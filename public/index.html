@@ -193,6 +193,27 @@ body[data-screen="xs"] .bottom-nav button{padding:7px 3px}
 @media print{body{background:white!important;color:black!important}header,.bottom-nav,.no-print,.wrap > section:not(#page-printqr):not(#page-templateQrPrint){display:none!important}#page-printqr,#page-templateQrPrint{display:block!important}.qr-print-area{width:210mm!important;min-height:297mm!important}.template-qr-print-area{background:#fff;color:#000;padding:0;margin:0}.template-qr-label{color:#000;border:0;border-bottom:1px dashed #999;border-radius:0;break-inside:avoid;page-break-inside:avoid}.wrap{padding:0;max-width:none}.card{border:0;box-shadow:none;padding:0}@page{size:A4 portrait;margin:0}}
 .template-qr-print-area{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;background:#fff;color:#000;padding:8mm;width:210mm;min-height:297mm;margin:auto;align-content:start}.template-qr-label{border:1px solid #111;border-radius:3mm;padding:4mm;text-align:center;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4mm;min-height:70mm;font-family:Arial,sans-serif}.template-qr-label img,.template-qr-label canvas{width:32mm!important;height:32mm!important}.template-qr-style{font-size:12pt;font-weight:800;line-height:1.2}.template-qr-process{font-size:9pt;line-height:1.25;max-width:100%;overflow-wrap:anywhere}.template-qr-ct{font-size:11pt;font-weight:800}.template-qr-id{font-size:7pt;color:#333}.template-qr-roll{grid-template-columns:1fr;width:auto;min-height:0;padding:0;gap:0}.template-qr-roll .template-qr-label{min-height:0;break-after:page;page-break-after:always;padding:3mm}.template-qr-roll[data-width="58"] .template-qr-label{width:54mm}.template-qr-roll[data-width="80"] .template-qr-label{width:76mm}.template-qr-roll[data-width="58"] .template-qr-label img,.template-qr-roll[data-width="58"] .template-qr-label canvas{width:28mm!important;height:28mm!important}.template-qr-roll[data-width="80"] .template-qr-label img,.template-qr-roll[data-width="80"] .template-qr-label canvas{width:36mm!important;height:36mm!important}
 .template-qr-select-card{display:block}.template-qr-select-card>label{display:flex;gap:10px;align-items:flex-start}.template-qr-select-card .ct-entry{margin-left:30px}.template-qr-select-card .ct-entry label{margin-top:5px}.template-qr-select-card .ct-entry input{max-width:260px}
+.badge.partial{background:#0369a1;color:#fff}
+.dist-group-title{font-size:12px;font-weight:800;color:#ffe9a3;letter-spacing:.3px;text-transform:uppercase;margin:12px 0 6px;padding:4px 8px;border-left:3px solid var(--accent);background:rgba(212,175,55,.08);border-radius:6px}
+.dist-pick-row{display:flex;gap:10px;align-items:flex-start}
+.dist-pick-row input[type=checkbox]{margin-top:3px;flex:0 0 auto}
+.dist-pick-body{flex:1;min-width:0}
+.dist-split-card{border:1px solid rgba(212,175,55,.35);background:rgba(15,23,42,.55);border-radius:14px;padding:12px;margin:10px 0}
+.dist-split-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.dist-part-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid rgba(184,192,194,.16);border-radius:12px;background:rgba(17,23,25,.65);margin:6px 0}
+.dist-part-row.unchecked{opacity:.52}
+.dist-part-info{min-width:0}
+.dist-part-info b{display:block;font-size:13.5px}
+.dist-part-info small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.dist-qty-ctrl{display:flex;align-items:center;gap:5px}
+.dist-qty-ctrl button{min-height:34px;padding:4px 10px;font-size:14px;border-radius:9px}
+.dist-qty-ctrl input{width:64px;min-height:34px;padding:4px 6px;text-align:center;font-size:14px}
+.dist-alert{border-radius:12px;padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.4}
+.dist-alert.warn{background:rgba(180,83,9,.18);border:1px solid rgba(245,158,11,.55);color:#fde68a}
+.dist-alert.bad{background:rgba(185,28,28,.22);border:1px solid rgba(239,68,68,.6);color:#fecaca}
+.dist-alert.good{background:rgba(47,107,69,.22);border:1px solid rgba(63,143,93,.55);color:#bbf7d0}
+.dist-alert.info{background:rgba(14,116,144,.2);border:1px solid rgba(56,189,248,.45);color:#bae6fd}
+@media(max-width:600px){.dist-part-row{grid-template-columns:auto 1fr}.dist-qty-ctrl{grid-column:2 / 3;justify-content:flex-start;margin-top:4px}}
 </style>
 </head>
 <body>
@@ -205,7 +226,7 @@ body[data-screen="xs"] .bottom-nav button{padding:7px 3px}
 <section class="page hidden" id="page-templateInput"><div class="card"><div class="topline"><h2>Input Template Baru</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted"></div><label>Buyer</label><input id="buyer" list="buyerSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Buyer"/><datalist id="buyerSuggest"></datalist><label>Style / KP</label><input id="stylekp" list="styleSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Style / KP"/><datalist id="styleSuggest"></datalist><label>Part Template</label><datalist id="partSuggest"></datalist><div class="part-head"><span>Nama Template / Part</span><span>Size</span><span>Qty</span><span></span></div><div id="partRows"></div><div class="actions"><button onclick="addPartRow()" type="button">+ Tambah Part</button></div><label>Upload Sketch</label><input accept="image/*" capture="environment" id="sketch" type="file" onchange="onSketchSelected(this)"/><div class="paste-zone" id="sketchPasteZone" tabindex="0" onclick="this.focus()" title="Klik area ini lalu tekan CTRL+V"><div class="paste-zone-icon">📋</div><div><b>CTRL+V</b> paste screenshot (Print Screen / Snipping Tool) di sini<br><small class="muted">atau drag &amp; drop file gambar ke area ini · di HP: tekan lama → Tempel</small></div></div><div class="sketch-preview-box hidden" id="sketchPreviewBox"><img id="sketchPreviewImg" alt="Preview sketch"/><div class="actions" style="justify-content:center"><button class="small warn" type="button" onclick="openSketchCrop()">✂️ Crop / Atur Ulang</button><button class="small bad" type="button" onclick="clearSketch()">Hapus Sketch</button></div><div class="muted" id="sketchPreviewInfo"></div></div><div class="actions"><button class="good" onclick="saveTemplate()">Simpan Template</button><button onclick="clearTemplateForm()">Clear</button></div></div></section>
 <div class="modal" id="cropModal"><div class="box"><div class="topline"><h2>✂️ Crop Sketch</h2><button class="bad small" onclick="closeCropModal(false)">Batal</button></div><div class="muted">Geser gambar untuk atur posisi, gunakan slider / pinch untuk zoom. Area di dalam kotak yang akan disimpan.</div><div class="crop-viewport" id="cropViewport"><img id="cropImage" alt="Crop"/><div class="crop-grid"></div></div><div class="crop-zoom-row"><span>➖</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="setCropZoom(this.value)"/><span>➕</span></div><div class="actions"><button class="good" onclick="applyCrop()">✔ Pakai Hasil Crop</button><button onclick="resetCrop()">Reset</button><button class="bad" onclick="closeCropModal(false)">Batal</button></div></div></div>
 <section class="page hidden" id="page-templateList"><div class="card"><div class="topline"><h2>List Semua Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Cari kombinasi</label><input id="templateSearch" oninput="renderTemplatesDebounced()" placeholder="Buyer Style/KP Part Storage ID"/></div><div><label>Status</label><select id="templateStatusFilter" onchange="renderTemplates()"><option value="">Semua</option><option value="WAITING_DISTRIBUTION">Menunggu Distribusi</option><option value="DISTRIBUTED">Sudah Distribusi</option><option value="OUT">Keluar</option></select></div></div><div id="templateListBox"></div></div></section>
-<section class="page hidden" id="page-distribution"><div class="card"><div class="topline"><h2>Distribusi Template Jadi</h2><span class="selected-counter"><span id="distCount">0</span> waiting</span></div><div class="muted">Pilih template yang sudah jadi, lalu tentukan Tujuan Meja/Storage.</div><div id="distTemplateList"></div><label>Tujuan Meja/Storage</label><select id="distStorage"></select><label>Catatan</label><textarea id="distNote" placeholder="Opsional"></textarea><div class="actions"><button class="good" onclick="distributeTemplate()">Distribusikan</button></div></div></section>
+<section class="page hidden" id="page-distribution"><div class="card"><div class="topline"><div><h2>Distribusi Template Jadi</h2><div class="muted">Pilih 1 atau banyak template waiting, lalu atur split part (nama, size, qty) dan storage tujuan. Anti-duplikat aktif otomatis.</div></div><div style="display:flex;gap:6px;align-items:center"><span class="selected-counter"><span id="distCount">0</span> waiting</span><button class="small" onclick="showPage('home')">← Home</button></div></div><div class="grid"><div><label>Filter Buyer</label><select id="distBuyerFilter" onchange="onDistBuyerFilterChange()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="distStyleFilter" onchange="renderDistribution()"><option value="">Semua Style / KP</option></select></div><div><label>Cari Part / Size / ID</label><input id="distSearch" oninput="renderDistributionDebounced()" placeholder="Contoh: FRONT BODY, M, TPL-..."/></div></div><div class="actions"><button class="small" type="button" onclick="selectAllFilteredDistribution(true)">Pilih Semua Tampil</button><button class="small" type="button" onclick="selectAllFilteredDistribution(false)">Kosongkan Pilihan</button><button class="small" type="button" onclick="resetDistributionFilter()">Reset Filter</button><button class="small" type="button" onclick="syncData('Refresh template waiting...')">🔄 Refresh</button></div><div id="distTemplateList" style="margin-top:10px"></div></div><div class="card hidden" id="distSplitPanel"><div class="topline"><div><h3>✂️ Pengaturan Split Distribution (Part · Size · Qty)</h3><div class="muted">Centang part dan atur qty yang akan dipindahkan sekarang. Sisa qty/part tetap berstatus WAITING_DISTRIBUTION.</div></div><span class="selected-counter"><span id="distSelectedCount">0</span> dipilih</span></div><div id="distSplitBody"></div><div class="row"><div><label>Tujuan Meja / Storage</label><select id="distStorage" onchange="renderDistributionSummary()"></select></div><div class="actions" style="align-self:end"><input id="distScanCode" class="hidden" value=""/><button class="good" type="button" onclick="scanBarcode('distScanCode','setDistStorageScanned')">📷 Scan QR Storage</button></div></div><div class="hidden" id="distReader"></div><div id="distSummary"></div><label>Catatan</label><textarea id="distNote" placeholder="Opsional (otomatis dilengkapi rincian split part/size/qty)"></textarea><div class="actions"><button class="good" id="btnDistributeSubmit" type="button" onclick="distributeTemplate()">📦 Distribusikan</button><button type="button" onclick="selectAllFilteredDistribution(false)">Batal Pilihan</button></div></div></section>
 <section class="page hidden" id="page-storage"><div class="card"><div class="topline"><h2>Scan / Cek Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="scanStorageCode" placeholder="Contoh: CNC-MEJA-01"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('scanStorageCode','openScannedStorage')">Scan QR</button><button onclick="openScannedStorage()">Buka</button></div></div><div class="hidden" id="reader"></div><div class="scan-status"></div></div><div class="card"><label>Cari Storage</label><input class="searchbar" id="storageSearch" oninput="renderStorage()" placeholder="Cari meja/storage"/><div class="grid" id="storageGrid"></div></div></section>
 <section class="page hidden" id="page-movement"><div class="card"><div class="topline"><h2>Movement Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Scan Storage Asal</label><input id="moveScanCode" placeholder="Scan / isi storage asal"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('moveScanCode','setMoveFromScanned')">Scan</button></div></div><div class="hidden" id="moveReader"></div><label>Dari Storage</label><select id="moveStorageFrom" onchange="selectedMoveTemplateId='';renderMoveTemplates()"></select><label>Pilih Template</label><div id="moveTemplateList"></div><div class="row"><div><label>Jenis Movement</label><select id="moveType"><option value="TRANSFER">Transfer antar storage</option><option value="REPAIR">Repair</option><option value="RETURN">Return</option><option value="OUT">Keluar dari storage</option></select></div><div><label>Ke / Tujuan</label><select id="moveStorageTo"></select></div></div><label>Catatan</label><textarea id="moveNote" placeholder="Opsional"></textarea><div class="actions"><button class="good" onclick="saveMovement()">Simpan Movement</button></div></div></section>
 <section class="page hidden" id="page-master"><div class="card"><div class="topline"><h2>Master Storage / Setting</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="storageCode" list="storageSuggest" placeholder="CNC-MEJA-03" onblur="normalizeInputLive(this)"/></div><div><label>Nama Storage</label><input id="storageName" placeholder="Meja CNC 03"/></div></div><label>Area</label><input id="storageArea" placeholder="Area CNC / Storage"/><div class="actions"><button class="good" onclick="addStorage()">Tambah Storage</button><button onclick="syncData()">Sync Data</button><button class="warn" onclick="showPage('importExisting')">Import Lapangan</button><button onclick="exportJSON()">Export Data Ringan</button><button onclick="showPage('printqr')">Print QR</button><button onclick="showPage('userManagement')">User Management</button><button class="bad" onclick="logout()">Logout</button></div><h3>List Storage</h3><div id="storageList"></div></div></section>
@@ -1569,6 +1590,8 @@ let selectedQR = new Set();
 let selectedTemplateQR = new Set();
 let templateCTValues = Object.create(null);
 let selectedTemplateId = "";
+let distSelections = new Map();
+let distSubmitting = false;
 let selectedMoveTemplateId = "";
 let scanner = null;
 let lastSyncText = "Belum sync";
@@ -1797,9 +1820,17 @@ function applyMovement(movement){
 }
 function applyParts(parts){
   (parts||[]).forEach(p=>{
-    if(!db.parts.some(x=>String(x.partId)===String(p.partId) && String(x.templateId)===String(p.templateId))) db.parts.push(p);
+    const idx=db.parts.findIndex(x=>String(x.partId)===String(p.partId) && String(x.templateId)===String(p.templateId));
+    if(idx>=0) db.parts[idx]={...db.parts[idx],...p};
+    else db.parts.push(p);
   });
   migrateDB(db);
+}
+function replacePartsForTemplate(templateId, parts){
+  if(!templateId || !Array.isArray(parts)) return;
+  const tid=String(templateId);
+  db.parts=db.parts.filter(p=>String(p.templateId)!==tid);
+  parts.forEach(p=>db.parts.push(p));
 }
 function finishFastUpdate(){
   db=migrateDB(db);
@@ -1812,12 +1843,38 @@ function finishFastUpdate(){
 function migrateDB(d){
   d = d || emptyDB();
   d.storages ||= []; d.templates ||= []; d.parts ||= []; d.movements ||= []; d.users ||= []; d.masters ||= {buyers:[],parts:[]};
+  const tMap=new Map();
   d.templates.forEach(t=>{
     if(t.storage && !t.currentStorage) t.currentStorage=t.storage;
     if(!t.status) t.status=t.currentStorage?"DISTRIBUTED":"WAITING_DISTRIBUTION";
     if(t.sketch){ t.hasSketch = true; delete t.sketch; }
     t.hasSketch = String(t.hasSketch).toUpperCase()==="TRUE" || t.hasSketch===true;
     delete t.storage;
+    tMap.set(String(t.id), t);
+  });
+  d.parts.forEach(p=>{
+    p.qty = Math.max(1, Math.round(Number(p.qty||1)));
+    const st = String(p.status||"").trim().toUpperCase();
+    const cs = String(p.currentStorage||"").trim();
+    if(!st && !cs){
+      const parent = tMap.get(String(p.templateId));
+      const pst = String(parent?.status||"").trim().toUpperCase();
+      if(pst==="DISTRIBUTED"){
+        p.status="DISTRIBUTED";
+        p.currentStorage=parent.currentStorage||"";
+        p.distributedAt=parent.distributedAt||"";
+      }else if(pst==="OUT"){
+        p.status="OUT";
+        p.currentStorage="";
+      }else{
+        p.status="WAITING_DISTRIBUTION";
+        p.currentStorage="";
+      }
+    }else if(!st && cs){
+      p.status="DISTRIBUTED";
+    }else{
+      p.status=st;
+    }
   });
   const buyers=new Set([...(d.masters.buyers||[]), ...d.templates.map(t=>t.buyer).filter(Boolean)]);
   const parts=new Set([...(d.masters.parts||[]), ...d.parts.map(p=>p.part).filter(Boolean)]);
@@ -1920,7 +1977,7 @@ function tryAutoLogin(){
   }catch(e){ return false; }
 }
 function logout(){
-  currentUser=null; db=emptyDB(); dataLoaded=false; activePage="home"; selectedQR.clear(); selectedTemplateId=""; selectedMoveTemplateId=""; selectedFieldStorage="";
+  currentUser=null; db=emptyDB(); dataLoaded=false; activePage="home"; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
   clearSession(); clearLocalCache();
   renderAuth(); toast("Logout berhasil");
 }
@@ -1967,16 +2024,73 @@ function renderCurrentPage(page=activePage){
 function renderAll(){ renderCurrentPage(); }
 function updateHeader(){
   const total=db.templates.length;
-  const waiting=db.templates.filter(t=>t.status==="WAITING_DISTRIBUTION").length;
+  const waiting=db.templates.filter(isTemplateWaiting).length;
   const mode=currentUser ? `${total} template · ${waiting} waiting` : "Cloud mode · belum login";
   const el=$("headerSyncStatus"); if(el) el.textContent = mode;
   const last=$("headerLastSync"); if(last) last.textContent = currentUser ? `Last sync: ${lastSyncText}` : "Last sync: -";
 }
-function partsOf(templateId){ return db.parts.filter(p=>p.templateId===templateId); }
-function partText(templateId){ const ps=partsOf(templateId); return ps.map(p=>`${p.part}${p.size?` [${p.size}]`:""}${Number(p.qty||1)>1?` (${p.qty})`:""}`).join(", "); }
-function templateSearchText(t){ return [t.id,t.buyer,t.stylekp,t.status,t.currentStorage,t.createdBy,partText(t.id)].join(" ").toLowerCase(); }
+function partsOf(templateId){ return db.parts.filter(p=>String(p.templateId)===String(templateId)); }
+function isPartWaiting(p){
+  const st=String(p?.status||"").trim().toUpperCase();
+  return st!=="DISTRIBUTED" && st!=="OUT" && !String(p?.currentStorage||"").trim();
+}
+function isPartDistributed(p){
+  return String(p?.status||"").trim().toUpperCase()==="DISTRIBUTED" && !!String(p?.currentStorage||"").trim();
+}
+function waitingPartsOf(templateId){ return partsOf(templateId).filter(isPartWaiting); }
+function distributedPartsOf(templateId){ return partsOf(templateId).filter(isPartDistributed); }
+function distributedPartsInStorage(templateId, code){
+  const target=normalizeText(code);
+  return partsOf(templateId).filter(p=>isPartDistributed(p) && normalizeText(p.currentStorage)===target);
+}
+function isTemplateWaiting(t){
+  if(!t) return false;
+  const ps=partsOf(t.id);
+  if(ps.length) return ps.some(isPartWaiting);
+  return String(t.status||"").toUpperCase()==="WAITING_DISTRIBUTION";
+}
+function isTemplatePartial(t){
+  if(!t) return false;
+  const ps=partsOf(t.id);
+  return ps.some(isPartWaiting) && ps.some(isPartDistributed);
+}
+function templateStorages(t){
+  if(!t) return [];
+  const ps=distributedPartsOf(t.id);
+  if(ps.length) return [...new Set(ps.map(p=>normalizeText(p.currentStorage)).filter(Boolean))];
+  return String(t.currentStorage||"").split(",").map(s=>normalizeText(s)).filter(Boolean);
+}
+function templatesInStorage(code){
+  const target=normalizeText(code);
+  if(!target) return [];
+  return db.templates.filter(t=>{
+    const ps=partsOf(t.id);
+    if(ps.length) return ps.some(p=>isPartDistributed(p) && normalizeText(p.currentStorage)===target);
+    return t.status==="DISTRIBUTED" && normalizeText(t.currentStorage)===target;
+  });
+}
+function formatPartList(parts){
+  return (parts||[]).map(p=>`${p.part}${p.size?` [${p.size}]`:""}${Number(p.qty||1)>1?` (${p.qty})`:""}`).join(", ");
+}
+function partText(templateId){ return formatPartList(partsOf(templateId)); }
+function partTextInStorage(templateId, code){
+  const inSt=distributedPartsInStorage(templateId, code);
+  return formatPartList(inSt.length ? inSt : partsOf(templateId));
+}
+function templateSearchText(t){ return [t.id,t.buyer,t.stylekp,t.status,t.currentStorage,templateStorages(t).join(" "),t.createdBy,partText(t.id)].join(" ").toLowerCase(); }
 
-function partsKeyLocal(parts){ return (parts||[]).map(p=>`${normalizeText(p.part)}[${normalizeText(p.size||"")}]#${Number(p.qty||1)}`).sort().join("|"); }
+function partsKeyLocal(parts){
+  const agg=new Map();
+  (parts||[]).forEach(p=>{
+    const part=normalizeText(p.part||p.name);
+    if(!part) return;
+    const size=normalizeText(p.size||p.ukuran||"");
+    const qty=Math.max(1, Math.round(Number(p.qty||1)));
+    const k=`${part}[${size}]`;
+    agg.set(k, (agg.get(k)||0)+qty);
+  });
+  return [...agg.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([k,q])=>`${k}#${q}`).join("|");
+}
 function templatePartsKeyLocal(templateId){ return partsKeyLocal(partsOf(templateId)); }
 function findDuplicateTemplateLocal(buyer, stylekp, parts){
   const key=partsKeyLocal(parts);
@@ -1987,8 +2101,8 @@ function renderHome(){
   if(!$("sumTemplates")) return;
   if($("menuUserManagement")) $("menuUserManagement").classList.toggle("hidden", !isSuperAdmin());
   $("sumTemplates").textContent=db.templates.length;
-  $("sumWaiting").textContent=db.templates.filter(t=>t.status==="WAITING_DISTRIBUTION").length;
-  $("sumDistributed").textContent=db.templates.filter(t=>t.status==="DISTRIBUTED").length;
+  $("sumWaiting").textContent=db.templates.filter(isTemplateWaiting).length;
+  $("sumDistributed").textContent=db.templates.filter(t=>!isTemplateWaiting(t) && t.status==="DISTRIBUTED").length;
   const recent=[...db.movements].sort(movementSortNewest).slice(0,5);
   $("recentMovements").innerHTML = recent.length ? recent.map(m=>{
     const t=db.templates.find(x=>x.id===m.templateId) || {};
@@ -2091,13 +2205,17 @@ function renderDashboardStorageFilters(){
   selectOptions("dashStyleFilter", masterStyles(), "Semua Style / KP");
   selectOptions("dashPartFilter", masterParts(), "Semua Part");
 }
-function dashboardTemplateMatch(t){
+function dashboardTemplateMatch(t, storageCode){
   const buyer=$("dashBuyerFilter")?.value || "";
   const style=$("dashStyleFilter")?.value || "";
   const part=$("dashPartFilter")?.value || "";
   if(buyer && t.buyer !== buyer) return false;
   if(style && t.stylekp !== style) return false;
-  if(part && !partsOf(t.id).some(p=>String(p.part)===part)) return false;
+  if(part){
+    const ps = storageCode ? distributedPartsInStorage(t.id, storageCode) : partsOf(t.id);
+    const list = ps.length ? ps : partsOf(t.id);
+    if(!list.some(p=>String(p.part)===part)) return false;
+  }
   return true;
 }
 function renderDashboardStorage(){
@@ -2107,16 +2225,16 @@ function renderDashboardStorage(){
   const storages=db.storages.filter(s=>!storageFilter || s.code===storageFilter);
   const groups=[];
   storages.forEach(s=>{
-    const rows=db.templates.filter(t=>t.status==="DISTRIBUTED" && t.currentStorage===s.code && dashboardTemplateMatch(t));
+    const rows=templatesInStorage(s.code).filter(t=>dashboardTemplateMatch(t, s.code));
     groups.push({storage:s,rows});
   });
   const total=groups.reduce((a,g)=>a+g.rows.length,0);
-  box.innerHTML=`<div class="summary-box"><div class="mini"><b>${storages.length}</b><span>Lokasi tampil</span></div><div class="mini"><b>${total}</b><span>Total template</span></div><div class="mini"><b>${db.templates.filter(t=>t.status==="WAITING_DISTRIBUTION").length}</b><span>Menunggu distribusi</span></div></div>`+
+  box.innerHTML=`<div class="summary-box"><div class="mini"><b>${storages.length}</b><span>Lokasi tampil</span></div><div class="mini"><b>${total}</b><span>Total template</span></div><div class="mini"><b>${db.templates.filter(isTemplateWaiting).length}</b><span>Menunggu distribusi</span></div></div>`+
   (groups.length?groups.map(g=>{
     const byKey=new Map();
     g.rows.forEach(t=>{const key=`${t.buyer||"(Tanpa buyer)"}|||${t.stylekp||"(Tanpa style/KP)"}`;byKey.set(key,(byKey.get(key)||0)+1);});
     const breakdown=[...byKey.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([key,count])=>{const [buyer,style]=key.split("|||");return `<tr><td>${esc(buyer)}</td><td>${esc(style)}</td><td class="num"><b>${count}</b></td></tr>`;}).join("");
-    return `<div class="card storage-dashboard-card"><div class="topline"><div><h3>${esc(g.storage.code)} · ${esc(g.storage.name||"")}</h3><div class="muted">${esc(g.storage.area||"")} · <b>${g.rows.length} template</b></div></div><button class="small" onclick="openStorage('${escAttr(g.storage.code)}')">Buka</button><button class="small good" onclick="goFieldUpdateStorage('${escAttr(g.storage.code)}')">+ Template</button></div>${g.rows.length?`<h4>Ringkasan Buyer / Style-KP per lokasi</h4><div class="table-wrap"><table><thead><tr><th>Buyer</th><th>Style / KP</th><th>Jumlah</th></tr></thead><tbody>${breakdown}</tbody></table></div><details><summary>Daftar template (${g.rows.length})</summary><table><thead><tr><th>Buyer / Style</th><th>Proses</th><th>ID</th><th>Action</th></tr></thead><tbody>${g.rows.map(t=>`<tr><td><b>${esc(t.buyer)}</b><br>${esc(t.stylekp)}</td><td>${esc(partText(t.id))}</td><td><span class="muted">${esc(t.id)}</span></td><td><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button></td></tr>`).join("")}</tbody></table></details>`:`<div class="empty">Lokasi kosong / tidak cocok filter.</div>`}</div>`;
+    return `<div class="card storage-dashboard-card"><div class="topline"><div><h3>${esc(g.storage.code)} · ${esc(g.storage.name||"")}</h3><div class="muted">${esc(g.storage.area||"")} · <b>${g.rows.length} template</b></div></div><button class="small" onclick="openStorage('${escAttr(g.storage.code)}')">Buka</button><button class="small good" onclick="goFieldUpdateStorage('${escAttr(g.storage.code)}')">+ Template</button></div>${g.rows.length?`<h4>Ringkasan Buyer / Style-KP per lokasi</h4><div class="table-wrap"><table><thead><tr><th>Buyer</th><th>Style / KP</th><th>Jumlah</th></tr></thead><tbody>${breakdown}</tbody></table></div><details><summary>Daftar template (${g.rows.length})</summary><table><thead><tr><th>Buyer / Style</th><th>Proses</th><th>ID</th><th>Action</th></tr></thead><tbody>${g.rows.map(t=>`<tr><td><b>${esc(t.buyer)}</b><br>${esc(t.stylekp)}</td><td>${esc(partTextInStorage(t.id, g.storage.code))}</td><td><span class="muted">${esc(t.id)}</span></td><td><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button></td></tr>`).join("")}</tbody></table></details>`:`<div class="empty">Lokasi kosong / tidak cocok filter.</div>`}</div>`;
   }).join(""):`<div class="empty">Tidak ada lokasi/template yang cocok filter.</div>`);
 }
 function resetDashboardStorageFilter(){
@@ -2348,16 +2466,25 @@ function renderTemplates(keepCount){
   if(!dataLoaded){ box.innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>'; return; }
   if(!keepCount) tplShownCount = TPL_PAGE_SIZE;
   const q=($("templateSearch")?.value||"").toLowerCase(); const status=$("templateStatusFilter")?.value||"";
-  const rows=db.templates.filter(t=>(!q || templateSearchText(t).includes(q)) && (!status || t.status===status));
+  const rows=db.templates.filter(t=>(!q || templateSearchText(t).includes(q)) && (!status || (status==="WAITING_DISTRIBUTION" ? isTemplateWaiting(t) : t.status===status)));
   const shown = rows.slice(0, tplShownCount);
-  box.innerHTML = `<div class="muted">Ditemukan: ${rows.length} template · ditampilkan ${shown.length}</div>` + (shown.length? `<table><thead><tr><th>Template</th><th>Part</th><th>Status</th><th>Lokasi</th><th>Action</th></tr></thead><tbody>${shown.map(t=>`<tr><td><b>${esc(t.buyer)}</b><br>${esc(t.stylekp)}<br><span class="muted">${esc(t.id)} · ${dateTimeText(t.createdAt)}</span></td><td>${esc(partText(t.id))}</td><td>${statusBadge(t.status)}</td><td>${esc(t.currentStorage||"Belum distribusi")}</td><td><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button>${t.hasSketch?` <button class="small" onclick="viewSketch('${escAttr(t.id)}')">Sketch</button>`:""}</td></tr>`).join("")}</tbody></table>` : `<div class="empty">Belum ada data.</div>`) + (rows.length > tplShownCount ? `<button class="load-more-btn" onclick="loadMoreTemplates()">⬇ Muat ${Math.min(TPL_PAGE_SIZE, rows.length-tplShownCount)} template lagi (${rows.length-tplShownCount} tersisa)</button>` : "");
+  box.innerHTML = `<div class="muted">Ditemukan: ${rows.length} template · ditampilkan ${shown.length}</div>` + (shown.length? `<table><thead><tr><th>Template</th><th>Part</th><th>Status</th><th>Lokasi</th><th>Action</th></tr></thead><tbody>${shown.map(t=>{
+    const partial=isTemplatePartial(t);
+    const locs=templateStorages(t);
+    const locLabel=locs.length ? (partial ? `${locs.join(", ")} (+waiting)` : locs.join(", ")) : "Belum distribusi";
+    return `<tr><td><b>${esc(t.buyer)}</b><br>${esc(t.stylekp)}<br><span class="muted">${esc(t.id)} · ${dateTimeText(t.createdAt)}</span></td><td>${esc(partText(t.id))}</td><td>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""}</td><td>${esc(locLabel)}</td><td><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button>${t.hasSketch?` <button class="small" onclick="viewSketch('${escAttr(t.id)}')">Sketch</button>`:""}</td></tr>`;
+  }).join("")}</tbody></table>` : `<div class="empty">Belum ada data.</div>`) + (rows.length > tplShownCount ? `<button class="load-more-btn" onclick="loadMoreTemplates()">⬇ Muat ${Math.min(TPL_PAGE_SIZE, rows.length-tplShownCount)} template lagi (${rows.length-tplShownCount} tersisa)</button>` : "");
 }
 const renderTemplatesDebounced = debounce(renderTemplates, 160);
 function openTemplateDetail(tid){
   const t=db.templates.find(x=>x.id===tid); if(!t) return;
   const mov=db.movements.filter(m=>m.templateId===tid).sort(movementSortNewest).slice(0,5);
+  const ps=partsOf(t.id);
+  const partial=isTemplatePartial(t);
+  const locs=templateStorages(t);
+  const partTable=ps.length ? `<table><thead><tr><th>Part</th><th>Size</th><th>Qty</th><th>Status</th><th>Storage</th></tr></thead><tbody>${ps.map(p=>`<tr><td><b>${esc(p.part)}</b></td><td>${esc(p.size||"-")}</td><td>${Number(p.qty||1)}</td><td>${statusBadge(p.status||"WAITING_DISTRIBUTION")}</td><td>${esc(p.currentStorage||"-")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">Belum ada rincian part.</p>`;
   $("modalTitle").textContent="Detail Template";
-  $("modalContent").innerHTML=`<div class="card"><h3>${esc(t.buyer)} · ${esc(t.stylekp)}</h3><p>${statusBadge(t.status)} <span class="badge">${esc(t.currentStorage||"Belum distribusi")}</span></p><p><b>Part:</b> ${esc(partText(t.id))}</p><p class="muted">Dibuat otomatis oleh sistem: ${esc(t.createdBy)} · ${dateTimeText(t.createdAt)}</p>${t.hasSketch?`<button onclick="viewSketch('${escAttr(t.id)}')">Lihat Sketch</button>`:""}</div><h3>History</h3>${mov.length?mov.map(m=>`<div class="line-item"><b>${esc(m.type)}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · ${esc(m.by||"")} · ${dateTimeText(m.at)}<br>${esc(m.note||"")}</span></div>`).join(""):`<div class="muted">Belum ada movement.</div>`}`;
+  $("modalContent").innerHTML=`<div class="card"><h3>${esc(t.buyer)} · ${esc(t.stylekp)}</h3><p>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""} <span class="badge">${esc(locs.length?locs.join(", "):"Belum distribusi")}</span></p><p><b>Rincian Part:</b></p>${partTable}<p class="muted">Dibuat oleh: ${esc(t.createdBy)} · ${dateTimeText(t.createdAt)}</p><div class="actions">${t.hasSketch?`<button onclick="viewSketch('${escAttr(t.id)}')">Lihat Sketch</button>`:""}${isTemplateWaiting(t)?`<button class="good" onclick="closeModal();goDistributeTemplate('${escAttr(t.id)}')">📦 Distribusikan</button>`:""}</div></div><h3>History</h3>${mov.length?mov.map(m=>`<div class="line-item"><b>${esc(m.type)}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · ${esc(m.by||"")} · ${dateTimeText(m.at)}<br>${esc(m.note||"")}</span></div>`).join(""):`<div class="muted">Belum ada movement.</div>`}`;
   openModal();
 }
 const zoomState={scale:1,x:0,y:0,startX:0,startY:0,pointerX:0,pointerY:0,dragging:false,startScale:1,lastDist:0,pointers:new Map()};
@@ -2396,50 +2523,431 @@ function setupImageZoomEvents(){
 function openModal(){ $("modal").style.display="flex"; document.body.style.overflow="hidden"; }
 function closeModal(){ $("modal").style.display="none"; $("modal").classList.remove("image-mode"); document.body.style.overflow=""; zoomState.pointers?.clear?.(); }
 
+function encKey(v){ return encodeURIComponent(String(v??"")).replace(/'/g,"%27"); }
+function decKey(v){ try{ return decodeURIComponent(String(v??"")); }catch(e){ return String(v??""); } }
+function distPartKey(p){ return String(p?.partId||"").trim() || `${normalizeText(p?.part)}||${normalizeText(p?.size||"")}`; }
+
+function ensureDistPartSelection(tid){
+  const idStr=String(tid);
+  const wParts=waitingPartsOf(idStr);
+  let partMap=distSelections.get(idStr);
+  if(!partMap){
+    partMap=new Map();
+    distSelections.set(idStr, partMap);
+  }
+  const validKeys=new Set();
+  wParts.forEach(p=>{
+    const key=distPartKey(p);
+    const maxQty=Math.max(1, Math.round(Number(p.qty||1)));
+    validKeys.add(key);
+    const prev=partMap.get(key);
+    if(!prev){
+      partMap.set(key, {checked:true, qty:maxQty});
+    }else{
+      prev.qty=Math.max(1, Math.min(maxQty, Math.round(Number(prev.qty||maxQty))));
+    }
+  });
+  [...partMap.keys()].forEach(k=>{ if(!validKeys.has(k)) partMap.delete(k); });
+  return partMap;
+}
+function goDistributeTemplate(tid){
+  const t=db.templates.find(x=>String(x.id)===String(tid));
+  if(!t || !isTemplateWaiting(t)) return toast("Template sudah tidak berstatus waiting.");
+  distSelections.clear();
+  ensureDistPartSelection(t.id);
+  selectedTemplateId=String(t.id);
+  showPage("distribution");
+}
+function getFilteredWaitingTemplates(){
+  const allWaiting=db.templates.filter(isTemplateWaiting);
+  const buyer=$("distBuyerFilter")?.value || "";
+  const style=$("distStyleFilter")?.value || "";
+  const q=($("distSearch")?.value || "").trim().toLowerCase();
+  return allWaiting.filter(t=>{
+    if(buyer && t.buyer !== buyer) return false;
+    if(style && t.stylekp !== style) return false;
+    if(q){
+      const hay=[t.id, t.buyer, t.stylekp, formatPartList(waitingPartsOf(t.id)), templateStorages(t).join(" ")].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function onDistBuyerFilterChange(){
+  const buyer=$("distBuyerFilter")?.value || "";
+  const styleEl=$("distStyleFilter");
+  if(styleEl && buyer){
+    const validStyles=new Set(db.templates.filter(t=>isTemplateWaiting(t) && t.buyer===buyer).map(t=>t.stylekp).filter(Boolean));
+    if(styleEl.value && !validStyles.has(styleEl.value)) styleEl.value="";
+  }
+  renderDistribution();
+}
+function resetDistributionFilter(){
+  ["distBuyerFilter","distStyleFilter","distSearch"].forEach(k=>{ if($(k)) $(k).value=""; });
+  renderDistribution();
+}
 function renderDistribution(){
   if(!$("distTemplateList")) return;
-  const waiting=db.templates.filter(t=>t.status==="WAITING_DISTRIBUTION");
-  $("distCount").textContent = waiting.length;
-  $("distTemplateList").innerHTML = waiting.length ? waiting.map(t=>`<div class="template-pick-card ${selectedTemplateId===t.id?'selected':''}" onclick="selectDistributionTemplate('${escAttr(t.id)}')"><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><span>${esc(partText(t.id))}</span><small>${esc(t.id)}</small></div>`).join("") : `<div class="empty">Tidak ada template menunggu distribusi.</div>`;
-  $("distStorage").innerHTML = db.storages.filter(s=>s.code!=="WORKSHOP").map(s=>`<option value="${escAttr(s.code)}">${esc(s.code)} · ${esc(s.name)}</option>`).join("");
+  const allWaiting=db.templates.filter(isTemplateWaiting);
+  const waitingIds=new Set(allWaiting.map(t=>String(t.id)));
+  [...distSelections.keys()].forEach(tid=>{ if(!waitingIds.has(tid)) distSelections.delete(tid); });
+  if(selectedTemplateId && !waitingIds.has(String(selectedTemplateId))) selectedTemplateId="";
+
+  $("distCount").textContent = allWaiting.length;
+  selectOptions("distBuyerFilter", allWaiting.map(t=>t.buyer), "Semua Buyer");
+  const activeBuyer=$("distBuyerFilter")?.value || "";
+  selectOptions("distStyleFilter", allWaiting.filter(t=>!activeBuyer || t.buyer===activeBuyer).map(t=>t.stylekp), "Semua Style / KP");
+
+  const stEl=$("distStorage");
+  if(stEl){
+    const prevStorage=stEl.value;
+    const validStorages=db.storages.filter(s=>normalizeText(s.code)!=="WORKSHOP");
+    stEl.innerHTML = validStorages.length
+      ? validStorages.map(s=>`<option value="${escAttr(s.code)}">${esc(s.code)} · ${esc(s.name)}</option>`).join("")
+      : `<option value="">Belum ada master storage</option>`;
+    if(prevStorage && validStorages.some(s=>s.code===prevStorage)) stEl.value=prevStorage;
+  }
+
+  const filtered=getFilteredWaitingTemplates();
+  const listBox=$("distTemplateList");
+  if(!filtered.length){
+    listBox.innerHTML = allWaiting.length
+      ? `<div class="empty">Tidak ada template waiting yang cocok dengan filter Buyer / Style / pencarian.</div>`
+      : `<div class="empty">Tidak ada template menunggu distribusi.</div>`;
+  }else{
+    const groups=new Map();
+    filtered.forEach(t=>{
+      const gKey=`${t.buyer||"(Tanpa Buyer)"}|||${t.stylekp||"(Tanpa Style/KP)"}`;
+      if(!groups.has(gKey)) groups.set(gKey, []);
+      groups.get(gKey).push(t);
+    });
+    const sortedKeys=[...groups.keys()].sort((a,b)=>a.localeCompare(b));
+    listBox.innerHTML = sortedKeys.map(gKey=>{
+      const [buyer, style]=gKey.split("|||");
+      const rows=groups.get(gKey);
+      return `<div class="dist-group-title">${esc(buyer)} · ${esc(style)} (${rows.length})</div>` + rows.map(t=>{
+        const tid=String(t.id);
+        const isSel=distSelections.has(tid);
+        const wParts=waitingPartsOf(tid);
+        const dParts=distributedPartsOf(tid);
+        const partial=wParts.length>0 && dParts.length>0;
+        const wQty=wParts.reduce((a,p)=>a+Math.max(1,Number(p.qty||1)),0);
+        const distInfo=dParts.length
+          ? `<small style="color:#7dd3fc">Sudah terdistribusi: ${esc(dParts.map(p=>`${p.part}${p.size?` [${p.size}]`:""} x${Number(p.qty||1)} @${p.currentStorage}`).join(", "))}</small>`
+          : "";
+        return `<div class="template-pick-card ${isSel?'selected':''}" onclick="toggleDistributionTemplate('${encKey(tid)}')"><div class="dist-pick-row"><input type="checkbox" ${isSel?"checked":""} onclick="event.stopPropagation();toggleDistributionTemplate('${encKey(tid)}')" aria-label="Pilih template ${escAttr(tid)}"/><div class="dist-pick-body"><b>${esc(t.buyer)} · ${esc(t.stylekp)} ${partial?`<span class="badge partial">Split Parsial</span>`:`<span class="badge warn">Waiting</span>`}</b><span>Waiting (${wParts.length} part · ${wQty} pcs): ${esc(formatPartList(wParts)||partText(tid)||"—")}</span>${distInfo}<small>${esc(tid)} · ${dateTimeText(t.createdAt)}</small></div></div></div>`;
+      }).join("");
+    }).join("");
+  }
+  renderDistributionSplitPanel();
 }
-function selectDistributionTemplate(id){ selectedTemplateId=id; renderDistribution(); }
+const renderDistributionDebounced = debounce(renderDistribution, 160);
+
+function selectDistributionTemplate(tid){ toggleDistributionTemplate(encKey(tid)); }
+function toggleDistributionTemplate(encTid){
+  const tid=decKey(encTid);
+  if(distSelections.has(tid)){
+    distSelections.delete(tid);
+    if(selectedTemplateId===tid) selectedTemplateId=[...distSelections.keys()][0]||"";
+  }else{
+    ensureDistPartSelection(tid);
+    selectedTemplateId=tid;
+  }
+  renderDistribution();
+}
+function selectAllFilteredDistribution(on){
+  if(!on){
+    distSelections.clear();
+    selectedTemplateId="";
+  }else{
+    const filtered=getFilteredWaitingTemplates();
+    filtered.forEach(t=>ensureDistPartSelection(t.id));
+    selectedTemplateId=filtered[0] ? String(filtered[0].id) : "";
+  }
+  renderDistribution();
+}
+function toggleDistPart(encTid, encPKey, checked){
+  const tid=decKey(encTid), pKey=decKey(encPKey);
+  const partMap=ensureDistPartSelection(tid);
+  const entry=partMap.get(pKey);
+  if(entry) entry.checked=!!checked;
+  renderDistributionSplitPanel();
+}
+function setDistPartQty(encTid, encPKey, rawVal){
+  const tid=decKey(encTid), pKey=decKey(encPKey);
+  const partMap=ensureDistPartSelection(tid);
+  const wPart=waitingPartsOf(tid).find(p=>distPartKey(p)===pKey);
+  if(!wPart) return;
+  const maxQty=Math.max(1, Math.round(Number(wPart.qty||1)));
+  let v=Math.round(Number(rawVal));
+  if(!Number.isFinite(v) || v<1) v=1;
+  if(v>maxQty) v=maxQty;
+  const entry=partMap.get(pKey) || {checked:true, qty:maxQty};
+  entry.qty=v;
+  entry.checked=true;
+  partMap.set(pKey, entry);
+  renderDistributionSplitPanel();
+}
+function stepDistPartQty(encTid, encPKey, delta){
+  const tid=decKey(encTid), pKey=decKey(encPKey);
+  const partMap=ensureDistPartSelection(tid);
+  const wPart=waitingPartsOf(tid).find(p=>distPartKey(p)===pKey);
+  if(!wPart) return;
+  const maxQty=Math.max(1, Math.round(Number(wPart.qty||1)));
+  const entry=partMap.get(pKey) || {checked:true, qty:maxQty};
+  const next=Math.max(1, Math.min(maxQty, Number(entry.qty||1) + Number(delta||0)));
+  entry.qty=next;
+  entry.checked=true;
+  partMap.set(pKey, entry);
+  renderDistributionSplitPanel();
+}
+function setAllDistParts(encTid, on){
+  const tid=decKey(encTid);
+  const partMap=ensureDistPartSelection(tid);
+  const wParts=waitingPartsOf(tid);
+  wParts.forEach(p=>{
+    const k=distPartKey(p);
+    const maxQty=Math.max(1, Math.round(Number(p.qty||1)));
+    const entry=partMap.get(k) || {checked:on, qty:maxQty};
+    entry.checked=!!on;
+    if(on && (!entry.qty || entry.qty<1)) entry.qty=maxQty;
+    partMap.set(k, entry);
+  });
+  renderDistributionSplitPanel();
+}
+function collectDistributionPlan(){
+  const items=[];
+  const errors=[];
+  let totalParts=0, totalQty=0, remainingQty=0, hasSplit=false;
+
+  [...distSelections.keys()].forEach(tid=>{
+    const t=db.templates.find(x=>String(x.id)===tid);
+    if(!t || !isTemplateWaiting(t)) return;
+    const wParts=waitingPartsOf(tid);
+    if(!wParts.length){
+      items.push({template:t, templateId:tid, splitParts:[]});
+      return;
+    }
+    const partMap=ensureDistPartSelection(tid);
+    const splitParts=[];
+    let tTotalWaitQty=0;
+    let tPickedQty=0;
+    wParts.forEach(p=>{
+      const maxQty=Math.max(1, Math.round(Number(p.qty||1)));
+      tTotalWaitQty += maxQty;
+      const k=distPartKey(p);
+      const sel=partMap.get(k);
+      if(sel && sel.checked){
+        const qty=Math.round(Number(sel.qty||0));
+        if(!Number.isFinite(qty) || qty<1 || qty>maxQty){
+          errors.push(`Qty part ${p.part}${p.size?` [${p.size}]`:""} pada ${t.buyer} · ${t.stylekp} tidak valid (1-${maxQty}).`);
+          return;
+        }
+        splitParts.push({partId:p.partId||"", part:normalizeText(p.part), size:normalizeText(p.size||""), qty});
+        tPickedQty += qty;
+        totalParts++;
+        totalQty += qty;
+        if(qty < maxQty) hasSplit=true;
+      }else{
+        hasSplit=true;
+      }
+    });
+    remainingQty += Math.max(0, tTotalWaitQty - tPickedQty);
+    if(splitParts.length){
+      items.push({template:t, templateId:tid, splitParts});
+    }
+  });
+
+  return {items, totalTemplates:items.length, totalParts, totalQty, remainingQty, hasSplit, errors};
+}
+function findLocalDistributionConflict(plan, storage){
+  const st=normalizeText(storage);
+  const duplicates=[];
+  const autoMerges=[];
+  if(!st || !plan?.items?.length) return {duplicates, autoMerges};
+
+  const batchKeys=new Map();
+  plan.items.forEach(item=>{
+    const t=item.template;
+    const buyerNorm=normalizeText(t.buyer);
+    const styleNorm=normalizeText(t.stylekp);
+    const plannedKey=partsKeyLocal(item.splitParts);
+    if(!plannedKey) return;
+
+    // 1. Cek duplikat terhadap template lain di storage tujuan
+    const otherDup=db.templates.find(other=>{
+      if(String(other.id)===String(t.id)) return false;
+      if(normalizeText(other.buyer)!==buyerNorm || normalizeText(other.stylekp)!==styleNorm) return false;
+      const otherInSt=distributedPartsInStorage(other.id, st);
+      if(!otherInSt.length) return false;
+      return partsKeyLocal(otherInSt)===plannedKey;
+    });
+    if(otherDup){
+      duplicates.push(`Duplikat di ${st}: ${buyerNorm} · ${styleNorm} dengan part/size/qty identik sudah ada (ID: ${otherDup.id}).`);
+    }
+
+    // 2. Cek duplikat antar item di batch yang sama
+    const batchSig=`${buyerNorm}||${styleNorm}||${plannedKey}`;
+    if(batchKeys.has(batchSig)){
+      duplicates.push(`Duplikat dalam pilihan: ${buyerNorm} · ${styleNorm} (${t.id} & ${batchKeys.get(batchSig)}) memiliki part/size/qty identik ke ${st}.`);
+    }else{
+      batchKeys.set(batchSig, t.id);
+    }
+
+    // 3. Cek auto-merge part yang sama dari template yang sama di storage tujuan
+    const sameInSt=distributedPartsInStorage(t.id, st);
+    if(sameInSt.length){
+      const mergedNames=[];
+      item.splitParts.forEach(sp=>{
+        const hit=sameInSt.find(p=>normalizeText(p.part)===normalizeText(sp.part) && normalizeText(p.size||"")===normalizeText(sp.size||""));
+        if(hit) mergedNames.push(`${sp.part}${sp.size?` [${sp.size}]`:""} (+${sp.qty} → ${Number(hit.qty||0)+sp.qty})`);
+      });
+      if(mergedNames.length){
+        autoMerges.push(`${buyerNorm} · ${styleNorm}: ${mergedNames.join(", ")} sudah ada di ${st} dan akan digabung qty-nya otomatis (anti-duplikat).`);
+      }
+    }
+  });
+  return {duplicates, autoMerges};
+}
+function renderDistributionSplitPanel(){
+  const panel=$("distSplitPanel");
+  const body=$("distSplitBody");
+  if(!panel || !body) return;
+  const selIds=[...distSelections.keys()].filter(tid=>{
+    const t=db.templates.find(x=>String(x.id)===tid);
+    return t && isTemplateWaiting(t);
+  });
+  if($("distSelectedCount")) $("distSelectedCount").textContent = selIds.length;
+  panel.classList.toggle("hidden", !selIds.length);
+  if(!selIds.length){ body.innerHTML=""; renderDistributionSummary(); return; }
+
+  body.innerHTML = selIds.map(tid=>{
+    const t=db.templates.find(x=>String(x.id)===tid);
+    const wParts=waitingPartsOf(tid);
+    const partMap=ensureDistPartSelection(tid);
+    const partRowsHtml = wParts.length ? wParts.map(p=>{
+      const pKey=distPartKey(p);
+      const maxQty=Math.max(1, Math.round(Number(p.qty||1)));
+      const sel=partMap.get(pKey) || {checked:true, qty:maxQty};
+      const isSplitQty=sel.checked && sel.qty < maxQty;
+      return `<div class="dist-part-row ${sel.checked?"":"unchecked"}"><input type="checkbox" ${sel.checked?"checked":""} onchange="toggleDistPart('${encKey(tid)}','${encKey(pKey)}',this.checked)" aria-label="Pilih part ${escAttr(p.part)}"/><div class="dist-part-info"><b>${esc(p.part)}${p.size?` <span class="badge">${esc(p.size)}</span>`:""}</b><small>Tersedia waiting: <b>${maxQty}</b>${isSplitQty?` · <span style="color:#fde68a">Split: kirim ${sel.qty}, sisa ${maxQty-sel.qty} tetap waiting</span>`:(sel.checked?` · kirim penuh (${sel.qty})`:` · tidak dikirim (tetap waiting)`)}</small></div><div class="dist-qty-ctrl"><button class="small" type="button" ${!sel.checked||sel.qty<=1?"disabled":""} onclick="stepDistPartQty('${encKey(tid)}','${encKey(pKey)}',-1)">−</button><input type="number" inputmode="numeric" min="1" max="${maxQty}" value="${sel.qty}" ${!sel.checked?"disabled":""} onchange="setDistPartQty('${encKey(tid)}','${encKey(pKey)}',this.value)"/><button class="small" type="button" ${!sel.checked||sel.qty>=maxQty?"disabled":""} onclick="stepDistPartQty('${encKey(tid)}','${encKey(pKey)}',1)">+</button></div></div>`;
+    }).join("") : `<div class="muted">Template ini tidak memiliki daftar part terpisah; akan didistribusikan utuh.</div>`;
+    return `<div class="dist-split-card"><div class="dist-split-head"><div><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><div class="muted">${esc(tid)}</div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="small" type="button" onclick="setAllDistParts('${encKey(tid)}',true)">Semua Part</button><button class="small" type="button" onclick="setAllDistParts('${encKey(tid)}',false)">Kosongkan</button><button class="small bad" type="button" onclick="toggleDistributionTemplate('${encKey(tid)}')">✕</button></div></div>${partRowsHtml}</div>`;
+  }).join("");
+  renderDistributionSummary();
+}
+function renderDistributionSummary(){
+  const box=$("distSummary");
+  if(!box) return;
+  const st=$("distStorage")?.value || "";
+  const plan=collectDistributionPlan();
+  const conflict=findLocalDistributionConflict(plan, st);
+  const btn=$("btnDistributeSubmit");
+  if(btn) btn.disabled = distSubmitting || !plan.totalTemplates || !!plan.errors.length || !!conflict.duplicates.length || !st;
+
+  const blocks=[];
+  if(plan.totalTemplates){
+    blocks.push(`<div class="dist-alert good"><b>Ringkasan Distribusi → ${esc(st||"(pilih storage)")}:</b> ${plan.totalTemplates} template · ${plan.totalParts} baris part · total <b>${plan.totalQty} pcs</b>${plan.remainingQty?` · sisa <b>${plan.remainingQty} pcs</b> tetap WAITING_DISTRIBUTION`:` · distribusi penuh`}</div>`);
+  }else if(distSelections.size){
+    blocks.push(`<div class="dist-alert warn">Centang minimal 1 part untuk didistribusikan.</div>`);
+  }
+  if(plan.errors.length){
+    blocks.push(`<div class="dist-alert bad">${plan.errors.map(esc).join("<br>")}</div>`);
+  }
+  if(conflict.duplicates.length){
+    blocks.push(`<div class="dist-alert bad"><b>Anti-Duplikat Aktif:</b><br>${conflict.duplicates.map(esc).join("<br>")}</div>`);
+  }
+  if(conflict.autoMerges.length){
+    blocks.push(`<div class="dist-alert info"><b>Auto-Merge Anti-Duplikat:</b><br>${conflict.autoMerges.map(esc).join("<br>")}</div>`);
+  }
+  box.innerHTML=blocks.join("");
+}
+function setDistStorageScanned(){
+  const code=normalizeText($("distScanCode")?.value || "");
+  if(!code) return;
+  const sel=$("distStorage");
+  if(sel && [...sel.options].some(o=>normalizeText(o.value)===code)){
+    sel.value=[...sel.options].find(o=>normalizeText(o.value)===code).value;
+    renderDistributionSummary();
+    toast("Storage tujuan dipilih: " + sel.value);
+  }else{
+    alert("Kode storage \"" + code + "\" tidak ada di master atau tidak valid untuk distribusi.");
+  }
+}
 async function distributeTemplate(){
-  const t=db.templates.find(x=>x.id===selectedTemplateId); const st=$("distStorage").value; if(!t) return alert("Pilih template dulu."); if(!st) return alert("Pilih storage tujuan.");
-  setBusy(true,"Simpan distribusi...");
+  if(distSubmitting) return;
+  const st=$("distStorage")?.value || "";
+  if(!st || normalizeText(st)==="WORKSHOP") return alert("Pilih storage tujuan yang valid.");
+  const plan=collectDistributionPlan();
+  if(!plan.totalTemplates) return alert("Pilih minimal satu template dan satu part waiting untuk didistribusikan.");
+  if(plan.errors.length) return alert(plan.errors.join("\n"));
+  const conflict=findLocalDistributionConflict(plan, st);
+  if(conflict.duplicates.length) return alert("Anti-duplikat aktif:\n" + conflict.duplicates.join("\n"));
+
+  distSubmitting=true;
+  renderDistributionSummary();
+  setBusy(true, plan.totalTemplates>1 ? `Simpan distribusi ${plan.totalTemplates} template...` : "Simpan distribusi...");
   try{
-    const res=await apiPost("distributeTemplate", {templateId:t.id, storage:st, by:userName(), note:normalizeText($("distNote").value)||"Distribusi template jadi"});
-    selectedTemplateId=""; $("distNote").value="";
-    applyTemplateUpdate(res.template || {id:t.id,status:"DISTRIBUTED",currentStorage:st,distributedAt:nowISO(),updatedAt:nowISO()});
-    applyMovement(res.movement);
+    const note=normalizeText($("distNote")?.value || "") || "Distribusi template jadi";
+    const requestId=id("REQ");
+    const payload = plan.items.length===1
+      ? {templateId:plan.items[0].templateId, splitParts:plan.items[0].splitParts, storage:st, by:userName(), note, requestId}
+      : {items:plan.items.map(it=>({templateId:it.templateId, splitParts:it.splitParts})), storage:st, by:userName(), note, requestId};
+    const res=await apiPost("distributeTemplate", payload);
+    distSelections.clear();
+    selectedTemplateId="";
+    if($("distNote")) $("distNote").value="";
+
+    if(res.noCors){
+      toast("Distribusi terkirim, memuat data terbaru...");
+      dataLoaded=false;
+      await syncData("Sinkronisasi hasil distribusi...");
+      return;
+    }
+
+    const updatedTemplates=Array.isArray(res.templates) && res.templates.length ? res.templates : (res.template ? [res.template] : []);
+    updatedTemplates.forEach(applyTemplateUpdate);
+    if(res.partsByTemplate && typeof res.partsByTemplate==="object"){
+      Object.entries(res.partsByTemplate).forEach(([tid, parts])=>replacePartsForTemplate(tid, parts));
+    }else if(Array.isArray(res.parts) && updatedTemplates[0]){
+      replacePartsForTemplate(updatedTemplates[0].id, res.parts);
+    }
+    const updatedMovs=Array.isArray(res.movements) && res.movements.length ? res.movements : (res.movement ? [res.movement] : []);
+    updatedMovs.forEach(applyMovement);
     finishFastUpdate();
-    toast("Template berhasil didistribusikan");
+    toast(res.message || "Template berhasil didistribusikan");
   }
   catch(e){ alert("Gagal distribusi: "+e.message); }
-  finally{ setBusy(false); }
+  finally{ distSubmitting=false; setBusy(false); renderDistributionSummary(); }
 }
 function renderMovementStart(){
   if(!$("moveStorageFrom")) return;
+  const prevFrom=$("moveStorageFrom").value;
+  const prevTo=$("moveStorageTo").value;
   $("moveStorageFrom").innerHTML = db.storages.map(s=>`<option value="${escAttr(s.code)}">${esc(s.code)} · ${esc(s.name)}</option>`).join("");
   $("moveStorageTo").innerHTML = db.storages.filter(s=>s.code!=="WORKSHOP").map(s=>`<option value="${escAttr(s.code)}">${esc(s.code)} · ${esc(s.name)}</option>`).join("");
+  if(prevFrom && db.storages.some(s=>s.code===prevFrom)) $("moveStorageFrom").value=prevFrom;
+  if(prevTo && db.storages.some(s=>s.code===prevTo && s.code!=="WORKSHOP")) $("moveStorageTo").value=prevTo;
   renderMoveTemplates();
 }
 function renderMoveTemplates(){
   if(!$("moveTemplateList")) return;
-  const from=$("moveStorageFrom")?.value || ""; const rows=db.templates.filter(t=>t.currentStorage===from && t.status==="DISTRIBUTED");
-  $("moveTemplateList").innerHTML = rows.length ? rows.map(t=>`<div class="template-pick-card ${selectedMoveTemplateId===t.id?'selected':''}" onclick="selectedMoveTemplateId='${escAttr(t.id)}';renderMoveTemplates()"><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><span>${esc(partText(t.id))}</span><small>${esc(t.id)}</small></div>`).join("") : `<div class="empty">Tidak ada template di storage ini.</div>`;
+  const from=$("moveStorageFrom")?.value || "";
+  const rows=templatesInStorage(from);
+  $("moveTemplateList").innerHTML = rows.length ? rows.map(t=>`<div class="template-pick-card ${selectedMoveTemplateId===t.id?'selected':''}" onclick="selectedMoveTemplateId='${escAttr(t.id)}';renderMoveTemplates()"><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><span>${esc(partTextInStorage(t.id, from))}</span><small>${esc(t.id)}</small></div>`).join("") : `<div class="empty">Tidak ada template di storage ini.</div>`;
 }
 async function saveMovement(){
   const t=db.templates.find(x=>x.id===selectedMoveTemplateId); if(!t) return alert("Pilih template dulu.");
-  const from=t.currentStorage||$("moveStorageFrom").value; const type=$("moveType").value; let to=$("moveStorageTo").value;
+  const from=$("moveStorageFrom")?.value || t.currentStorage; const type=$("moveType").value; let to=$("moveStorageTo").value;
   setBusy(true,"Simpan movement...");
   try{
     const res=await apiPost("moveTemplate", {templateId:t.id,type,from,to,by:userName(),note:$("moveNote").value.trim()});
     selectedMoveTemplateId=""; $("moveNote").value="";
     applyTemplateUpdate(res.template || {id:t.id,status:type==="OUT"?"OUT":"DISTRIBUTED",currentStorage:type==="OUT"?"":to,updatedAt:nowISO()});
+    if(Array.isArray(res.parts)) replacePartsForTemplate(t.id, res.parts);
     applyMovement(res.movement);
     finishFastUpdate();
-    toast("Movement tersimpan");
+    toast(res.message || "Movement tersimpan");
   }
   catch(e){ alert("Gagal simpan movement: "+e.message); }
   finally{ setBusy(false); }
@@ -2448,13 +2956,13 @@ function renderStorage(){
   if(!$("storageGrid")) return;
   const q=($("storageSearch")?.value||"").toLowerCase();
   const rows=db.storages.filter(s=>!q || [s.code,s.name,s.area].join(" ").toLowerCase().includes(q));
-  $("storageGrid").innerHTML = rows.map(s=>{ const total=db.templates.filter(t=>t.currentStorage===s.code && t.status==="DISTRIBUTED").length; return `<div class="card storage-card" onclick="openStorage('${escAttr(s.code)}')"><b>${esc(s.code)}</b><p>${esc(s.name)}</p><span class="badge">${total} template</span><div class="muted">${esc(s.area||"")}</div></div>`; }).join("");
+  $("storageGrid").innerHTML = rows.map(s=>{ const total=templatesInStorage(s.code).length; return `<div class="card storage-card" onclick="openStorage('${escAttr(s.code)}')"><b>${esc(s.code)}</b><p>${esc(s.name)}</p><span class="badge">${total} template</span><div class="muted">${esc(s.area||"")}</div></div>`; }).join("");
 }
 function openStorage(code){
-  const s=db.storages.find(x=>x.code===code); const rows=db.templates.filter(t=>t.currentStorage===code && t.status==="DISTRIBUTED");
+  const s=db.storages.find(x=>x.code===code); const rows=templatesInStorage(code);
   $("modalTitle").textContent = s ? `${s.code} · ${s.name}` : code;
   const addBtn = `<div class="actions"><button class="good" onclick="goFieldUpdateStorage('${escAttr(code)}')">+ Tambah Template di Storage Ini</button></div>`;
-  $("modalContent").innerHTML = addBtn + (rows.length ? rows.map(t=>`<div class="line-item"><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><span>${esc(partText(t.id))}<br><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button></span></div>`).join("") : `<div class="empty">Storage kosong.</div>`);
+  $("modalContent").innerHTML = addBtn + (rows.length ? rows.map(t=>`<div class="line-item"><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><span>${esc(partTextInStorage(t.id, code))}<br><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button></span></div>`).join("") : `<div class="empty">Storage kosong.</div>`);
   openModal();
 }
 function scanBarcode(targetId, callbackName){
@@ -2476,7 +2984,7 @@ function scanBarcode(targetId, callbackName){
 
   // Mode browser/PC memakai kamera web jika library Html5Qrcode tersedia
   if(window.Html5Qrcode && APP_CONFIG.build==="pc"){
-    const readerId = targetId==="scanStorageCode" ? "reader" : (targetId==="importMainStorage" ? "importReader" : "moveReader");
+    const readerId = targetId==="scanStorageCode" ? "reader" : (targetId==="importMainStorage" ? "importReader" : (targetId==="distScanCode" ? "distReader" : "moveReader"));
     const box=$(readerId); if(!box) return fallbackPrompt(targetId,callbackName); box.classList.remove("hidden");
     if(scanner){ try{scanner.stop()}catch(e){} }
     scanner = new Html5Qrcode(readerId);
@@ -2680,7 +3188,7 @@ function renderFieldUpdateStorageList(){
   const rows=db.storages.filter(s=>!q || [s.code,s.name,s.area].join(' ').toLowerCase().includes(q));
   if($('fieldSelectedStorage')) $('fieldSelectedStorage').value = selectedFieldStorage || '';
   box.innerHTML = rows.length ? rows.map(s=>{
-    const total=db.templates.filter(t=>t.status==='DISTRIBUTED' && t.currentStorage===s.code).length;
+    const total=templatesInStorage(s.code).length;
     const sel=selectedFieldStorage===s.code ? ' selected' : '';
     return `<div class="card storage-card${sel}" onclick="selectFieldStorage('${escAttr(s.code)}')"><b>${esc(s.code)}</b><p>${esc(s.name||'')}</p><span class="badge">${total} template</span><div class="muted">${esc(s.area||'')}</div><div class="actions"><button class="small good" type="button" onclick="event.stopPropagation();selectFieldStorage('${escAttr(s.code)}')">+ Tambah Template</button><button class="small" type="button" onclick="event.stopPropagation();openStorage('${escAttr(s.code)}')">Lihat Isi</button></div></div>`;
   }).join('') : `<div class="empty">Storage tidak ditemukan. Tambahkan dulu di Master Storage.</div>`;

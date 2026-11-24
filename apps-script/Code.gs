@@ -329,11 +329,21 @@ function hydratePartStatuses_(parts, templates){
   var tMap = {};
   (templates || []).forEach(function(t){ tMap[String(t.id)] = t; });
   (parts || []).forEach(function(p){
-    if(p.status || p.currentStorage) return;
+    var st = String(p.status || '').trim().toUpperCase();
+    var cs = String(p.currentStorage || '').trim();
+    if(st || cs){
+      if(!st && cs) p.status = 'DISTRIBUTED';
+      return;
+    }
     var t = tMap[String(p.templateId)] || {};
-    if(String(t.status || '').toUpperCase() === 'DISTRIBUTED' || t.currentStorage){
+    var parentStatus = String(t.status || '').trim().toUpperCase();
+    if(parentStatus === 'DISTRIBUTED'){
       p.status = 'DISTRIBUTED';
       p.currentStorage = t.currentStorage || '';
+      p.distributedAt = t.distributedAt || '';
+    }else if(parentStatus === 'OUT'){
+      p.status = 'OUT';
+      p.currentStorage = '';
       p.distributedAt = t.distributedAt || '';
     }else{
       p.status = 'WAITING_DISTRIBUTION';
@@ -618,81 +628,363 @@ function bulkImportExisting_(p){
 }
 
 function distributeTemplate_(p){
-  var id = String(p.id || p.templateId || '');
+  p = p || {};
+  var requestId = String(p.requestId || '').trim();
+  if(requestId){
+    try{
+      var prev = CacheService.getScriptCache().get('DIST_REQ_' + requestId);
+      if(prev){
+        var parsedPrev = JSON.parse(prev);
+        parsedPrev.duplicateRequest = true;
+        return json_(parsedPrev);
+      }
+    }catch(e){}
+  }
+
   var storage = norm_(p.storage || p.to);
   var user = String(p.by || p.user || 'system');
-  if(!id || !storage) return json_({ok:false, message:'Template dan storage tujuan wajib'});
-  var t = findRow_('TEMPLATES','id',id);
-  if(!t) return json_({ok:false, message:'Template tidak ditemukan'});
-  if(storage && !findRow_('STORAGES','code',storage)) return json_({ok:false, message:'Storage tujuan belum ada di master'});
+  var baseNote = String(p.note || '').trim() || 'Distribusi template jadi';
+  if(!storage) return json_({ok:false, version:APP_VERSION, message:'Storage tujuan wajib dipilih.'});
+  if(storage === 'WORKSHOP') return json_({ok:false, version:APP_VERSION, message:'Storage tujuan tidak boleh WORKSHOP.'});
+  if(!findRow_('STORAGES','code',storage)) return json_({ok:false, version:APP_VERSION, message:'Storage tujuan belum ada di master: ' + storage});
 
-  var now = new Date();
-  var allPartsBefore = read_('TEMPLATE_PARTS').filter(function(pp){ return String(pp.templateId) === String(id); });
-  var splitParts = normalizeSplitParts_(p.splitParts);
-  // Jika caller lama tidak mengirim splitParts, distribusikan semua part yang masih waiting.
-  if(!splitParts.length){
-    splitParts = allPartsBefore.filter(isPartWaiting_).map(function(pp){ return {partId:pp.partId, part:pp.part, size:pp.size, qty:Number(pp.qty||1)}; });
-  }
-  if(allPartsBefore.length && !splitParts.length){
-    return json_({ok:false, version:APP_VERSION, message:'Tidak ada part waiting yang dipilih untuk distribusi.'});
-  }
+  var rawItems = Array.isArray(p.items) && p.items.length
+    ? p.items
+    : [{templateId: String(p.id || p.templateId || ''), splitParts: p.splitParts}];
+  var items = normalizeDistributionItems_(rawItems);
+  if(!items.length) return json_({ok:false, version:APP_VERSION, message:'Pilih minimal satu template untuk didistribusikan.'});
 
-  var changedParts = [];
-  splitParts.forEach(function(sp){
-    var partRow = findPartRowForSplit_(id, sp, allPartsBefore);
-    if(!partRow || !partRow._row) return;
-    if(!isPartWaiting_(partRow)) return;
-    var maxQty = Math.max(1, Number(partRow.qty || 1));
-    var qty = Math.max(1, Math.min(maxQty, Number(sp.qty || maxQty)));
-    update_('TEMPLATE_PARTS', partRow._row, {qty:qty, status:'DISTRIBUTED', currentStorage:storage, distributedAt:now, updatedAt:now});
-    changedParts.push({partId:partRow.partId, templateId:id, part:partRow.part, size:partRow.size, qty:qty, createdAt:partRow.createdAt, status:'DISTRIBUTED', currentStorage:storage, distributedAt:now, updatedAt:now});
-    partRow.status = 'DISTRIBUTED'; partRow.currentStorage = storage; partRow.qty = qty;
-    if(qty < maxQty){
-      var remain = {partId:id_('PRT'), templateId:id, part:partRow.part, size:partRow.size, qty:maxQty-qty, createdAt:partRow.createdAt || now, status:'WAITING_DISTRIBUTION', currentStorage:'', distributedAt:'', updatedAt:now};
-      append_('TEMPLATE_PARTS', remain);
-      changedParts.push(remain);
-      allPartsBefore.push(remain);
-    }
+  var allTemplates = readExcept_('TEMPLATES', ['sketch']);
+  var templateMap = {};
+  allTemplates.forEach(function(t){ templateMap[String(t.id)] = t; });
+
+  var allParts = read_('TEMPLATE_PARTS');
+  hydratePartStatuses_(allParts, allTemplates);
+  var partsByTemplate = {};
+  allParts.forEach(function(pp){
+    var tid = String(pp.templateId || '');
+    if(!partsByTemplate[tid]) partsByTemplate[tid] = [];
+    partsByTemplate[tid].push(pp);
   });
 
-  if(allPartsBefore.length && !changedParts.length){
-    return json_({ok:false, version:APP_VERSION, message:'Part yang dipilih tidak ditemukan / sudah terdistribusi. Sync data lalu coba lagi.'});
+  // Phase 1: Validasi seluruh item & anti-duplikat otomatis sebelum menulis ke Spreadsheet.
+  var plans = [];
+  var batchSignatureMap = {};
+  for(var i=0; i<items.length; i++){
+    var item = items[i];
+    var tid = item.templateId;
+    var t = templateMap[tid];
+    if(!t) return json_({ok:false, version:APP_VERSION, message:'Template tidak ditemukan: ' + tid});
+
+    var tParts = partsByTemplate[tid] || [];
+    var waitingParts = tParts.filter(isPartWaiting_);
+    var requestedSplits = item.splitParts;
+
+    if(!tParts.length){
+      if(String(t.status || '').toUpperCase() === 'DISTRIBUTED' && norm_(t.currentStorage) === storage){
+        return json_({ok:false, version:APP_VERSION, duplicate:true, message:'Anti duplicate aktif: Template ' + tid + ' sudah berada di storage ' + storage + '.'});
+      }
+      if(String(t.status || '').toUpperCase() !== 'WAITING_DISTRIBUTION'){
+        return json_({ok:false, version:APP_VERSION, message:'Template ' + tid + ' tidak berstatus WAITING_DISTRIBUTION.'});
+      }
+      plans.push({template:t, tParts:[], splits:[], splitSummary:[]});
+      continue;
+    }
+
+    if(!waitingParts.length){
+      return json_({ok:false, version:APP_VERSION, message:'Template ' + t.buyer + ' · ' + t.stylekp + ' (' + tid + ') tidak memiliki part berstatus WAITING_DISTRIBUTION.'});
+    }
+
+    // Jika caller tidak mengirim splitParts, distribusikan semua part yang masih waiting.
+    if(!requestedSplits.length){
+      requestedSplits = waitingParts.map(function(pp){
+        return {partId:String(pp.partId || ''), part:norm_(pp.part), size:norm_(pp.size || ''), qty:Math.max(1, Math.round(Number(pp.qty || 1)))};
+      });
+    }
+
+    var usedByRow = {};
+    var resolvedSplits = [];
+    for(var j=0; j<requestedSplits.length; j++){
+      var sp = requestedSplits[j];
+      var partRow = findPartRowForSplit_(tid, sp, waitingParts, usedByRow);
+      if(!partRow || !partRow._row || !isPartWaiting_(partRow)){
+        return json_({ok:false, version:APP_VERSION, message:'Part "' + (sp.part || sp.partId) + '" pada template ' + tid + ' tidak ditemukan atau sudah terdistribusi. Sync data lalu coba lagi.'});
+      }
+      var maxQty = Math.max(1, Math.round(Number(partRow.qty || 1)));
+      var alreadyPlanned = usedByRow[partRow._row] || 0;
+      var remainAvail = maxQty - alreadyPlanned;
+      var reqQty = Math.round(Number(sp.qty || 0));
+      if(!isFinite(reqQty) || reqQty < 1){
+        return json_({ok:false, version:APP_VERSION, message:'Qty distribusi untuk part ' + partRow.part + ' minimal 1.'});
+      }
+      if(reqQty > remainAvail){
+        return json_({ok:false, version:APP_VERSION, message:'Qty distribusi part ' + partRow.part + (partRow.size ? ' [' + partRow.size + ']' : '') + ' (' + reqQty + ') melebihi sisa waiting (' + remainAvail + ').'});
+      }
+      usedByRow[partRow._row] = alreadyPlanned + reqQty;
+      var existingPlan = resolvedSplits.find(function(x){ return x.partRow._row === partRow._row; });
+      if(existingPlan){
+        existingPlan.qty += reqQty;
+      }else{
+        resolvedSplits.push({partRow:partRow, maxQty:maxQty, qty:reqQty});
+      }
+    }
+
+    if(!resolvedSplits.length){
+      return json_({ok:false, version:APP_VERSION, message:'Tidak ada part waiting yang dipilih untuk distribusi pada template ' + tid + '.'});
+    }
+
+    var splitSummary = resolvedSplits.map(function(x){
+      return {part:norm_(x.partRow.part), size:norm_(x.partRow.size || ''), qty:x.qty};
+    });
+    var plannedKey = partsKey_(splitSummary);
+    var buyerNorm = norm_(t.buyer);
+    var styleNorm = norm_(t.stylekp);
+
+    // Anti-duplikat otomatis: cek apakah template lain dengan Buyer + Style/KP + Part/Size/Qty identik sudah ada di storage tujuan.
+    var dupTemplate = findDuplicateDistributedInStorage_(allTemplates, partsByTemplate, tid, buyerNorm, styleNorm, plannedKey, storage);
+    if(dupTemplate){
+      return json_({
+        ok:false,
+        version:APP_VERSION,
+        duplicate:true,
+        existing:{id:dupTemplate.id, buyer:dupTemplate.buyer, stylekp:dupTemplate.stylekp, currentStorage:storage},
+        message:'Anti duplicate aktif: Template dengan Buyer (' + buyerNorm + ') + Style/KP (' + styleNorm + ') + Part yang sama sudah terdistribusi di storage ' + storage + ' (ID: ' + dupTemplate.id + ').'
+      });
+    }
+
+    var batchSig = buyerNorm + '||' + styleNorm + '||' + plannedKey;
+    if(batchSignatureMap[batchSig]){
+      return json_({
+        ok:false,
+        version:APP_VERSION,
+        duplicate:true,
+        message:'Anti duplicate aktif: Terdapat dua template identik (' + buyerNorm + ' · ' + styleNorm + ') dalam satu batch distribusi ke ' + storage + '.'
+      });
+    }
+    batchSignatureMap[batchSig] = tid;
+
+    plans.push({template:t, tParts:tParts, splits:resolvedSplits, splitSummary:splitSummary});
   }
 
-  var allPartsAfter = read_('TEMPLATE_PARTS').filter(function(pp){ return String(pp.templateId) === String(id); });
-  var remainingWaiting = allPartsAfter.some(isPartWaiting_);
-  var newStatus = remainingWaiting ? 'WAITING_DISTRIBUTION' : 'DISTRIBUTED';
-  var newStorage = remainingWaiting ? '' : storage;
-  var newDistributedAt = remainingWaiting ? (t.distributedAt || '') : now;
-  update_('TEMPLATES', t._row, {status:newStatus, currentStorage:newStorage, updatedAt:now, distributedAt:newDistributedAt});
+  // Phase 2: Eksekusi update -> append -> delete descending agar nomor baris Sheet selalu aman.
+  var now = new Date();
+  var newPartRows = [];
+  var rowsToDelete = [];
 
-  var note = p.note || 'Distribusi template jadi';
-  if(splitParts.length){
-    var splitText = splitParts.map(function(x){
-      return norm_(x.part) + (x.size ? ' [' + norm_(x.size) + ']' : '') + ' x' + Math.max(1, Number(x.qty || 1));
-    }).join(', ');
-    if(splitText && String(note).indexOf('Split Part/Size/Qty:') < 0) note += ' | Split Part/Size/Qty: ' + splitText;
+  plans.forEach(function(plan){
+    var t = plan.template;
+    var tid = String(t.id);
+    var existingDistByKey = {};
+    plan.tParts.forEach(function(pp){
+      if(isPartDistributed_(pp) && norm_(pp.currentStorage) === storage){
+        var k = norm_(pp.part) + '||' + norm_(pp.size || '');
+        if(!existingDistByKey[k]) existingDistByKey[k] = pp;
+      }
+    });
+
+    plan.splits.forEach(function(sp){
+      var partRow = sp.partRow;
+      var maxQty = sp.maxQty;
+      var qty = sp.qty;
+      var partKey = norm_(partRow.part) + '||' + norm_(partRow.size || '');
+      var existingDist = existingDistByKey[partKey];
+
+      if(existingDist){
+        // Anti-duplikat baris part: template yang sama sudah punya part (nama+size) di storage tujuan -> gabungkan qty otomatis.
+        var mergedQty = Math.max(1, Number(existingDist.qty || 0)) + qty;
+        if(existingDist._row){
+          update_('TEMPLATE_PARTS', existingDist._row, {qty:mergedQty, status:'DISTRIBUTED', currentStorage:storage, distributedAt:now, updatedAt:now});
+        }
+        existingDist.qty = mergedQty;
+        if(qty >= maxQty){
+          rowsToDelete.push(partRow._row);
+        }else{
+          update_('TEMPLATE_PARTS', partRow._row, {qty:maxQty - qty, status:'WAITING_DISTRIBUTION', currentStorage:'', distributedAt:'', updatedAt:now});
+          partRow.qty = maxQty - qty;
+        }
+      }else if(qty >= maxQty){
+        update_('TEMPLATE_PARTS', partRow._row, {qty:qty, status:'DISTRIBUTED', currentStorage:storage, distributedAt:now, updatedAt:now});
+        partRow.status = 'DISTRIBUTED';
+        partRow.currentStorage = storage;
+        partRow.qty = qty;
+        existingDistByKey[partKey] = partRow;
+      }else{
+        // Partial split: pertahankan baris waiting dengan sisa qty, tambahkan baris baru untuk qty yang didistribusikan.
+        update_('TEMPLATE_PARTS', partRow._row, {qty:maxQty - qty, status:'WAITING_DISTRIBUTION', currentStorage:'', distributedAt:'', updatedAt:now});
+        partRow.qty = maxQty - qty;
+        var distributedRow = {
+          partId:id_('PRT'),
+          templateId:tid,
+          part:norm_(partRow.part),
+          size:norm_(partRow.size || ''),
+          qty:qty,
+          createdAt:partRow.createdAt || now,
+          status:'DISTRIBUTED',
+          currentStorage:storage,
+          distributedAt:now,
+          updatedAt:now
+        };
+        newPartRows.push(distributedRow);
+        existingDistByKey[partKey] = distributedRow;
+      }
+    });
+  });
+
+  if(newPartRows.length) appendRows_('TEMPLATE_PARTS', newPartRows);
+  if(rowsToDelete.length) deleteSheetRows_('TEMPLATE_PARTS', rowsToDelete);
+
+  // Phase 3: Hitung ulang status & lokasi setiap template terdampak dari TEMPLATE_PARTS terbaru.
+  var refreshedParts = read_('TEMPLATE_PARTS');
+  var updatedTemplates = [];
+  var updatedPartsByTemplate = {};
+  var movements = [];
+  var anyPartial = false;
+
+  plans.forEach(function(plan){
+    var t = plan.template;
+    var tid = String(t.id);
+    var tPartsAfter = refreshedParts.filter(function(pp){ return String(pp.templateId) === tid; });
+    var remainingWaiting = tPartsAfter.some(isPartWaiting_);
+    var distStorages = unique_(tPartsAfter.filter(isPartDistributed_).map(function(pp){ return pp.currentStorage; }));
+    var newStatus = tPartsAfter.length
+      ? (remainingWaiting ? 'WAITING_DISTRIBUTION' : (distStorages.length ? 'DISTRIBUTED' : (tPartsAfter.some(isPartOut_) ? 'OUT' : 'DISTRIBUTED')))
+      : 'DISTRIBUTED';
+    var newStorage = tPartsAfter.length ? distStorages.join(', ') : storage;
+    var newDistributedAt = t.distributedAt || now;
+    if(remainingWaiting) anyPartial = true;
+
+    update_('TEMPLATES', t._row, {status:newStatus, currentStorage:newStorage, updatedAt:now, distributedAt:newDistributedAt});
+    var updatedTpl = {id:tid, status:newStatus, currentStorage:newStorage, updatedAt:now, distributedAt:newDistributedAt};
+    updatedTemplates.push(updatedTpl);
+    updatedPartsByTemplate[tid] = tPartsAfter;
+
+    var note = baseNote;
+    if(plan.splitSummary.length){
+      var splitText = plan.splitSummary.map(function(x){
+        return norm_(x.part) + (x.size ? ' [' + norm_(x.size) + ']' : '') + ' x' + Math.max(1, Number(x.qty || 1));
+      }).join(', ');
+      if(splitText && String(note).indexOf('Split Part/Size/Qty:') < 0) note += ' | Split Part/Size/Qty: ' + splitText;
+    }
+    movements.push({id:id_('MOV'), templateId:tid, type:'DISTRIBUTE', from:'WORKSHOP', to:storage, by:user, note:note, at:now});
+  });
+
+  if(movements.length) appendRows_('MOVEMENTS', movements);
+
+  var firstTpl = updatedTemplates[0] || null;
+  var firstParts = firstTpl ? (updatedPartsByTemplate[firstTpl.id] || []) : [];
+  var firstMov = movements[0] || null;
+  var msg = updatedTemplates.length > 1
+    ? (anyPartial
+      ? ('Distribusi ' + updatedTemplates.length + ' template ke ' + storage + ' tersimpan (sebagian split, sisa tetap waiting).')
+      : (updatedTemplates.length + ' template berhasil didistribusikan ke ' + storage + '.'))
+    : (anyPartial
+      ? ('Distribusi split ke ' + storage + ' tersimpan. Part yang belum dipilih tetap waiting.')
+      : ('Template berhasil didistribusikan ke ' + storage + '.'));
+
+  var result = {
+    ok:true,
+    version:APP_VERSION,
+    template:firstTpl,
+    templates:updatedTemplates,
+    parts:firstParts,
+    partsByTemplate:updatedPartsByTemplate,
+    movement:firstMov,
+    movements:movements,
+    partial:anyPartial,
+    distributedCount:updatedTemplates.length,
+    message:msg
+  };
+
+  if(requestId){
+    try{ CacheService.getScriptCache().put('DIST_REQ_' + requestId, JSON.stringify(result), 300); }catch(e){}
   }
-  var movement = {id:id_('MOV'), templateId:id, type:'DISTRIBUTE', from:t.currentStorage || 'WORKSHOP', to:storage, by:user, note:note, at:now};
-  append_('MOVEMENTS', movement);
-  var template = {id:id, status:newStatus, currentStorage:newStorage, updatedAt:now, distributedAt:newDistributedAt};
-  return json_({ok:true, version:APP_VERSION, template:template, parts:allPartsAfter, movement:movement, partial:remainingWaiting, message:remainingWaiting?'Distribusi split tersimpan. Part yang belum dipilih tetap waiting.':'Template berhasil didistribusikan'});
+  return json_(result);
 }
 
 function isPartWaiting_(p){
-  return String(p.status || '').toUpperCase() !== 'DISTRIBUTED' && !p.currentStorage;
+  var st = String(p && p.status || '').trim().toUpperCase();
+  return st !== 'DISTRIBUTED' && st !== 'OUT' && !String(p && p.currentStorage || '').trim();
+}
+function isPartDistributed_(p){
+  return String(p && p.status || '').trim().toUpperCase() === 'DISTRIBUTED' && !!String(p && p.currentStorage || '').trim();
+}
+function isPartOut_(p){
+  return String(p && p.status || '').trim().toUpperCase() === 'OUT';
+}
+function normalizeDistributionItems_(rawItems){
+  var byId = {};
+  var order = [];
+  (rawItems || []).forEach(function(item){
+    if(!item) return;
+    var tid = String(item.templateId || item.id || '').trim();
+    if(!tid) return;
+    var sp = normalizeSplitParts_(item.splitParts);
+    if(!byId[tid]){
+      byId[tid] = {templateId:tid, splitParts:sp};
+      order.push(tid);
+    }else if(sp.length){
+      byId[tid].splitParts = normalizeSplitParts_(byId[tid].splitParts.concat(sp));
+    }
+  });
+  return order.map(function(tid){ return byId[tid]; });
 }
 function normalizeSplitParts_(rows){
   if(!Array.isArray(rows)) return [];
-  return rows.map(function(x){ return {partId:String(x.partId || ''), part:norm_(x.part), size:norm_(x.size || ''), qty:Math.max(1, Number(x.qty || 1))}; }).filter(function(x){ return x.partId || x.part; });
+  var dedup = {};
+  var order = [];
+  rows.forEach(function(x){
+    if(!x) return;
+    var partId = String(x.partId || '').trim();
+    var part = norm_(x.part || x.name);
+    var size = norm_(x.size || x.ukuran || '');
+    var qty = Math.round(Number(x.qty || 0));
+    if(!partId && !part) return;
+    if(!isFinite(qty) || qty < 1) qty = 1;
+    var key = partId ? ('ID:' + partId) : ('PS:' + part + '||' + size);
+    if(!dedup[key]){
+      dedup[key] = {partId:partId, part:part, size:size, qty:qty};
+      order.push(key);
+    }else{
+      dedup[key].qty += qty;
+    }
+  });
+  return order.map(function(k){ return dedup[k]; });
 }
-function findPartRowForSplit_(templateId, sp, allParts){
+function findPartRowForSplit_(templateId, sp, allParts, usedByRow){
   var rows = allParts || read_('TEMPLATE_PARTS').filter(function(pp){ return String(pp.templateId) === String(templateId); });
+  usedByRow = usedByRow || {};
   if(sp.partId){
     var byId = rows.find(function(pp){ return String(pp.partId) === String(sp.partId); });
     if(byId) return byId;
   }
-  return rows.find(function(pp){ return isPartWaiting_(pp) && norm_(pp.part) === norm_(sp.part) && norm_(pp.size || '') === norm_(sp.size || ''); });
+  return rows.find(function(pp){
+    if(!isPartWaiting_(pp)) return false;
+    var maxQty = Math.max(1, Math.round(Number(pp.qty || 1)));
+    if((usedByRow[pp._row] || 0) >= maxQty) return false;
+    return norm_(pp.part) === norm_(sp.part) && norm_(pp.size || '') === norm_(sp.size || '');
+  });
+}
+function findDuplicateDistributedInStorage_(allTemplates, partsByTemplate, currentTemplateId, buyerNorm, styleNorm, plannedKey, storage){
+  if(!plannedKey) return null;
+  for(var i=0; i<allTemplates.length; i++){
+    var other = allTemplates[i];
+    if(String(other.id) === String(currentTemplateId)) continue;
+    if(norm_(other.buyer) !== buyerNorm || norm_(other.stylekp) !== styleNorm) continue;
+    var otherDistInStorage = (partsByTemplate[String(other.id)] || []).filter(function(pp){
+      return isPartDistributed_(pp) && norm_(pp.currentStorage) === storage;
+    });
+    if(!otherDistInStorage.length) continue;
+    if(partsKey_(otherDistInStorage) === plannedKey) return other;
+  }
+  return null;
+}
+function deleteSheetRows_(sheetName, rowNumbers){
+  var uniqueRows = {};
+  (rowNumbers || []).forEach(function(r){ var n = Number(r); if(n > 1) uniqueRows[n] = true; });
+  var sorted = Object.keys(uniqueRows).map(Number).sort(function(a,b){ return b - a; });
+  if(!sorted.length) return;
+  var sh = ensureSheet_(sheetName);
+  sorted.forEach(function(row){ sh.deleteRow(row); });
 }
 
 function moveTemplate_(p){
@@ -701,20 +993,72 @@ function moveTemplate_(p){
   var user = String(p.by || p.user || 'system');
   var t = findRow_('TEMPLATES','id',id);
   if(!t) return json_({ok:false, message:'Template tidak ditemukan'});
-  var from = p.from || t.currentStorage || '';
+  var from = norm_(p.from || t.currentStorage || '');
   var to = type === 'OUT' ? '' : norm_(p.to);
+  if(type !== 'OUT' && !to) return json_({ok:false, message:'Storage tujuan wajib diisi'});
   if(type !== 'OUT' && to && !findRow_('STORAGES','code',to)) return json_({ok:false, message:'Storage tujuan belum ada di master'});
 
-  if(type !== 'OUT' && norm_(from) === norm_(to)){
-    return json_({ok:true, version:APP_VERSION, noChange:true, template:{id:id,status:'DISTRIBUTED',currentStorage:to,updatedAt:t.updatedAt}, message:'Anti duplicate aktif: Storage asal dan tujuan sama, movement tidak digandakan.'});
+  if(type !== 'OUT' && from && from === to){
+    return json_({ok:true, version:APP_VERSION, noChange:true, template:{id:id,status:t.status||'DISTRIBUTED',currentStorage:t.currentStorage||to,updatedAt:t.updatedAt}, message:'Anti duplicate aktif: Storage asal dan tujuan sama, movement tidak digandakan.'});
   }
 
   var now = new Date();
-  update_('TEMPLATES', t._row, {status:type === 'OUT' ? 'OUT' : 'DISTRIBUTED', currentStorage:to, updatedAt:now});
+  var tParts = read_('TEMPLATE_PARTS').filter(function(pp){ return String(pp.templateId) === String(id); });
+  hydratePartStatuses_(tParts, [t]);
+
+  var rowsToDelete = [];
+  if(tParts.length){
+    var matchingParts = from
+      ? tParts.filter(function(pp){ return isPartDistributed_(pp) && norm_(pp.currentStorage) === from; })
+      : tParts.filter(isPartDistributed_);
+    if(!matchingParts.length) matchingParts = tParts.filter(isPartDistributed_);
+
+    var destByKey = {};
+    if(type !== 'OUT'){
+      tParts.forEach(function(pp){
+        if(isPartDistributed_(pp) && norm_(pp.currentStorage) === to){
+          var k = norm_(pp.part) + '||' + norm_(pp.size || '');
+          if(!destByKey[k]) destByKey[k] = pp;
+        }
+      });
+    }
+
+    matchingParts.forEach(function(pp){
+      if(!pp._row) return;
+      if(type === 'OUT'){
+        update_('TEMPLATE_PARTS', pp._row, {status:'OUT', currentStorage:'', updatedAt:now});
+      }else{
+        var k = norm_(pp.part) + '||' + norm_(pp.size || '');
+        var dest = destByKey[k];
+        if(dest && dest._row && dest._row !== pp._row){
+          var mergedQty = Math.max(1, Number(dest.qty || 0)) + Math.max(1, Number(pp.qty || 1));
+          update_('TEMPLATE_PARTS', dest._row, {qty:mergedQty, status:'DISTRIBUTED', currentStorage:to, updatedAt:now});
+          dest.qty = mergedQty;
+          rowsToDelete.push(pp._row);
+        }else{
+          update_('TEMPLATE_PARTS', pp._row, {status:'DISTRIBUTED', currentStorage:to, updatedAt:now});
+          destByKey[k] = pp;
+        }
+      }
+    });
+    if(rowsToDelete.length) deleteSheetRows_('TEMPLATE_PARTS', rowsToDelete);
+  }
+
+  var allPartsAfter = read_('TEMPLATE_PARTS').filter(function(pp){ return String(pp.templateId) === String(id); });
+  var newStatus = type === 'OUT' ? 'OUT' : 'DISTRIBUTED';
+  var newStorage = type === 'OUT' ? '' : to;
+  if(allPartsAfter.length){
+    var remainingWaiting = allPartsAfter.some(isPartWaiting_);
+    var distStorages = unique_(allPartsAfter.filter(isPartDistributed_).map(function(pp){ return pp.currentStorage; }));
+    newStatus = remainingWaiting ? 'WAITING_DISTRIBUTION' : (distStorages.length ? 'DISTRIBUTED' : 'OUT');
+    newStorage = distStorages.join(', ');
+  }
+
+  update_('TEMPLATES', t._row, {status:newStatus, currentStorage:newStorage, updatedAt:now});
   var movement = {id:id_('MOV'), templateId:id, type:type, from:from, to:to, by:user, note:p.note || '', at:now};
   append_('MOVEMENTS', movement);
-  var template = {id:id, status:type === 'OUT' ? 'OUT' : 'DISTRIBUTED', currentStorage:to, updatedAt:now};
-  return json_({ok:true, version:APP_VERSION, template:template, movement:movement, message:'Movement tersimpan'});
+  var template = {id:id, status:newStatus, currentStorage:newStorage, updatedAt:now};
+  return json_({ok:true, version:APP_VERSION, template:template, parts:allPartsAfter, movement:movement, message:'Movement tersimpan'});
 }
 
 function addStorage_(p){
@@ -772,7 +1116,12 @@ function partsKeyForTemplate_(templateId){
 }
 
 function partsKey_(parts){
-  return normalizeParts_(parts).map(function(x){ return norm_(x.part)+'['+norm_(x.size)+']#'+Number(x.qty || 1); }).sort().join('|');
+  var agg = {};
+  normalizeParts_(parts).forEach(function(x){
+    var k = norm_(x.part) + '[' + norm_(x.size) + ']';
+    agg[k] = (agg[k] || 0) + Math.max(1, Math.round(Number(x.qty || 1)));
+  });
+  return Object.keys(agg).sort().map(function(k){ return k + '#' + agg[k]; }).join('|');
 }
 
 function normalizeParts_(parts){
