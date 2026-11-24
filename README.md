@@ -1,64 +1,72 @@
-# CNC Template Tracker — Google Sheets Edition 4.0.2
+# CNC Template Tracker — Offline-First Edition 5.0.0
 
-Clone dari project `cnc-template-tracker-v3.4.2.zip`, disesuaikan dengan requirement Google Sheets/OpenSheet, sketch Drive, tampilan history 5 terakhir, label QR template, dashboard lokasi, desktop, dan Android Studio.
+Satu kode web **offline-first** di folder `public/` yang dibungkus sesuai platform (**PC folder mandiri + `Jalankan.bat`** dan **Android APK via Capacitor**). Semua data disimpan lokal terlebih dahulu di perangkat (IndexedDB + file sketch lokal di Android); **Google Sheets + Google Drive** digunakan khusus untuk sinkronisasi (update, soft-delete, delta download, dan upload antrean).
 
-## Fitur yang dipertahankan
+---
 
-- Input template multi-part, buyer, style/KP, sketch, distribusi, transfer/movement, storage, import lapangan, pencarian, dan hak akses.
-- **Google Sheets** menjadi database. Baca/query utama memakai `https://opensheet.elk.sh/{SPREADSHEET_ID}/{TAB}`; tulis/login tetap melalui Google Apps Script Web App karena OpenSheet bersifat read-only.
-- **Sketch/foto disimpan di folder Drive privat**, bukan base64 di sel Spreadsheet. Batas maksimal 1 MB per gambar ditegakkan di browser dan server.
-- **History movement paling banyak 5** baris ditampilkan di beranda, halaman history, dan detail template. Filter tanggal/jenis/storage tetap ada.
-- **Print QR Template**: QR berisi ID template; di bawah QR tercetak Style/KP, proses/part, lalu CT. CT dimasukkan saat akan mencetak dan tidak disimpan ke database.
-- Cetak dari browser desktop/HP menggunakan dialog print perangkat: printer yang dikenali OS/driver atau **Save as PDF**. Pilihan thermal 58/80 mm tersedia. Printer thermal harus dikenali oleh layanan cetak perangkat.
-- Dashboard menghitung template per lokasi dan merinci jumlah per Buyer + Style/KP.
-- Android WebView wrapper untuk build APK di Android Studio, termasuk scanner QR dan Print Framework Android.
+## Arsitektur Inti (PC & Android)
 
-## Jalankan di desktop
+- **Satu kode web klasik (`public/`):** `index.html`, `config.js`, `db.js`, dan `sync.js` ditulis sebagai skrip klasik (tanpa `type="module"`, tanpa CDN, tanpa `fetch` ke file lokal, semua path relatif) sehingga berjalan langsung lewat `file://` di PC maupun dari asset internal APK via Capacitor.
+- **Database lokal + antrean tulis (Outbox):** Semua operasi tulis (input template, split distribusi, movement, storage, soft-delete, import lapangan, upload sketch) langsung disimpan lokal ke **IndexedDB** dengan **UUID klien** dan masuk antrean **Outbox**, lalu dikirim otomatis saat online dengan retry backoff eksponensial.
+- **Delta Sync (`POST text/plain`):** Sinkronisasi memakai endpoint Google Apps Script sendiri (`action: "syncDelta"` dengan `since=timestamp` & `action: "pushOutbox"`), menggunakan `POST` dengan `Content-Type: text/plain;charset=utf-8` dan token di body JSON (respons JSON terbaca penuh — tanpa OpenSheet, tanpa JSONP, tanpa `POST no-cors`).
+- **Soft Delete & Aturan Konflik:**
+  - `MOVEMENTS` bersifat **append-only** (dedupe berdasarkan UUID klien).
+  - `TEMPLATES`, `TEMPLATE_PARTS`, dan `STORAGES` memakai soft delete (`deleted: true`) dan aturan **update terbaru menang (Last-Write-Wins berdasarkan `updatedAt`)**.
+- **Token perangkat 30 hari:** Login satu kali saat online menghasilkan token perangkat berumur **30 hari** (disimpan sebagai hash SHA-256 di tab privat `SESSIONS`), sehingga aplikasi tetap berjalan penuh saat offline.
+- **Gambar Sketch:** Disimpan lokal (IndexedDB di PC, file lokal `files/sketches/` di Android), diunggah ke folder Google Drive privat (maks 1 MB/gambar) melalui antrean Outbox, serta diunduh on-demand lalu di-cache di perangkat.
+- **Indikator Sync di UI:** Menampilkan status **Online/Offline**, jumlah antrean tertunda/gagal (bisa diklik untuk lihat/coba ulang), waktu sync terakhir, dan tombol **Sync Sekarang**.
+- **Backup & Restore Lokal:** Export/Import backup JSON di semua platform, ditambah **Auto-Backup otomatis ke folder pilihan** (File System Access API) di Edge/Chrome PC.
 
-Prasyarat: Node.js 20 atau lebih baru.
+---
 
-```sh
-npm start
-```
+## Menjalankan di PC (Mandiri, Tanpa Node / Server)
 
-Buka `http://localhost:3000`. App ini client-side; data dibaca dari OpenSheet dan perubahan ditulis ke Apps Script. Pastikan perangkat punya akses internet.
+1. Buka `public/config.js` dan isi `apiUrl` dengan URL Web App Apps Script Anda (atau atur langsung dari tombol **⚙️ Pengaturan Server** di layar Login).
+2. Klik dua kali **`Jalankan.bat`**.
+3. Launcher akan otomatis membuka Microsoft Edge / Google Chrome dalam mode aplikasi (`--app`) langsung ke `public\index.html` dengan profil browser tersimpan di folder `browser-data\` di dalam folder aplikasi sendiri (tidak terhapus saat cache browser harian dibersihkan).
+4. Sangat disarankan mengaktifkan **Auto-Backup ke Folder** di menu **Master & Backup**.
+
+*(Opsional untuk development saja: `npm start` tetap tersedia untuk preview HTTP lokal di port `3000`.)*
+
+---
 
 ## Setup Google Sheets + Apps Script
 
-Ikuti [`SHEETS-SCHEMA.md`](SHEETS-SCHEMA.md) untuk header tab dan publikasi yang aman.
+Ikuti [`SHEETS-SCHEMA.md`](SHEETS-SCHEMA.md) untuk struktur tab lengkap. Ringkasnya:
 
-Ringkasnya:
+1. Buka Google Spreadsheet → **Extensions → Apps Script**, salin seluruh isi `apps-script/Code.gs`.
+2. Jalankan fungsi `setup()` satu kali dari editor Apps Script dan berikan izin Spreadsheet + Drive. Fungsi ini membuat 7 tab (`USERS`, `SESSIONS`, `STORAGES`, `TEMPLATES`, `TEMPLATE_PARTS`, `MOVEMENTS`, `SKETCHES`) dan folder Drive privat.
+3. Tambahkan akun pertama di tab `USERS` dengan role `super_admin` dan password minimal 10 karakter (otomatis di-hash SHA-256 bersalt saat login pertama).
+4. **Jangan publikasikan Spreadsheet ke web.** Tab `USERS`, `SESSIONS`, `SKETCHES`, dan data operasional tidak perlu dipublikasikan karena seluruh pembacaan dan penulisan berjalan lewat Apps Script Web App.
+5. Deploy Apps Script sebagai **Web app** (*Execute as: Me*, *Who has access: Anyone*), lalu masukkan URL `/exec` ke `public/config.js` atau lewat menu **⚙️ Pengaturan Server**.
 
-1. Buat/copy Google Spreadsheet untuk project. Pada Spreadsheet, buka **Extensions → Apps Script** dan salin `apps-script/Code.gs` ke project yang terikat pada Spreadsheet.
-2. Jalankan fungsi `setup()` satu kali dari editor Apps Script dan berikan izin Spreadsheet + Drive. Fungsi membuat header/master awal dan folder Drive privat; jika ada sketch lama, migrasikan ke Drive.
-3. Isi baris pertama akun di tab `USERS` dengan role `super_admin` (password kuat, minimal 10 karakter). Tidak ada akun default `1234`. Password awal otomatis di-hash saat login pertama; password akun baru disimpan dalam bentuk hash.
-4. **Publish hanya tab data yang aman dibaca** (`STORAGES`, `TEMPLATES`, `TEMPLATE_PARTS`, `MOVEMENTS`) ke web agar OpenSheet dapat membacanya. Jangan publish `USERS` atau `SKETCHES`, dan jangan ubah seluruh workbook menjadi bisa diedit publik.
-5. Deploy Apps Script sebagai **Web app**, execute as pemilik, akses login Web App yang dibutuhkan perangkat pengguna. Aksi tulis memerlukan session hasil login; session berlaku maksimal 6 jam.
-6. Koneksi pada clone ini sudah dikonfigurasi di `public/index.html`; panel pengaturan koneksi tidak ditampilkan pada layar login. Gunakan **Tes Koneksi** untuk memeriksa OpenSheet dan Apps Script.
+---
 
-Tab `SKETCHES` hanya menyimpan referensi file Drive internal. Tab itu tidak perlu dipublikasikan. Jangan memasukkan password, token, atau data sensitif ke tab yang diterbitkan untuk OpenSheet.
+## Build APK Android (Capacitor + Android Studio)
 
-## Build APK
+Folder `public/` dibundel langsung di dalam APK menggunakan **Capacitor**, sehingga **tidak memerlukan `APP_URL` maupun hosting HTTPS**.
 
-1. Host folder `public/` sebagai situs HTTPS.
-2. Atur `APP_URL` di `android/gradle.properties` ke URL `index.html`.
-3. Buka folder `android/` di Android Studio, lakukan Gradle Sync, lalu **Build → Generate Signed Bundle / APK → APK**.
-4. Pada HP, printer tersedia bila printer/print service terdeteksi Android. Untuk PDF pilih **Save as PDF** pada dialog print.
+1. Pastikan `public/config.js` sudah diisi (opsional; bisa juga diatur dari UI di dalam aplikasi).
+2. Salin aset web terbaru ke project Android:
+   ```sh
+   npm install
+   npm run cap:sync
+   ```
+3. Buka folder `android/` di Android Studio (`npm run cap:open` atau Open folder `android/`), lakukan Gradle Sync, lalu **Build → Generate Signed Bundle / APK → APK**.
+4. Fitur native Android yang terintegrasi di `MainActivity.kt`:
+   - File chooser kamera + galeri (`onShowFileChooser` + `FileProvider`) untuk upload sketch dan import JSON backup.
+   - `Android.shareQRText` untuk berbagi daftar QR Storage ke WhatsApp / aplikasi lain.
+   - Scanner QR ZXing (`Android.scanQr`) & Android Print Framework (`window.print` / `Android.printCurrentPage`).
+   - Penyimpanan file sketch lokal di `files/sketches/`.
 
 Panduan lengkap: [`android/README.md`](android/README.md).
 
-## Penting sebelum dipakai produksi
+---
 
-- OpenSheet hanya read/query; Apps Script menangani tulis, login, serta pembacaan foto Drive terproteksi.
-- Jika menghubungkan Spreadsheet lama, periksa tab `USERS`: source lama pernah menggunakan akun demo `superadmin/admin/operator` dengan password `1234`. Hapus/ubah password tersebut sebelum deployment. Kode clone tidak lagi membuat akun default.
-- Publikasi tab membuat nilai pada tab itu bisa dibaca publik. Publikasikan hanya data operasional yang memang boleh dibaca pengguna umum; bila perlu privasi lebih ketat, buat spreadsheet publik read-only terpisah dan salin view datanya.
-- Perubahan yang baru ditulis bisa memerlukan refresh/sync sebelum tampak lewat layanan OpenSheet.
-- Versi clone ini tidak membawa modul Storage Akrilik dari backend SQL V3.4 karena requirement yang diminta berfokus pada tracker template.
-
-## Pemeriksaan lokal
+## Validasi Lokal
 
 ```sh
 npm run check
 ```
 
-Pemeriksaan ini memvalidasi sintaks JavaScript frontend dan Apps Script serta mengecek fitur utama. Build APK tetap memerlukan Android Studio/SDK dan konfigurasi URL/keystore milik Anda.
+Memvalidasi sintaks semua file skrip (`config.js`, `db.js`, `sync.js`, skrip inline `index.html`, dan `Code.gs`), memastikan tidak ada `type="module"`, CDN, OpenSheet, JSONP, `no-cors`, atau kredensial/URL hardcoded, serta memverifikasi konfigurasi PC & Capacitor Android.

@@ -214,23 +214,29 @@ body[data-screen="xs"] .bottom-nav button{padding:7px 3px}
 .dist-alert.good{background:rgba(47,107,69,.22);border:1px solid rgba(63,143,93,.55);color:#bbf7d0}
 .dist-alert.info{background:rgba(14,116,144,.2);border:1px solid rgba(56,189,248,.45);color:#bae6fd}
 @media(max-width:600px){.dist-part-row{grid-template-columns:auto 1fr}.dist-qty-ctrl{grid-column:2 / 3;justify-content:flex-start;margin-top:4px}}
+.sync-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid rgba(255,255,255,.2)}
+.sync-pill.online{background:rgba(47,107,69,.28);border-color:rgba(63,143,93,.6);color:#bbf7d0}
+.sync-pill.offline{background:rgba(185,28,28,.28);border-color:rgba(239,68,68,.6);color:#fecaca}
+.sync-pill.pending{background:rgba(180,83,9,.28);border-color:rgba(245,158,11,.6);color:#fde68a;cursor:pointer}
+.sync-pill.error{background:rgba(185,28,28,.35);border-color:rgba(239,68,68,.75);color:#fecaca;cursor:pointer}
+.sync-pill.clean{background:rgba(14,116,144,.22);border-color:rgba(56,189,248,.45);color:#bae6fd;cursor:pointer}
 </style>
 </head>
 <body>
-<header class="no-print"><div class="app-head"><div class="brand"><h1>CNC Template Tracker</h1><div class="brand-tools"><button class="small good hidden" id="btnHeaderSync" onclick="syncData('Sync data dari header...')">🔄 Sync Data</button><span id="headerLastSync">Last sync: -</span></div><small></small></div><div class="sync-head"><div id="headerSyncStatus">Cloud mode</div><div id="whoami"></div><button class="small bad hidden" id="btnHeaderLogout" onclick="logout()" style="margin-top:6px">Logout</button></div></div></header>
-<section class="wrap" id="page-login"><div class="card" style="max-width:520px;margin:34px auto"><h2>Login</h2><p class="muted">Database CNC berbasis Google Sheets.</p><label>Username</label><input id="loginUser" value="" autocomplete="username"/><label>Password</label><input id="loginPass" type="password" value="" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/><div class="remember-row"><input type="checkbox" id="rememberMe"/><label for="rememberMe">Ingat saya di perangkat ini</label></div><div class="actions"><button class="good" onclick="login()">Masuk</button><button id="btnPingCloud" onclick="testConnection()">Tes Koneksi</button></div><div class="scan-status" id="loginStatus"></div></div></section>
+<header class="no-print"><div class="app-head"><div class="brand"><h1>CNC Template Tracker</h1><div class="brand-tools"><span class="sync-pill online" id="syncNetBadge">🟢 Online</span><button class="sync-pill clean hidden" id="syncQueueBadge" type="button" onclick="openOutboxModal()">✓ 0 tertunda</button><button class="small good hidden" id="btnHeaderSync" type="button" onclick="syncNowManual()">🔄 Sync Sekarang</button><span id="headerLastSync">Sync: -</span></div></div><div class="sync-head"><div id="headerSyncStatus">Mode Offline-First</div><div id="whoami"></div><button class="small bad hidden" id="btnHeaderLogout" type="button" onclick="logout()" style="margin-top:6px">Logout</button></div></div></header>
+<section class="wrap" id="page-login"><div class="card" style="max-width:520px;margin:34px auto"><h2>Login</h2><p class="muted">Mode Offline-First: data tersimpan lokal di perangkat &amp; sync delta ke Google Sheets. Login mengaktifkan token perangkat 30 hari.</p><label>Username</label><input id="loginUser" value="" autocomplete="username"/><label>Password</label><input id="loginPass" type="password" value="" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/><div class="actions"><button class="good" type="button" onclick="login()">Masuk</button><button id="btnPingCloud" type="button" onclick="testConnection()">Tes Koneksi</button><button type="button" onclick="openServerSettingsModal()">⚙️ Pengaturan Server</button></div><div class="scan-status" id="loginStatus"></div></div></section>
 <main class="wrap hidden" id="app">
-<section class="page" id="page-home"><div class="home-hero"><h2>Dashboard Template CNC</h2><div class="muted"></div><div class="summary-box"><div class="mini"><b id="sumTemplates">0</b><span>Total</span></div><div class="mini"><b id="sumWaiting">0</b><span>Waiting</span></div><div class="mini"><b id="sumDistributed">0</b><span>Distributed</span></div></div></div><div class="menu-grid"><div class="menu-card" onclick="showPage('dashboardStorage')"><div class="icon">📊</div><b>Dashboard Storage</b><span>Isi tiap storage + filter master</span></div><div class="menu-card" onclick="showPage('templateInput')"><div class="icon">➕</div><b>Input Template</b><span>Buyer, Style/KP, multi part, sketch</span></div><div class="menu-card" onclick="showPage('distribution')"><div class="icon">📦</div><b>Distribusi</b><span>Assign storage setelah jadi</span></div><div class="menu-card" onclick="showPage('storage')"><div class="icon">📷</div><b>Scan / Storage</b><span>Cek isi meja</span></div><div class="menu-card" onclick="showPage('movement')"><div class="icon">🔁</div><b>Movement</b><span>Pindah antar storage</span></div><div class="menu-card" onclick="showPage('templateList')"><div class="icon">📋</div><b>List Template</b><span>Filter cepat</span></div><div class="menu-card" onclick="showPage('templateQrPrint')"><div class="icon">🏷️</div><b>Print QR Template</b><span>Style/KP · proses · CT</span></div><div class="menu-card" onclick="showPage('master')"><div class="icon">⚙️</div><b>Master Storage</b><span>Tambah storage, QR, backup</span></div><div class="menu-card" id="menuUserManagement" onclick="showPage('userManagement')"><div class="icon">👥</div><b>User Management</b><span>Super admin only</span></div><div class="menu-card" onclick="showPage('fieldUpdate')"><div class="icon">🧾</div><b>Update Lapangan</b><span>Klik storage → tambah 10+ template</span></div><div class="menu-card" onclick="showPage('importExisting')"><div class="icon">📥</div><b>Import Lapangan</b><span>Paste Excel / CSV massal</span></div><div class="menu-card" onclick="syncData()"><div class="icon">☁️</div><b>Sync Data</b><span>Refresh dari Spreadsheet</span></div></div><div class="card movement-menu-card" onclick="showPage('movementHistory')"><div class="topline"><div><h3>🕘 Movement Terakhir</h3><div class="muted">Tampilkan maksimal 5 movement terbaru</div></div><button class="small warn" type="button" onclick="event.stopPropagation();showPage('movementHistory')">Buka →</button></div><div id="recentMovements"></div></div></section>
-<section class="page hidden" id="page-movementHistory"><div class="card"><div class="topline"><h2>🕘 5 Movement Terakhir / History</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Maksimal <b>5 movement terbaru</b> ditampilkan. Filter tetap tersedia; hasilnya dibatasi ke 5 baris.</div><div class="chip-row" id="mhPeriodChips"><span class="chip active" data-days="-1" onclick="setMhPeriod(-1,this)">Semua</span><span class="chip" data-days="7" onclick="setMhPeriod(7,this)">7 Hari</span><span class="chip" data-days="30" onclick="setMhPeriod(30,this)">30 Hari</span><span class="chip" data-days="90" onclick="setMhPeriod(90,this)">3 Bulan</span><span class="chip" data-days="0" onclick="setMhPeriod(0,this)">Custom Tanggal</span></div><div class="row hidden" id="mhCustomDateRow"><div><label>Dari Tanggal</label><input type="date" id="mhFrom"/></div><div><label>Sampai Tanggal</label><input type="date" id="mhTo"/></div></div><div class="row"><div><label>Jenis Movement</label><select id="mhType" onchange="renderMovementHistory()"><option value="">Semua Jenis</option><option value="DISTRIBUTE">Distribusi</option><option value="TRANSFER">Transfer</option><option value="REPAIR">Repair</option><option value="RETURN">Return</option><option value="OUT">Keluar</option><option value="IMPORT_EXISTING">Import Lapangan</option><option value="UPDATE_EXISTING">Update Lapangan</option></select></div><div><label>Storage (asal/tujuan)</label><select id="mhStorage" onchange="renderMovementHistory()"><option value="">Semua Storage</option></select></div></div><label>Cari (buyer / style / user / catatan / ID)</label><input id="mhSearch" oninput="renderMovementHistoryDebounced()" placeholder="Contoh: PUMA, KP-123, operator01..."/><div class="actions"><button class="good" onclick="applyMovementHistoryFilter()">🔍 Terapkan Filter</button><button onclick="resetMovementHistoryFilter()">Reset</button></div><div id="mhInfo" class="scan-status hidden"></div><div id="mhList"></div></div></section>
-<section class="page hidden" id="page-dashboardStorage"><div class="card"><div class="topline"><h2>Dashboard Isi Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Menampilkan isi masing-masing storage. </div><div class="grid"><div><label>Filter Storage</label><select id="dashStorageFilter" onchange="renderDashboardStorage()"><option value="">Semua Storage</option></select></div><div><label>Filter Buyer</label><select id="dashBuyerFilter" onchange="renderDashboardStorage()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="dashStyleFilter" onchange="renderDashboardStorage()"><option value="">Semua Style / KP</option></select></div><div><label>Filter Part</label><select id="dashPartFilter" onchange="renderDashboardStorage()"><option value="">Semua Part</option></select></div></div><div class="actions"><button onclick="resetDashboardStorageFilter()">Reset Filter</button><button onclick="syncData('Refresh dashboard storage...')">Refresh</button><button class="bad" onclick="logout()">Logout</button></div><div id="dashboardStorageBox"></div></div></section>
-<section class="page hidden" id="page-templateInput"><div class="card"><div class="topline"><h2>Input Template Baru</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted"></div><label>Buyer</label><input id="buyer" list="buyerSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Buyer"/><datalist id="buyerSuggest"></datalist><label>Style / KP</label><input id="stylekp" list="styleSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Style / KP"/><datalist id="styleSuggest"></datalist><label>Part Template</label><datalist id="partSuggest"></datalist><div class="part-head"><span>Nama Template / Part</span><span>Size</span><span>Qty</span><span></span></div><div id="partRows"></div><div class="actions"><button onclick="addPartRow()" type="button">+ Tambah Part</button></div><label>Upload Sketch</label><input accept="image/*" capture="environment" id="sketch" type="file" onchange="onSketchSelected(this)"/><div class="paste-zone" id="sketchPasteZone" tabindex="0" onclick="this.focus()" title="Klik area ini lalu tekan CTRL+V"><div class="paste-zone-icon">📋</div><div><b>CTRL+V</b> paste screenshot (Print Screen / Snipping Tool) di sini<br><small class="muted">atau drag &amp; drop file gambar ke area ini · di HP: tekan lama → Tempel</small></div></div><div class="sketch-preview-box hidden" id="sketchPreviewBox"><img id="sketchPreviewImg" alt="Preview sketch"/><div class="actions" style="justify-content:center"><button class="small warn" type="button" onclick="openSketchCrop()">✂️ Crop / Atur Ulang</button><button class="small bad" type="button" onclick="clearSketch()">Hapus Sketch</button></div><div class="muted" id="sketchPreviewInfo"></div></div><div class="actions"><button class="good" onclick="saveTemplate()">Simpan Template</button><button onclick="clearTemplateForm()">Clear</button></div></div></section>
+<section class="page" id="page-home"><div class="home-hero"><h2>Dashboard Template CNC</h2><div class="muted" id="homeSyncSummary">Database lokal siap offline</div><div class="summary-box"><div class="mini"><b id="sumTemplates">0</b><span>Total</span></div><div class="mini"><b id="sumWaiting">0</b><span>Waiting</span></div><div class="mini"><b id="sumDistributed">0</b><span>Distributed</span></div></div></div><div class="menu-grid"><div class="menu-card" onclick="showPage('dashboardStorage')"><div class="icon">📊</div><b>Dashboard Storage</b><span>Isi tiap storage + filter master</span></div><div class="menu-card" onclick="showPage('templateInput')"><div class="icon">➕</div><b>Input Template</b><span>Buyer, Style/KP, multi part, sketch</span></div><div class="menu-card" onclick="showPage('distribution')"><div class="icon">📦</div><b>Distribusi</b><span>Split &amp; assign storage</span></div><div class="menu-card" onclick="showPage('storage')"><div class="icon">📷</div><b>Scan / Storage</b><span>Cek isi meja</span></div><div class="menu-card" onclick="showPage('movement')"><div class="icon">🔁</div><b>Movement</b><span>Pindah antar storage</span></div><div class="menu-card" onclick="showPage('templateList')"><div class="icon">📋</div><b>List Template</b><span>Filter cepat</span></div><div class="menu-card" onclick="showPage('templateQrPrint')"><div class="icon">🏷️</div><b>Print QR Template</b><span>Style/KP · proses · CT</span></div><div class="menu-card" onclick="showPage('master')"><div class="icon">⚙️</div><b>Master &amp; Backup</b><span>Storage, QR, server, backup</span></div><div class="menu-card" id="menuUserManagement" onclick="showPage('userManagement')"><div class="icon">👥</div><b>User Management</b><span>Super admin only</span></div><div class="menu-card" onclick="showPage('fieldUpdate')"><div class="icon">🧾</div><b>Update Lapangan</b><span>Klik storage → tambah 10+ template</span></div><div class="menu-card" onclick="showPage('importExisting')"><div class="icon">📥</div><b>Import Lapangan</b><span>Paste Excel / CSV massal</span></div><div class="menu-card" onclick="syncNowManual()"><div class="icon">☁️</div><b>Sync Sekarang</b><span>Upload outbox &amp; unduh delta</span></div></div><div class="card movement-menu-card" onclick="showPage('movementHistory')"><div class="topline"><div><h3>🕘 Movement Terakhir</h3><div class="muted">Tampilkan maksimal 5 movement terbaru</div></div><button class="small warn" type="button" onclick="event.stopPropagation();showPage('movementHistory')">Buka →</button></div><div id="recentMovements"></div></div></section>
+<section class="page hidden" id="page-movementHistory"><div class="card"><div class="topline"><h2>🕘 5 Movement Terakhir / History</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Maksimal <b>5 movement terbaru</b> ditampilkan dari database lokal. Filter tetap tersedia; hasilnya dibatasi ke 5 baris.</div><div class="chip-row" id="mhPeriodChips"><span class="chip active" data-days="-1" onclick="setMhPeriod(-1,this)">Semua</span><span class="chip" data-days="7" onclick="setMhPeriod(7,this)">7 Hari</span><span class="chip" data-days="30" onclick="setMhPeriod(30,this)">30 Hari</span><span class="chip" data-days="90" onclick="setMhPeriod(90,this)">3 Bulan</span><span class="chip" data-days="0" onclick="setMhPeriod(0,this)">Custom Tanggal</span></div><div class="row hidden" id="mhCustomDateRow"><div><label>Dari Tanggal</label><input type="date" id="mhFrom"/></div><div><label>Sampai Tanggal</label><input type="date" id="mhTo"/></div></div><div class="row"><div><label>Jenis Movement</label><select id="mhType" onchange="renderMovementHistory()"><option value="">Semua Jenis</option><option value="DISTRIBUTE">Distribusi</option><option value="TRANSFER">Transfer</option><option value="REPAIR">Repair</option><option value="RETURN">Return</option><option value="OUT">Keluar</option><option value="IMPORT_EXISTING">Import Lapangan</option><option value="UPDATE_EXISTING">Update Lapangan</option></select></div><div><label>Storage (asal/tujuan)</label><select id="mhStorage" onchange="renderMovementHistory()"><option value="">Semua Storage</option></select></div></div><label>Cari (buyer / style / user / catatan / ID)</label><input id="mhSearch" oninput="renderMovementHistoryDebounced()" placeholder="Contoh: PUMA, KP-123, operator01..."/><div class="actions"><button class="good" onclick="applyMovementHistoryFilter()">🔍 Terapkan Filter</button><button onclick="resetMovementHistoryFilter()">Reset</button></div><div id="mhInfo" class="scan-status hidden"></div><div id="mhList"></div></div></section>
+<section class="page hidden" id="page-dashboardStorage"><div class="card"><div class="topline"><h2>Dashboard Isi Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Menampilkan isi masing-masing storage. </div><div class="grid"><div><label>Filter Storage</label><select id="dashStorageFilter" onchange="renderDashboardStorage()"><option value="">Semua Storage</option></select></div><div><label>Filter Buyer</label><select id="dashBuyerFilter" onchange="renderDashboardStorage()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="dashStyleFilter" onchange="renderDashboardStorage()"><option value="">Semua Style / KP</option></select></div><div><label>Filter Part</label><select id="dashPartFilter" onchange="renderDashboardStorage()"><option value="">Semua Part</option></select></div></div><div class="actions"><button onclick="resetDashboardStorageFilter()">Reset Filter</button><button onclick="syncNowManual()">Sync Sekarang</button><button class="bad" onclick="logout()">Logout</button></div><div id="dashboardStorageBox"></div></div></section>
+<section class="page hidden" id="page-templateInput"><div class="card"><div class="topline"><h2>Input Template Baru</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Disimpan ke database lokal dulu (bisa offline) lalu disinkronkan otomatis ke Google Sheets &amp; Drive.</div><label>Buyer</label><input id="buyer" list="buyerSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Buyer"/><datalist id="buyerSuggest"></datalist><label>Style / KP</label><input id="stylekp" list="styleSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Style / KP"/><datalist id="styleSuggest"></datalist><label>Part Template</label><datalist id="partSuggest"></datalist><div class="part-head"><span>Nama Template / Part</span><span>Size</span><span>Qty</span><span></span></div><div id="partRows"></div><div class="actions"><button onclick="addPartRow()" type="button">+ Tambah Part</button></div><label>Upload Sketch</label><input accept="image/*" capture="environment" id="sketch" type="file" onchange="onSketchSelected(this)"/><div class="paste-zone" id="sketchPasteZone" tabindex="0" onclick="this.focus()" title="Klik area ini lalu tekan CTRL+V"><div class="paste-zone-icon">📋</div><div><b>CTRL+V</b> paste screenshot (Print Screen / Snipping Tool) di sini<br><small class="muted">atau drag &amp; drop file gambar ke area ini · di HP: tekan lama → Tempel</small></div></div><div class="sketch-preview-box hidden" id="sketchPreviewBox"><img id="sketchPreviewImg" alt="Preview sketch"/><div class="actions" style="justify-content:center"><button class="small warn" type="button" onclick="openSketchCrop()">✂️ Crop / Atur Ulang</button><button class="small bad" type="button" onclick="clearSketch()">Hapus Sketch</button></div><div class="muted" id="sketchPreviewInfo"></div></div><div class="actions"><button class="good" onclick="saveTemplate()">Simpan Template</button><button onclick="clearTemplateForm()">Clear</button></div></div></section>
 <div class="modal" id="cropModal"><div class="box"><div class="topline"><h2>✂️ Crop Sketch</h2><button class="bad small" onclick="closeCropModal(false)">Batal</button></div><div class="muted">Geser gambar untuk atur posisi, gunakan slider / pinch untuk zoom. Area di dalam kotak yang akan disimpan.</div><div class="crop-viewport" id="cropViewport"><img id="cropImage" alt="Crop"/><div class="crop-grid"></div></div><div class="crop-zoom-row"><span>➖</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="setCropZoom(this.value)"/><span>➕</span></div><div class="actions"><button class="good" onclick="applyCrop()">✔ Pakai Hasil Crop</button><button onclick="resetCrop()">Reset</button><button class="bad" onclick="closeCropModal(false)">Batal</button></div></div></div>
 <section class="page hidden" id="page-templateList"><div class="card"><div class="topline"><h2>List Semua Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Cari kombinasi</label><input id="templateSearch" oninput="renderTemplatesDebounced()" placeholder="Buyer Style/KP Part Storage ID"/></div><div><label>Status</label><select id="templateStatusFilter" onchange="renderTemplates()"><option value="">Semua</option><option value="WAITING_DISTRIBUTION">Menunggu Distribusi</option><option value="DISTRIBUTED">Sudah Distribusi</option><option value="OUT">Keluar</option></select></div></div><div id="templateListBox"></div></div></section>
-<section class="page hidden" id="page-distribution"><div class="card"><div class="topline"><div><h2>Distribusi Template Jadi</h2><div class="muted">Pilih 1 atau banyak template waiting, lalu atur split part (nama, size, qty) dan storage tujuan. Anti-duplikat aktif otomatis.</div></div><div style="display:flex;gap:6px;align-items:center"><span class="selected-counter"><span id="distCount">0</span> waiting</span><button class="small" onclick="showPage('home')">← Home</button></div></div><div class="grid"><div><label>Filter Buyer</label><select id="distBuyerFilter" onchange="onDistBuyerFilterChange()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="distStyleFilter" onchange="renderDistribution()"><option value="">Semua Style / KP</option></select></div><div><label>Cari Part / Size / ID</label><input id="distSearch" oninput="renderDistributionDebounced()" placeholder="Contoh: FRONT BODY, M, TPL-..."/></div></div><div class="actions"><button class="small" type="button" onclick="selectAllFilteredDistribution(true)">Pilih Semua Tampil</button><button class="small" type="button" onclick="selectAllFilteredDistribution(false)">Kosongkan Pilihan</button><button class="small" type="button" onclick="resetDistributionFilter()">Reset Filter</button><button class="small" type="button" onclick="syncData('Refresh template waiting...')">🔄 Refresh</button></div><div id="distTemplateList" style="margin-top:10px"></div></div><div class="card hidden" id="distSplitPanel"><div class="topline"><div><h3>✂️ Pengaturan Split Distribution (Part · Size · Qty)</h3><div class="muted">Centang part dan atur qty yang akan dipindahkan sekarang. Sisa qty/part tetap berstatus WAITING_DISTRIBUTION.</div></div><span class="selected-counter"><span id="distSelectedCount">0</span> dipilih</span></div><div id="distSplitBody"></div><div class="row"><div><label>Tujuan Meja / Storage</label><select id="distStorage" onchange="renderDistributionSummary()"></select></div><div class="actions" style="align-self:end"><input id="distScanCode" class="hidden" value=""/><button class="good" type="button" onclick="scanBarcode('distScanCode','setDistStorageScanned')">📷 Scan QR Storage</button></div></div><div class="hidden" id="distReader"></div><div id="distSummary"></div><label>Catatan</label><textarea id="distNote" placeholder="Opsional (otomatis dilengkapi rincian split part/size/qty)"></textarea><div class="actions"><button class="good" id="btnDistributeSubmit" type="button" onclick="distributeTemplate()">📦 Distribusikan</button><button type="button" onclick="selectAllFilteredDistribution(false)">Batal Pilihan</button></div></div></section>
+<section class="page hidden" id="page-distribution"><div class="card"><div class="topline"><div><h2>Distribusi Template Jadi</h2><div class="muted">Pilih 1 atau banyak template waiting, lalu atur split part (nama, size, qty) dan storage tujuan. Anti-duplikat aktif otomatis.</div></div><div style="display:flex;gap:6px;align-items:center"><span class="selected-counter"><span id="distCount">0</span> waiting</span><button class="small" onclick="showPage('home')">← Home</button></div></div><div class="grid"><div><label>Filter Buyer</label><select id="distBuyerFilter" onchange="onDistBuyerFilterChange()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="distStyleFilter" onchange="renderDistribution()"><option value="">Semua Style / KP</option></select></div><div><label>Cari Part / Size / ID</label><input id="distSearch" oninput="renderDistributionDebounced()" placeholder="Contoh: FRONT BODY, M, TPL-..."/></div></div><div class="actions"><button class="small" type="button" onclick="selectAllFilteredDistribution(true)">Pilih Semua Tampil</button><button class="small" type="button" onclick="selectAllFilteredDistribution(false)">Kosongkan Pilihan</button><button class="small" type="button" onclick="resetDistributionFilter()">Reset Filter</button><button class="small" type="button" onclick="syncNowManual()">🔄 Sync</button></div><div id="distTemplateList" style="margin-top:10px"></div></div><div class="card hidden" id="distSplitPanel"><div class="topline"><div><h3>✂️ Pengaturan Split Distribution (Part · Size · Qty)</h3><div class="muted">Centang part dan atur qty yang akan dipindahkan sekarang. Sisa qty/part tetap berstatus WAITING_DISTRIBUTION.</div></div><span class="selected-counter"><span id="distSelectedCount">0</span> dipilih</span></div><div id="distSplitBody"></div><div class="row"><div><label>Tujuan Meja / Storage</label><select id="distStorage" onchange="renderDistributionSummary()"></select></div><div class="actions" style="align-self:end"><input id="distScanCode" class="hidden" value=""/><button class="good" type="button" onclick="scanBarcode('distScanCode','setDistStorageScanned')">📷 Scan QR Storage</button></div></div><div class="hidden" id="distReader"></div><div id="distSummary"></div><label>Catatan</label><textarea id="distNote" placeholder="Opsional (otomatis dilengkapi rincian split part/size/qty)"></textarea><div class="actions"><button class="good" id="btnDistributeSubmit" type="button" onclick="distributeTemplate()">📦 Distribusikan</button><button type="button" onclick="selectAllFilteredDistribution(false)">Batal Pilihan</button></div></div></section>
 <section class="page hidden" id="page-storage"><div class="card"><div class="topline"><h2>Scan / Cek Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="scanStorageCode" placeholder="Contoh: CNC-MEJA-01"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('scanStorageCode','openScannedStorage')">Scan QR</button><button onclick="openScannedStorage()">Buka</button></div></div><div class="hidden" id="reader"></div><div class="scan-status"></div></div><div class="card"><label>Cari Storage</label><input class="searchbar" id="storageSearch" oninput="renderStorage()" placeholder="Cari meja/storage"/><div class="grid" id="storageGrid"></div></div></section>
 <section class="page hidden" id="page-movement"><div class="card"><div class="topline"><h2>Movement Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Scan Storage Asal</label><input id="moveScanCode" placeholder="Scan / isi storage asal"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('moveScanCode','setMoveFromScanned')">Scan</button></div></div><div class="hidden" id="moveReader"></div><label>Dari Storage</label><select id="moveStorageFrom" onchange="selectedMoveTemplateId='';renderMoveTemplates()"></select><label>Pilih Template</label><div id="moveTemplateList"></div><div class="row"><div><label>Jenis Movement</label><select id="moveType"><option value="TRANSFER">Transfer antar storage</option><option value="REPAIR">Repair</option><option value="RETURN">Return</option><option value="OUT">Keluar dari storage</option></select></div><div><label>Ke / Tujuan</label><select id="moveStorageTo"></select></div></div><label>Catatan</label><textarea id="moveNote" placeholder="Opsional"></textarea><div class="actions"><button class="good" onclick="saveMovement()">Simpan Movement</button></div></div></section>
-<section class="page hidden" id="page-master"><div class="card"><div class="topline"><h2>Master Storage / Setting</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="storageCode" list="storageSuggest" placeholder="CNC-MEJA-03" onblur="normalizeInputLive(this)"/></div><div><label>Nama Storage</label><input id="storageName" placeholder="Meja CNC 03"/></div></div><label>Area</label><input id="storageArea" placeholder="Area CNC / Storage"/><div class="actions"><button class="good" onclick="addStorage()">Tambah Storage</button><button onclick="syncData()">Sync Data</button><button class="warn" onclick="showPage('importExisting')">Import Lapangan</button><button onclick="exportJSON()">Export Data Ringan</button><button onclick="showPage('printqr')">Print QR</button><button onclick="showPage('userManagement')">User Management</button><button class="bad" onclick="logout()">Logout</button></div><h3>List Storage</h3><div id="storageList"></div></div></section>
-<section class="page hidden" id="page-userManagement"><div class="card"><div class="topline"><h2>User Management</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="scan-status"></div><div class="row"><div><label>Username</label><input id="newUsername" placeholder="operator01"/></div><div><label>Password</label><input id="newPassword" type="password" placeholder="Password awal"/></div></div><div class="row"><div><label>Nama</label><input id="newName" placeholder="Nama user"/></div><div><label>Role</label><select id="newRole"><option value="operator">operator</option><option value="admin">admin</option><option value="super_admin">super_admin</option></select></div></div><div class="actions"><button class="good" onclick="addUser()">Tambah User</button><button onclick="syncData()">Refresh User</button><button class="bad" onclick="logout()">Logout</button></div><div id="userList"></div></div></section>
+<section class="page hidden" id="page-master"><div class="card"><div class="topline"><h2>Master Storage / Setting</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="storageCode" list="storageSuggest" placeholder="CNC-MEJA-03" onblur="normalizeInputLive(this)"/></div><div><label>Nama Storage</label><input id="storageName" placeholder="Meja CNC 03"/></div></div><label>Area</label><input id="storageArea" placeholder="Area CNC / Storage"/><div class="actions"><button class="good" onclick="addStorage()">Tambah Storage</button><button onclick="syncNowManual()">🔄 Sync Sekarang</button><button onclick="syncNowManual(true)">⬇️ Full Sync Ulang</button><button class="warn" onclick="showPage('importExisting')">Import Lapangan</button><button onclick="showPage('printqr')">Print QR</button><button onclick="showPage('userManagement')">User Management</button><button type="button" onclick="openServerSettingsModal()">⚙️ Pengaturan Server</button><button type="button" onclick="openOutboxModal()">🧾 Antrean Sync</button><button class="bad" onclick="logout()">Logout</button></div><h3>List Storage</h3><div id="storageList"></div></div><div class="card"><h3>💾 Backup &amp; Restore Lokal (IndexedDB)</h3><div class="muted">Data lokal tersimpan di perangkat. Gunakan Export/Import JSON atau Auto-Backup ke folder (PC) untuk mencegah kehilangan data jika cache browser dibersihkan.</div><div class="actions"><button class="good" type="button" onclick="exportBackupFile()">📤 Export Backup JSON</button><button type="button" onclick="$('importBackupFile').click()">📥 Import Backup JSON</button><input id="importBackupFile" type="file" accept=".json,application/json" class="hidden" onchange="onImportBackupSelected(this)"/></div><div id="autoBackupBox" class="scan-status" style="margin-top:10px">Memeriksa status auto-backup...</div><div class="actions" id="autoBackupActions"><button type="button" onclick="setupAutoBackupFolder()">📁 Pilih Folder Auto-Backup (PC)</button><button type="button" onclick="runAutoBackupNow()">💾 Backup ke Folder Sekarang</button><button class="bad small" type="button" onclick="disableAutoBackupFolderUI()">Matikan Auto-Backup</button></div></div></section>
+<section class="page hidden" id="page-userManagement"><div class="card"><div class="topline"><h2>User Management</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="scan-status">Manajemen akun membutuhkan koneksi online (khusus super_admin).</div><div class="row"><div><label>Username</label><input id="newUsername" placeholder="operator01"/></div><div><label>Password</label><input id="newPassword" type="password" placeholder="Minimal 10 karakter"/></div></div><div class="row"><div><label>Nama</label><input id="newName" placeholder="Nama user"/></div><div><label>Role</label><select id="newRole"><option value="operator">operator</option><option value="admin">admin</option><option value="super_admin">super_admin</option></select></div></div><div class="actions"><button class="good" onclick="addUser()">Tambah User</button><button onclick="loadUsers()">Refresh User</button><button class="bad" onclick="logout()">Logout</button></div><div id="userList"></div></div></section>
 <section class="page hidden" id="page-importExisting">
 <div class="card">
 <div class="topline"><h2>Update Template Lapangan per Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div>
@@ -252,13 +258,13 @@ ARC'TERYX | ST-778 | SLEEVE x2, COLLAR | CNC-MEJA-01 | hasil opname"></textarea>
 <div class="topline"><h2>Update Template Lapangan per Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div>
 <div class="scan-status">Alur cepat: user pilih/klik storage → klik tambah template → isi 1 atau lebih dari 10 template → upload 1x. </div>
 <div class="row"><div><label>Cari Storage</label><input id="fieldStorageSearch" oninput="renderFieldUpdateStorageList()" placeholder="Cari kode/nama/area storage"/></div><div><label>Storage terpilih</label><input id="fieldSelectedStorage" readonly placeholder="Belum pilih storage"/></div></div>
-<div class="actions"><button onclick="syncData('Refresh storage lapangan...')">Refresh Storage</button><button class="bad" onclick="logout()">Logout</button></div>
+<div class="actions"><button onclick="syncNowManual()">🔄 Sync Storage</button><button class="bad" onclick="logout()">Logout</button></div>
 <div class="grid" id="fieldStorageGrid"></div>
 </div>
 <div class="card hidden" id="fieldTemplateFormCard">
 <div class="topline"><div><h3>Tambah Template ke Storage</h3><div class="muted" id="fieldStorageTitle">-</div></div><span class="selected-counter"><span id="fieldRowCount">0</span> baris</span></div>
 <div id="fieldTemplateRows"></div>
-<div class="actions"><button onclick="addFieldTemplateRow()">+ Tambah 1 Template</button><button onclick="addFieldTemplateRows(10)">+ Tambah 10 Baris</button><button onclick="clearFieldTemplateRows()">Clear Baris</button><button class="good" onclick="saveFieldStorageTemplates()">Upload Template ke Storage</button></div>
+<div class="actions"><button onclick="addFieldTemplateRow()">+ Tambah 1 Template</button><button onclick="addFieldTemplateRows(10)">+ Tambah 10 Baris</button><button onclick="clearFieldTemplateRows()">Clear Baris</button><button class="good" onclick="saveFieldStorageTemplates()">Simpan ke Storage</button></div>
 <div class="muted">Kolom Part bisa isi banyak part pakai koma. Contoh: FRONT BODY, BACK BODY x2.</div>
 <div id="fieldUploadPreview"></div>
 </div>
@@ -271,7 +277,10 @@ ARC'TERYX | ST-778 | SLEEVE x2, COLLAR | CNC-MEJA-01 | hasil opname"></textarea>
 <div class="modal" id="modal"><div class="box"><div class="topline"><h2 id="modalTitle">Detail</h2><button class="bad small" onclick="closeModal()">Tutup</button></div><div id="modalContent"></div></div></div>
 <div class="loading-overlay hidden" id="busy"><div class="loading-box"><b id="busyTitle">Memproses data...</b><div class="bar"><span></span></div></div></div>
 <div class="toast hidden" id="toast"></div>
-<script>const APP_CONFIG = {"build": "apk", "label": "APK Cloud"};</script>
+<script src="./config.js"></script>
+<script src="./db.js"></script>
+<script src="./sync.js"></script>
+<script>const APP_CONFIG = { build: (window.Android || window.Capacitor) ? "apk" : "pc", label: "Offline-First" };</script>
 
 <script>
 /* Offline QRCode generator bundled for CNC Template Tracker V5.
@@ -1579,11 +1588,7 @@ module.exports = QRCode;
 </script>
 
 <script>
-const VERSION = "2026-07-09-v9-paste-crop-autoscreen";
-const DEFAULT_SPREADSHEET_ID = "1rGCyMImRqLknwhqaWtuRQ-sF5DolaHk_DnwTY3Wvzcs";
-const DEFAULT_API_BASE = "https://script.google.com/macros/s/AKfycbyX4opqECk7-BTejSjPq3mfIACkWXWWGWo1__UzuamZnk87MGPrmeCSwvDIkpyn_wZP/exec";
-let API_BASE = DEFAULT_API_BASE;
-let OPEN_SHEET_ID = DEFAULT_SPREADSHEET_ID;
+const VERSION = "5.0.0-offline-first";
 let db = emptyDB();
 let currentUser = null;
 let selectedQR = new Set();
@@ -1597,32 +1602,8 @@ let scanner = null;
 let lastSyncText = "Belum sync";
 let dataLoaded = false;
 let activePage = "home";
-let syncPromise = null;
 let selectedFieldStorage = "";
-const DATA_REQUIRED_PAGES = new Set(["dashboardStorage","templateInput","templateList","distribution","storage","movement","movementHistory","master","userManagement","fieldUpdate","printqr","templateQrPrint","importExisting"]);
-const QUICK_JSONP_ACTIONS = new Set(["addTemplate","distributeTemplate","moveTemplate","bulkImportExisting","addStorage","addUser","resetPassword"]);
-
-/* ================= CACHING LOKAL (localStorage) ================= */
-const LS_KEYS = {DB:"cnc_v8_db", DB_TIME:"cnc_v8_db_time", USER:"cnc_v8_user", REMEMBER:"cnc_v8_remember", CRED:"cnc_v8_cred"};
-const LOCAL_CACHE_TTL_MS = 10*60*1000; // cache lokal dianggap fresh 10 menit, tetap background-sync
-function saveLocalCache(){
-  try{
-    const lite = {...db, templates: db.templates.map(t=>{ const c={...t}; delete c.sketch; return c; })};
-    localStorage.setItem(LS_KEYS.DB, JSON.stringify(lite));
-    localStorage.setItem(LS_KEYS.DB_TIME, String(Date.now()));
-  }catch(e){ /* quota penuh: abaikan */ }
-}
-function loadLocalCache(){
-  try{
-    const raw = localStorage.getItem(LS_KEYS.DB);
-    if(!raw) return null;
-    return {data: JSON.parse(raw), time: Number(localStorage.getItem(LS_KEYS.DB_TIME)||0)};
-  }catch(e){ return null; }
-}
-function clearLocalCache(){ try{ localStorage.removeItem(LS_KEYS.DB); localStorage.removeItem(LS_KEYS.DB_TIME); }catch(e){} }
-function saveSession(user){ try{ localStorage.setItem(LS_KEYS.USER, JSON.stringify(user)); }catch(e){} }
-function loadSession(){ try{ return JSON.parse(localStorage.getItem(LS_KEYS.USER)||"null"); }catch(e){ return null; } }
-function clearSession(){ try{ localStorage.removeItem(LS_KEYS.USER); }catch(e){} }
+let syncUiState = { online: true, syncing: false, pendingCount: 0, errorCount: 0, lastSyncAt: "", lastError: "", authExpired: false };
 
 /* ================= AUTO DETECT DEVICE + LAYAR =================
    Set 3 atribut di <body>:
@@ -1638,14 +1619,12 @@ function detectDevice(){
   if(w <= 700 || (coarse && w <= 820)) device = "mobile";
   else if(w <= 1100) device = "tablet";
 
-  // Kelas ukuran layar untuk skala font/form/menu ideal
   let screen = "md";
-  if(w <= 380) screen = "xs";         // HP kecil
-  else if(w <= 700) screen = "sm";    // HP normal / besar
-  else if(w <= 1100) screen = "md";   // tablet
-  else if(w <= 1500) screen = "lg";   // laptop
-  else screen = "xl";                 // monitor besar
-  // Layar fisik kecil tapi resolusi tinggi (HP flagship): jangan sampai font kekecilan
+  if(w <= 380) screen = "xs";
+  else if(w <= 700) screen = "sm";
+  else if(w <= 1100) screen = "md";
+  else if(w <= 1500) screen = "lg";
+  else screen = "xl";
   if(device === "mobile" && dpr >= 2.5 && screen === "xs") screen = "sm";
 
   const b = document.body;
@@ -1664,10 +1643,11 @@ function escAttr(v){return esc(v).replace(/`/g,"&#96;");}
 function normalizeText(v){return String(v||"").trim().replace(/\s+/g," ").toUpperCase();}
 function nowISO(){return new Date().toISOString();}
 function dateTimeText(v){ if(!v) return "-"; const d=new Date(v); return isNaN(d) ? esc(v) : d.toLocaleString("id-ID"); }
-function id(prefix){ return prefix + "-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2,6).toUpperCase(); }
+function id(prefix){ return window.CNCDB ? CNCDB.uuid(prefix) : (prefix + "-" + Date.now().toString(36).toUpperCase() + "-" + Math.random().toString(36).slice(2,8).toUpperCase()); }
 function userName(){ return currentUser?.username || "system"; }
 function isAdmin(){ return currentUser && ["admin","super_admin"].includes(currentUser.role); }
 function isSuperAdmin(){ return currentUser?.role === "super_admin"; }
+function isAndroidNative(){ return !!(window.Android || window.Capacitor); }
 function emptyDB(){ return {storages:[],templates:[],parts:[],movements:[],users:[],masters:{buyers:[],parts:[]}}; }
 function statusLabel(s){
   const map={WAITING_DISTRIBUTION:"Menunggu Distribusi",DISTRIBUTED:"Sudah Distribusi",OUT:"Keluar",REPAIR:"Repair",ARCHIVED:"Arsip"};
@@ -1679,170 +1659,22 @@ function statusBadge(s){
 }
 function toast(msg){
   let t=$("toast"); if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t)}
-  t.textContent=msg; t.classList.remove("hidden"); clearTimeout(window.__toastTimer); window.__toastTimer=setTimeout(()=>t.classList.add("hidden"),2600);
+  t.textContent=msg; t.classList.remove("hidden"); clearTimeout(window.__toastTimer); window.__toastTimer=setTimeout(()=>t.classList.add("hidden"),2800);
 }
 function setBusy(on, title="Memproses data..."){
   const el=$("busy"); if(!el) return; el.classList.toggle("hidden", !on); $("busyTitle").textContent=title;
 }
-function isApkOrFileMode(){
-  return location.protocol === "file:" || (window.APP_CONFIG && APP_CONFIG.build === "apk");
-}
 function debounce(fn, wait=180){ let t; return (...args)=>{clearTimeout(t); t=setTimeout(()=>fn(...args),wait)}; }
-function loadConnectionConfig(){
-  // Koneksi sudah dikonfigurasi untuk deployment ini; abaikan nilai lama di localStorage.
-  OPEN_SHEET_ID=DEFAULT_SPREADSHEET_ID;
-  API_BASE=DEFAULT_API_BASE;
-}
-function getOpenSheetId(){
-  if(!OPEN_SHEET_ID) throw new Error("Spreadsheet ID belum dikonfigurasi pada build aplikasi.");
-  return OPEN_SHEET_ID;
-}
-async function openSheetRows(tab){
-  const id=getOpenSheetId();
-  // OpenSheet rejects arbitrary query params (only `raw` is supported).
-  const url=`https://opensheet.elk.sh/${encodeURIComponent(id)}/${encodeURIComponent(tab)}`;
-  const response=await fetch(url,{cache:"no-store"});
-  if(!response.ok) throw new Error(`OpenSheet gagal membaca tab ${tab} (HTTP ${response.status}). Pastikan tab dipublikasikan dan namanya tepat.`);
-  const rows=await response.json();
-  if(!Array.isArray(rows)) throw new Error(`Respons OpenSheet untuk ${tab} bukan daftar baris.`);
-  return rows;
-}
-const field=(row,...keys)=>{for(const k of keys){if(row?.[k]!==undefined&&row[k]!==null)return String(row[k]).trim();}return "";};
-function openSheetBool(v){return ["TRUE","YES","1","DRIVE"].includes(String(v||"").trim().toUpperCase());}
-async function loadOpenSheetSnapshot(){
-  const [storageRows,templateRows,partRows,movementRows]=await Promise.all(["STORAGES","TEMPLATES","TEMPLATE_PARTS","MOVEMENTS"].map(openSheetRows));
-  const templates=templateRows.filter(r=>field(r,"id")).map(r=>({id:field(r,"id"),buyer:field(r,"buyer"),stylekp:field(r,"stylekp"),status:field(r,"status"),currentStorage:field(r,"currentStorage"),sketch:openSheetBool(field(r,"sketch"))?"DRIVE":"",hasSketch:openSheetBool(field(r,"sketch")),createdBy:field(r,"createdBy"),createdAt:field(r,"createdAt"),updatedAt:field(r,"updatedAt"),distributedAt:field(r,"distributedAt")}));
-  const parts=partRows.filter(r=>field(r,"templateId")).map(r=>({partId:field(r,"partId"),templateId:field(r,"templateId"),part:field(r,"part"),size:field(r,"size"),qty:Number(field(r,"qty")||1),createdAt:field(r,"createdAt"),status:field(r,"status"),currentStorage:field(r,"currentStorage"),distributedAt:field(r,"distributedAt"),updatedAt:field(r,"updatedAt")}));
-  const movements=movementRows.filter(r=>field(r,"id")).map(r=>({id:field(r,"id"),templateId:field(r,"templateId"),type:field(r,"type"),from:field(r,"from"),to:field(r,"to"),by:field(r,"by"),note:field(r,"note"),at:field(r,"at")})).sort(movementSortNewest);
-  return {data:{storages:storageRows.filter(r=>field(r,"code")).map(r=>({code:field(r,"code"),name:field(r,"name"),area:field(r,"area"),createdAt:field(r,"createdAt"),updatedAt:field(r,"updatedAt")})),templates,parts,movements,users:[],masters:{buyers:[...new Set(templates.map(t=>t.buyer).filter(Boolean))],parts:[...new Set(parts.map(p=>p.part).filter(Boolean))]}},cached:false};
-}
-async function testConnection(){
-  const status=$("loginStatus");
-  try{
-    if(status)status.textContent="Menguji OpenSheet dan Apps Script…";
-    await Promise.all([openSheetRows("STORAGES"),apiGet("ping")]);
-    if(status)status.textContent="Koneksi OpenSheet dan Apps Script berhasil.";
-    toast("Koneksi berhasil");
-  }catch(e){if(status)status.textContent=e.message;alert("Tes koneksi gagal: "+e.message);}
-}
-function normalizeApiUrl(v){ return String(v||"").trim().replace(/\/+$/,""); }
-function getApiBase(){
-  const v = normalizeApiUrl(API_BASE || DEFAULT_API_BASE);
-  API_BASE = v;
-  return v;
-}
-function ensureApi(){
-  const v = getApiBase();
-  if(!v || !v.startsWith("https://script.google.com/macros/s/") || !v.endsWith("/exec")){
-    throw new Error("URL Apps Script belum valid. Copy URL lengkap dari Deploy > Web app > Copy, harus berakhiran /exec.");
-  }
-}
-function buildUrl(action, params={}){
-  ensureApi();
-  const u = new URL(getApiBase());
-  u.searchParams.set("action", action);
-  Object.entries(params).forEach(([k,v])=>{ if(v!==undefined && v!==null) u.searchParams.set(k, String(v)); });
-  return u.toString();
-}
-function jsonpGet(action, params={}, timeout=35000){
-  return new Promise((resolve,reject)=>{
-    const cb = "__gas_jsonp_" + Date.now().toString(36) + Math.random().toString(36).slice(2);
-    const s = document.createElement("script");
-    let done=false;
-    const clean=()=>{ try{ delete window[cb]; }catch(e){ window[cb]=undefined; } s.remove(); };
-    const timer=setTimeout(()=>{ if(done) return; done=true; clean(); reject(new Error("Timeout JSONP. Cek URL Web app dan permission Anyone.")); }, timeout);
-    window[cb]=(data)=>{ if(done) return; done=true; clearTimeout(timer); clean(); if(!data?.ok) reject(new Error(data?.message || "Request gagal")); else resolve(data); };
-    s.onerror=()=>{ if(done) return; done=true; clearTimeout(timer); clean(); reject(new Error("Gagal load JSONP. Biasanya URL Web app salah/terpotong, deployment belum aktif, atau akses belum Anyone.")); };
-    s.src = buildUrl(action, {...params, callback: cb, _: Date.now()});
-    document.head.appendChild(s);
-  });
-}
-async function apiGet(action, params={}){
-  const query={...params, ...(currentUser?.sessionToken?{sessionToken:currentUser.sessionToken}:{}), _:Date.now()};
-  try{
-    const res = await fetch(buildUrl(action, query), {method:"GET", cache:"no-store", redirect:"follow"});
-    return await parseBackendResponse(res, action);
-  }catch(e){
-    const msg=String(e?.message||e);
-    if(msg.includes("HTTP 404") || msg.includes("URL Web app salah")) throw e;
-    return await jsonpGet(action, query);
-  }
-}
-async function apiPostNoCors(action, payload={}){
-  const body = new URLSearchParams();
-  body.set("action", action);
-  body.set("payload", JSON.stringify(payload));
-  await fetch(buildUrl(action), {method:"POST", body, mode:"no-cors", cache:"no-store", redirect:"follow", headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"}});
-  await new Promise(r=>setTimeout(r,1400));
-  return {ok:true, noCors:true, message:"Terkirim mode kompatibel. Sync ulang untuk ambil data terbaru."};
-}
-async function apiPost(action, payload={}){
-  ensureApi();
-  payload={...(payload||{}), ...(currentUser?.sessionToken?{sessionToken:currentUser.sessionToken}:{})};
-  const payloadText=JSON.stringify(payload||{});
-  if(payloadText.length<14000){
-    try{return await jsonpGet(action,{payload:payloadText},20000);}
-    catch(err){console.warn("JSONP write fallback to form POST",err);return await apiPostNoCors(action,payload);}
-  }
-  return await apiPostNoCors(action,payload);
-}
-async function parseBackendResponse(res, action){
-  const text = await res.text();
-  if(res.status === 404){
-    throw new Error(`HTTP 404 = URL Web app salah/terpotong. Copy ulang URL lengkap dari Deploy > Web app > Copy. Action: ${action}`);
-  }
-  let data;
-  try{
-    data = JSON.parse(text);
-  }catch(e){
-    const preview = text.slice(0,360).replace(/\s+/g," ").trim();
-    const isHtml = /^<!doctype html|^<html|<title>|accounts\.google\.com|ServiceLogin|Pengolah kata|spreadsheet web/i.test(preview);
-    const hint = isHtml
-      ? "Backend mengembalikan HTML, bukan JSON. Biasanya URL Web app salah/terpotong, akses Web app belum 'Anyone', execute belum 'Me', atau belum New version."
-      : "Backend bukan JSON. Cek error Apps Script dan URL deploy.";
-    throw new Error(`${hint}
-Action: ${action}
-HTTP: ${res.status}
-Preview: ${preview || "(kosong)"}`);
-  }
-  if(!data.ok) throw new Error(data.message || "Request gagal");
-  return data;
-}
-function applyTemplateUpdate(template){
-  if(!template || !template.id) return;
-  const idx=db.templates.findIndex(x=>String(x.id)===String(template.id));
-  if(idx>=0) db.templates[idx]={...db.templates[idx],...template};
-  else db.templates.unshift(template);
-}
-function applyMovement(movement){
-  if(!movement || !movement.id) return;
-  if(!db.movements.some(x=>String(x.id)===String(movement.id))) db.movements.unshift(movement);
-}
-function applyParts(parts){
-  (parts||[]).forEach(p=>{
-    const idx=db.parts.findIndex(x=>String(x.partId)===String(p.partId) && String(x.templateId)===String(p.templateId));
-    if(idx>=0) db.parts[idx]={...db.parts[idx],...p};
-    else db.parts.push(p);
-  });
-  migrateDB(db);
-}
-function replacePartsForTemplate(templateId, parts){
-  if(!templateId || !Array.isArray(parts)) return;
-  const tid=String(templateId);
-  db.parts=db.parts.filter(p=>String(p.templateId)!==tid);
-  parts.forEach(p=>db.parts.push(p));
-}
-function finishFastUpdate(){
-  db=migrateDB(db);
-  dataLoaded = true;
-  lastSyncText = new Date().toLocaleTimeString("id-ID") + " · update cepat";
-  saveLocalCache();
-  renderCurrentPage();
-  updateHeader();
-}
+
 function migrateDB(d){
   d = d || emptyDB();
-  d.storages ||= []; d.templates ||= []; d.parts ||= []; d.movements ||= []; d.users ||= []; d.masters ||= {buyers:[],parts:[]};
+  d.storages = (d.storages || []).filter(s=>s && s.code && !s.deleted);
+  d.templates = (d.templates || []).filter(t=>t && t.id && !t.deleted);
+  d.parts = (d.parts || []).filter(p=>p && (p.partId || p.templateId) && !p.deleted);
+  d.movements = (d.movements || []).filter(m=>m && m.id);
+  d.users = d.users || [];
+  d.masters = d.masters || {buyers:[],parts:[]};
+
   const tMap=new Map();
   d.templates.forEach(t=>{
     if(t.storage && !t.currentStorage) t.currentStorage=t.storage;
@@ -1881,114 +1713,336 @@ function migrateDB(d){
   d.masters.buyers=[...buyers].sort(); d.masters.parts=[...parts].sort();
   return d;
 }
-/* Formula loading cepat:
-   1) Render instan dari cache lokal (localStorage) -> UI langsung tampil.
-   2) Background sync ambil data server (movements hanya 7 hari terakhir).
-   3) Server juga pakai CacheService, jadi respon list jauh lebih cepat. */
-async function syncData(title="Sync data dari Spreadsheet...", opts={}){
-  if(!currentUser) return;
-  if(syncPromise) return syncPromise;
-  const silent = !!opts.silent;
 
-  // Cache-first: tampilkan data lokal dulu biar terasa instan
-  const cached = loadLocalCache();
-  if(cached && !dataLoaded){
-    db = migrateDB(cached.data);
-    dataLoaded = true;
-    lastSyncText = new Date(cached.time).toLocaleTimeString("id-ID") + " · cache";
-    renderCurrentPage();
-    updateHeader();
-    // Kalau cache masih fresh & diminta silent, sync tetap jalan di belakang tanpa overlay
-    if(!silent && (Date.now() - cached.time) < LOCAL_CACHE_TTL_MS){ opts = {...opts, silent:true}; }
+async function reloadLocalState(){
+  const snap = await CNCDB.loadAllData();
+  db = migrateDB(snap);
+  dataLoaded = true;
+  await CNCSync.refreshOutboxCounters();
+  if(currentUser) renderCurrentPage();
+  updateHeader();
+  return db;
+}
+
+function updateSyncIndicator(st){
+  syncUiState = st || syncUiState;
+  const net = $("syncNetBadge");
+  if(net){
+    net.className = "sync-pill " + (syncUiState.online ? "online" : "offline");
+    net.textContent = syncUiState.syncing ? "🔄 Menyinkronkan..." : (syncUiState.online ? "🟢 Online" : "🔴 Offline");
   }
-  const reallySilent = !!opts.silent || (dataLoaded && cached);
-  if(!reallySilent) setBusy(true, title);
-
-  syncPromise = (async()=>{
-    try{
-      const res = await loadOpenSheetSnapshot();
-      db = migrateDB(res.data || emptyDB());
-      dataLoaded = true;
-      lastSyncText = new Date().toLocaleTimeString("id-ID") + " · OpenSheet";
-      saveLocalCache();
-      renderCurrentPage();
-      if(!silent) toast("Sync selesai dari Google Sheets");
-      return res;
-    }catch(e){
-      toast("Sync gagal" + (cached ? " · pakai data cache" : ""));
-      if(!silent && !cached) alert("Sync gagal: " + e.message + "\n\nCek ID Spreadsheet, tab yang dipublikasikan, dan koneksi Apps Script.");
-      if(!cached) throw e;
-    }finally{
-      syncPromise = null;
-      if(!reallySilent) setBusy(false);
-      updateHeader();
+  const qBadge = $("syncQueueBadge");
+  if(qBadge){
+    qBadge.classList.toggle("hidden", !currentUser);
+    if(syncUiState.errorCount > 0){
+      qBadge.className = "sync-pill error";
+      qBadge.textContent = `⚠️ ${syncUiState.errorCount} gagal · ${syncUiState.pendingCount} antre`;
+    }else if(syncUiState.pendingCount > 0){
+      qBadge.className = "sync-pill pending";
+      qBadge.textContent = `⏳ ${syncUiState.pendingCount} tertunda`;
+    }else{
+      qBadge.className = "sync-pill clean";
+      qBadge.textContent = "✓ Tersinkron";
     }
-  })();
-  return syncPromise;
-}
-async function setupCloud(){
-  alert("Jalankan fungsi setup() satu kali dari Apps Script editor agar Drive dapat meminta izin.");
-}
-async function pingCloud(){
-  setBusy(true,"Cek koneksi Apps Script...");
-  try{ await apiGet("ping"); toast("Koneksi Apps Script OK"); }
-  catch(e){ alert("Koneksi gagal: "+e.message); }
-  finally{ setBusy(false); }
+  }
+  const lastSyncStr = syncUiState.lastSyncAt ? dateTimeText(syncUiState.lastSyncAt) : "Belum sync";
+  lastSyncText = lastSyncStr;
+  const lastEl = $("headerLastSync");
+  if(lastEl) lastEl.textContent = currentUser ? `Sync: ${lastSyncStr}` : "Sync: -";
+  const btn = $("btnHeaderSync");
+  if(btn) btn.disabled = !!syncUiState.syncing;
+  const homeSum = $("homeSyncSummary");
+  if(homeSum){
+    homeSum.textContent = `${syncUiState.online ? "Online" : "Offline"} · Antrean tertunda: ${syncUiState.pendingCount}${syncUiState.errorCount ? ` (${syncUiState.errorCount} gagal)` : ""} · Sync terakhir: ${lastSyncStr}`;
+  }
+  if(syncUiState.authExpired && currentUser){
+    toast("Token perangkat kedaluwarsa/dicabut. Silakan login ulang saat online.");
+  }
 }
 
+async function syncNowManual(full=false){
+  if(!currentUser) return;
+  if(!CNCSync.isOnline()){
+    toast("Sedang offline — data lokal tetap aman, antrean akan dikirim saat online.");
+    return;
+  }
+  setBusy(true, full ? "Full sync ulang dari Google Sheets..." : "Menyinkronkan antrean & delta...");
+  try{
+    const res = await CNCSync.syncNow({ force: true, full: !!full });
+    await reloadLocalState();
+    if(res.ok){
+      const m = res.merged || {};
+      const pulled = (m.templates||0) + (m.parts||0) + (m.movements||0) + (m.storages||0);
+      toast(`Sync selesai · upload ${res.pushed||0}, unduh ${pulled} perubahan`);
+    }else if(res.authError){
+      alert("Sesi kedaluwarsa/dicabut di server. Silakan login ulang (data lokal & antrean tidak hilang).");
+    }else if(res.error){
+      alert("Sync gagal: " + res.error);
+    }else if(res.message){
+      toast(res.message);
+    }
+  }catch(e){
+    alert("Sync gagal: " + e.message);
+  }finally{
+    setBusy(false);
+  }
+}
+async function syncData(){ return syncNowManual(false); }
+
+/* ================= PENGATURAN SERVER (config.js + override IndexedDB) ================= */
+async function openServerSettingsModal(){
+  const cfg = await CNCDB.getEffectiveConfig();
+  $("modalTitle").textContent = "⚙️ Pengaturan Server Apps Script";
+  $("modalContent").innerHTML = `
+    <div class="card">
+      <p class="muted">Konfigurasi dapat diisi di file <code>public/config.js</code> atau disimpan di perangkat ini. Semua sync menggunakan <b>POST text/plain</b> langsung ke Apps Script (tanpa OpenSheet).</p>
+      <label>URL Web App Apps Script (wajib berakhiran /exec)</label>
+      <input id="cfgApiUrl" value="${escAttr(cfg.apiUrl||"")}" placeholder="https://script.google.com/macros/s/.../exec"/>
+      <label>Spreadsheet ID (opsional, catatan admin saja)</label>
+      <input id="cfgSheetId" value="${escAttr(cfg.spreadsheetId||"")}" placeholder="Opsional"/>
+      <div class="actions">
+        <button class="good" type="button" onclick="saveServerSettingsUI()">💾 Simpan Pengaturan</button>
+        <button type="button" onclick="testConnectionFromModal()">🔌 Tes Koneksi</button>
+      </div>
+      <div id="cfgTestStatus" class="scan-status" style="margin-top:10px">${cfg.apiUrl ? "Server terkonfigurasi." : "URL Apps Script belum diisi."}</div>
+    </div>`;
+  openModal();
+}
+async function saveServerSettingsUI(){
+  const apiUrl = String($("cfgApiUrl")?.value || "").trim().replace(/\/+$/,"");
+  const spreadsheetId = String($("cfgSheetId")?.value || "").trim();
+  if(apiUrl){
+    try{ CNCSync.validateApiUrl(apiUrl); }catch(e){ return alert(e.message); }
+  }
+  await CNCDB.saveConfig({ apiUrl, spreadsheetId });
+  toast("Pengaturan server tersimpan");
+  await updateLoginConfigHint();
+  closeModal();
+}
+async function testConnectionFromModal(){
+  const st = $("cfgTestStatus");
+  const apiUrl = String($("cfgApiUrl")?.value || "").trim().replace(/\/+$/,"");
+  try{
+    if(st) st.textContent = "Menguji POST ping ke Apps Script...";
+    const res = await CNCSync.postApi("ping", {}, { skipAuth: true, apiUrl });
+    if(st) st.textContent = `Koneksi OK (versi backend: ${res.version || "-"}, waktu server: ${dateTimeText(res.now)})`;
+    toast("Koneksi Apps Script OK");
+  }catch(e){
+    if(st) st.textContent = "Gagal: " + e.message;
+  }
+}
+async function testConnection(){
+  const status=$("loginStatus");
+  try{
+    if(status) status.textContent="Menguji koneksi POST ke Apps Script...";
+    const res = await CNCSync.postApi("ping", {}, { skipAuth: true });
+    if(status) status.textContent=`Koneksi Apps Script berhasil (v${res.version||"-"})`;
+    toast("Koneksi berhasil");
+  }catch(e){
+    if(status) status.textContent=e.message;
+    alert("Tes koneksi gagal: "+e.message);
+  }
+}
+async function updateLoginConfigHint(){
+  const status=$("loginStatus");
+  if(!status) return;
+  const cfg = await CNCDB.getEffectiveConfig();
+  if(!cfg.apiUrl){
+    status.textContent = "URL Apps Script belum diatur. Klik 'Pengaturan Server' atau edit public/config.js.";
+  }else{
+    status.textContent = CNCSync.isOnline()
+      ? "Server siap. Login sekali untuk mengaktifkan sesi offline 30 hari."
+      : "Perangkat sedang offline. Jika sudah pernah login sebelumnya, sesi 30 hari aktif otomatis.";
+  }
+}
+
+/* ================= OUTBOX MODAL (ANTREAN TULIS) ================= */
+async function openOutboxModal(){
+  const ops = await CNCDB.getOutbox();
+  $("modalTitle").textContent = `🧾 Antrean Sinkronisasi (${ops.length})`;
+  const summary = `<div class="actions"><button class="good" type="button" onclick="retryOutboxFromModal()">🔄 Sync / Coba Ulang Semua</button><button class="small" type="button" onclick="openOutboxModal()">Refresh Daftar</button></div>`;
+  const rowsHtml = ops.length ? ops.map(op=>`
+    <div class="line-item">
+      <b>${esc(op.type)} ${op.status==="error" ? `<span class="badge bad">Gagal</span>` : `<span class="badge warn">Menunggu</span>`}</b>
+      <span>ID: ${esc(op.opId)} · dibuat ${dateTimeText(op.createdAt)} · percobaan: ${Number(op.retries||0)}</span>
+      ${op.lastError ? `<small style="color:#fecaca">Error: ${esc(op.lastError)}</small>` : ""}
+      <div class="actions" style="margin-top:6px">
+        <button class="small bad" type="button" onclick="removeOutboxItemUI('${encKey(op.opId)}')">Hapus dari Antrean</button>
+      </div>
+    </div>`).join("") : `<div class="empty">Semua perubahan lokal sudah tersinkron ke Google Sheets.</div>`;
+  $("modalContent").innerHTML = summary + rowsHtml;
+  openModal();
+}
+async function retryOutboxFromModal(){
+  closeModal();
+  if(!CNCSync.isOnline()) return alert("Perangkat masih offline.");
+  setBusy(true, "Mencoba ulang antrean sync...");
+  try{
+    await CNCSync.retryAllFailedOutbox();
+    await reloadLocalState();
+    toast("Sinkronisasi antrean selesai");
+  }catch(e){
+    alert("Gagal retry antrean: " + e.message);
+  }finally{
+    setBusy(false);
+  }
+}
+async function removeOutboxItemUI(encOpId){
+  const opId = decKey(encOpId);
+  if(!confirm("Hapus item ini dari antrean sync? Perubahan lokal tetap ada tetapi tidak akan dikirim ke server.")) return;
+  await CNCDB.removeOutboxOp(opId);
+  await CNCSync.refreshOutboxCounters();
+  openOutboxModal();
+}
+
+/* ================= BACKUP & RESTORE LOKAL (JSON + AUTO-BACKUP FOLDER PC) ================= */
+async function refreshAutoBackupUI(){
+  const box = $("autoBackupBox");
+  const actions = $("autoBackupActions");
+  if(!box) return;
+  const st = await CNCDB.getAutoBackupStatus();
+  if(!st.supported){
+    box.textContent = "Auto-backup folder langsung tersedia di Edge/Chrome PC. Di perangkat ini gunakan tombol Export / Import Backup JSON.";
+    if(actions) actions.classList.add("hidden");
+    return;
+  }
+  if(actions) actions.classList.remove("hidden");
+  box.textContent = st.enabled
+    ? `Auto-backup AKTIF ke folder "${st.folderName}" · backup terakhir: ${st.lastBackupAt ? dateTimeText(st.lastBackupAt) : "-"}`
+    : "Auto-backup folder belum diaktifkan. Klik 'Pilih Folder Auto-Backup (PC)' untuk backup otomatis setiap ada perubahan.";
+}
+async function setupAutoBackupFolder(){
+  try{
+    const name = await CNCDB.pickAutoBackupFolder();
+    toast(`Auto-backup aktif ke folder: ${name}`);
+    await refreshAutoBackupUI();
+  }catch(e){
+    if(e && e.name !== "AbortError") alert(e.message || "Gagal memilih folder backup.");
+  }
+}
+async function runAutoBackupNow(){
+  const ok = await CNCDB.runAutoBackup(true);
+  await refreshAutoBackupUI();
+  toast(ok ? "Backup ke folder berhasil" : "Belum ada folder auto-backup atau izin ditolak");
+}
+async function disableAutoBackupFolderUI(){
+  await CNCDB.disableAutoBackupFolder();
+  await refreshAutoBackupUI();
+  toast("Auto-backup folder dimatikan");
+}
+async function exportBackupFile(){
+  try{
+    const backupObj = await CNCDB.exportBackupObject();
+    const jsonText = JSON.stringify(backupObj, null, 2);
+    const filename = "cnc_template_tracker_backup_" + nowISO().slice(0,10) + ".json";
+    if(window.Android && typeof window.Android.saveBase64File === "function"){
+      const b64 = btoa(unescape(encodeURIComponent(jsonText)));
+      window.Android.saveBase64File(filename, b64, "application/json");
+      return;
+    }
+    const blob = new Blob([jsonText], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+    toast("Backup JSON berhasil diekspor");
+  }catch(e){
+    alert("Export backup gagal: " + e.message);
+  }
+}
+function exportJSON(){ return exportBackupFile(); }
+async function onImportBackupSelected(input){
+  const file = input.files?.[0];
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const replaceMode = confirm("Pilih OK untuk MERGE (gabung data terbaru, aman), atau Cancel untuk batal import.");
+    if(!replaceMode){ input.value=""; return; }
+    setBusy(true, "Mengimpor backup JSON...");
+    const stats = await CNCDB.importBackupObject(parsed, "merge");
+    await reloadLocalState();
+    toast(`Import selesai: ${stats.templates} template, ${stats.parts} part, ${stats.storages} storage`);
+  }catch(e){
+    alert("Import backup gagal: " + e.message);
+  }finally{
+    input.value = "";
+    setBusy(false);
+  }
+}
+
+/* ================= LOGIN / LOGOUT (TOKEN 30 HARI OFFLINE) ================= */
 async function login(){
   const u=normalizeText($("loginUser").value).toLowerCase(); const p=$("loginPass").value;
   if(!u || !p) return alert("Username dan password wajib diisi.");
-  try{getOpenSheetId();ensureApi();}catch(e){return alert(e.message);}
-  setBusy(true,"Login ke Spreadsheet...");
+  if(!CNCSync.isOnline()) return alert("Login pertama kali membutuhkan koneksi internet untuk membuat token perangkat 30 hari.");
+  setBusy(true,"Login & membuat token perangkat 30 hari...");
   try{
-    const res=await apiGet("login", {username:u, password:p});
-    currentUser=res.user;
-    dataLoaded = false;
-    db = emptyDB();
-    // Ingat saya: simpan sesi + username supaya buka app langsung masuk
-    const remember = !!$("rememberMe")?.checked;
-    try{
-      localStorage.setItem(LS_KEYS.REMEMBER, remember ? "1" : "0");
-      if(remember){ saveSession(currentUser); localStorage.setItem(LS_KEYS.CRED, JSON.stringify({username:u})); }
-      else { clearSession(); localStorage.removeItem(LS_KEYS.CRED); }
-    }catch(e){}
+    const deviceId = await CNCDB.getDeviceId();
+    const deviceName = isAndroidNative() ? "Android APK" : ("PC Browser (" + (navigator.platform || "Desktop") + ")");
+    const res = await CNCSync.postApi("login", {username:u, password:p, deviceId, deviceName}, { skipAuth: true });
+    currentUser = res.user;
+    await CNCDB.saveSession(currentUser);
     $("loginPass").value="";
-    $("whoami").textContent = `${currentUser.name || currentUser.username} · ${currentUser.role}`;
     renderAuth();
-    toast("Login berhasil");
-    setTimeout(()=>syncData("Memuat data awal...", {silent:true}).catch(()=>toast("Sync awal gagal, klik Sync Data.")), 80);
+    toast(`Login berhasil · sesi aktif ${res.tokenDays||30} hari (bisa offline)`);
+    CNCSync.startAutoSync();
+    await reloadLocalState();
+    setTimeout(()=>CNCSync.syncNow({ force: true, silent: true }).then(()=>reloadLocalState()), 100);
   }catch(e){ alert("Login gagal: "+e.message); }
   finally{ setBusy(false); }
 }
-function tryAutoLogin(){
+
+async function tryAutoLogin(){
   try{
-    if(localStorage.getItem(LS_KEYS.REMEMBER) !== "1") return false;
-    const user = loadSession();
-    const cred = JSON.parse(localStorage.getItem(LS_KEYS.CRED)||"null");
-    if(cred?.username && $("loginUser")) $("loginUser").value = cred.username;
-    if($("rememberMe")) $("rememberMe").checked = true;
-    if(!user) return false;
-    currentUser = user;
+    await CNCDB.openDB();
+    const sess = await CNCDB.loadSession();
+    await reloadLocalState();
+    await updateLoginConfigHint();
+    if(!sess) return false;
+    currentUser = sess;
     renderAuth();
-    toast(`Selamat datang kembali, ${user.name || user.username} 👋`);
-    setTimeout(()=>syncData("Memuat data...", {silent:true}).catch(()=>{}), 80);
+    CNCSync.startAutoSync();
+    toast(`Selamat datang kembali, ${sess.name || sess.username}${CNCSync.isOnline() ? "" : " (Mode Offline)"}`);
+    if(CNCSync.isOnline()){
+      setTimeout(()=>CNCSync.syncNow({ silent: true }).then(()=>reloadLocalState()), 250);
+    }
     return true;
   }catch(e){ return false; }
 }
-function logout(){
-  currentUser=null; db=emptyDB(); dataLoaded=false; activePage="home"; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
-  clearSession(); clearLocalCache();
-  renderAuth(); toast("Logout berhasil");
+
+async function logout(){
+  const outbox = await CNCDB.getOutbox();
+  if(outbox.length && !confirm(`Masih ada ${outbox.length} antrean sync yang belum terkirim ke server. Data lokal & antrean tetap tersimpan di perangkat, lanjutkan logout?`)){
+    return;
+  }
+  const token = currentUser?.token || currentUser?.sessionToken || "";
+  if(token && CNCSync.isOnline()){
+    try{ await CNCSync.postApi("logout", {}, { token }); }catch(e){}
+  }
+  CNCSync.stopAutoSync();
+  currentUser=null; activePage="home"; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
+  await CNCDB.clearSession();
+  renderAuth();
+  await updateLoginConfigHint();
+  toast("Logout berhasil");
 }
+
 function renderAuth(){
   $("page-login").classList.toggle("hidden", !!currentUser);
   $("app").classList.toggle("hidden", !currentUser);
   $("bottomNav").classList.toggle("hidden", !currentUser);
   if($("btnHeaderLogout")) $("btnHeaderLogout").classList.toggle("hidden", !currentUser);
   if($("btnHeaderSync")) $("btnHeaderSync").classList.toggle("hidden", !currentUser);
-  if(currentUser){ $("whoami").textContent = `${currentUser.name || currentUser.username} · ${currentUser.role}`; showPage("home"); }
-  else { $("whoami").textContent=""; updateHeader(); }
+  if($("syncQueueBadge")) $("syncQueueBadge").classList.toggle("hidden", !currentUser);
+  if(currentUser){
+    $("whoami").textContent = `${currentUser.name || currentUser.username} · ${currentUser.role}`;
+    showPage("home");
+  }else{
+    $("whoami").textContent="";
+    updateHeader();
+  }
 }
 
 async function showPage(page){
@@ -1997,11 +2051,12 @@ async function showPage(page){
   document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
   const el=$("page-"+activePage); if(el) el.classList.remove("hidden");
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active", b.dataset.page===activePage));
-  if(currentUser && DATA_REQUIRED_PAGES.has(activePage) && !dataLoaded){
-    try{ await syncData("Memuat data " + activePage + "..."); }catch(e){}
+  if(!dataLoaded){
+    try{ await reloadLocalState(); }catch(e){}
   }
   renderCurrentPage(activePage);
   if(activePage==="userManagement") loadUsers();
+  if(activePage==="master") refreshAutoBackupUI();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function renderCurrentPage(page=activePage){
@@ -2025,9 +2080,9 @@ function renderAll(){ renderCurrentPage(); }
 function updateHeader(){
   const total=db.templates.length;
   const waiting=db.templates.filter(isTemplateWaiting).length;
-  const mode=currentUser ? `${total} template · ${waiting} waiting` : "Cloud mode · belum login";
+  const mode=currentUser ? `${total} template · ${waiting} waiting` : "Mode Offline-First · belum login";
   const el=$("headerSyncStatus"); if(el) el.textContent = mode;
-  const last=$("headerLastSync"); if(last) last.textContent = currentUser ? `Last sync: ${lastSyncText}` : "Last sync: -";
+  updateSyncIndicator(syncUiState);
 }
 function partsOf(templateId){ return db.parts.filter(p=>String(p.templateId)===String(templateId)); }
 function isPartWaiting(p){
@@ -2117,7 +2172,7 @@ function movementIcon(type){
 
 /* ================= MOVEMENT HISTORY (menu + filter + lazy load) ================= */
 let mhDays = -1;               // -1 = semua periode; hasil tampilan selalu maksimal lima
-let mhServerRows = null;       // tetap null: history dibaca dari OpenSheet
+let mhServerRows = null;       // tetap null: history dibaca dari database lokal (IndexedDB)
 let mhShownCount = 30;         // lazy loading: tampilkan bertahap
 const MH_PAGE_SIZE = 30;
 
@@ -2143,7 +2198,7 @@ async function applyMovementHistoryFilter(){
   mhServerRows=null;
   mhShownCount=5;
   renderMovementHistory();
-  const info=$("mhInfo"); if(info){info.classList.remove("hidden");info.textContent="Filter diterapkan dari data OpenSheet; ditampilkan maksimal 5 movement terbaru.";}
+  const info=$("mhInfo"); if(info){info.classList.remove("hidden");info.textContent="Filter diterapkan dari database lokal; ditampilkan maksimal 5 movement terbaru.";}
 }
 
 function resetMovementHistoryFilter(){
@@ -2186,7 +2241,7 @@ function renderMovementHistory(){
   const box=$("mhList"); if(!box) return;
   const rows = getMhRows();
   const shown = rows.slice(0, 5);
-  const src = mhServerRows ? "hasil filter" : "OpenSheet";
+  const src = mhServerRows ? "hasil filter" : "database lokal";
   box.innerHTML = `<div class="muted" style="margin:8px 0">Cocok: <b>${rows.length}</b> · ditampilkan maksimal 5 terbaru · sumber: ${src}</div>` +
     (shown.length ? shown.map(m=>`<div class="line-item mh-item"><div class="mh-icon">${movementIcon(m.type)}</div><div style="flex:1"><b>${esc(m.type)} ${m.buyer?`· ${esc(m.buyer)} ${esc(m.stylekp)}`:""}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · oleh ${esc(m.by||"-")} · ${dateTimeText(m.at)}</span>${m.note?`<small>📝 ${esc(m.note)}</small>`:""}<small class="muted">${esc(m.templateId||"")}</small></div><button class="small" onclick="openTemplateDetail('${escAttr(m.templateId)}')">Detail</button></div>`).join("") : `<div class="empty">Tidak ada movement yang cocok filter.</div>`);
 }
@@ -2444,15 +2499,64 @@ async function saveTemplate(){
   if(!buyer || !stylekp || !parts.length){ alert("Buyer, Style/KP, dan minimal 1 Part wajib diisi."); return; }
   const dup=findDuplicateTemplateLocal(buyer, stylekp, parts);
   if(dup){ alert(`Anti duplicate aktif: Template sudah ada.\nBuyer: ${dup.buyer}\nStyle/KP: ${dup.stylekp}\nStatus: ${statusLabel(dup.status)}\nLokasi: ${dup.currentStorage || "Belum distribusi"}`); return; }
-  setBusy(true,"Upload template ke Spreadsheet...");
+  setBusy(true,"Menyimpan template ke database lokal...");
   try{
-    // Pakai hasil preview/crop kalau ada; fallback compress file mentah
-    const sketch = sketchDataUrl || await compressImage($("sketch").files[0],0.95);
-    const res=await apiPost("addTemplate", {buyer,stylekp,parts,sketch,createdBy:userName()});
-    if(res.template){ applyTemplateUpdate(res.template); applyParts(res.parts||[]); finishFastUpdate(); }
-    else { await syncData("Memuat data terbaru..."); }
+    const sketch = sketchDataUrl || await compressImage($("sketch").files[0], 0.95);
+    const now = nowISO();
+    const tid = id("TPL");
+    const partRows = parts.map(x=>({
+      partId: id("PRT"),
+      templateId: tid,
+      part: normalizeText(x.part),
+      size: normalizeText(x.size || ""),
+      qty: Math.max(1, Math.round(Number(x.qty || 1))),
+      createdAt: now,
+      status: "WAITING_DISTRIBUTION",
+      currentStorage: "",
+      distributedAt: "",
+      updatedAt: now,
+      deleted: false
+    }));
+    const templateObj = {
+      id: tid,
+      buyer,
+      stylekp,
+      status: "WAITING_DISTRIBUTION",
+      currentStorage: "",
+      hasSketch: !!sketch,
+      sketchCount: sketch ? 1 : 0,
+      createdBy: userName(),
+      createdAt: now,
+      updatedAt: now,
+      distributedAt: "",
+      deleted: false
+    };
+
+    await CNCDB.putOne("templates", templateObj);
+    await CNCDB.putMany("parts", partRows);
+    if(sketch){
+      await CNCDB.saveSketchLocal(tid, [sketch], { synced: false, updatedAt: now });
+    }
+
+    await CNCSync.enqueueAndSync("upsertTemplate", {
+      id: tid,
+      buyer,
+      stylekp,
+      status: "WAITING_DISTRIBUTION",
+      currentStorage: "",
+      parts: partRows,
+      createdBy: userName(),
+      createdAt: now,
+      updatedAt: now
+    });
+    if(sketch){
+      await CNCSync.enqueueAndSync("uploadSketch", { templateId: tid });
+    }
+
+    await reloadLocalState();
     clearTemplateForm();
-    toast("Template tersimpan · menunggu distribusi"); showPage("templateList");
+    toast(CNCSync.isOnline() ? "Template tersimpan lokal & dikirim ke antrean sync" : "Template tersimpan offline · akan sync saat online");
+    showPage("templateList");
   }catch(e){ alert("Gagal simpan: "+e.message); }
   finally{ setBusy(false); }
 }
@@ -2484,17 +2588,34 @@ function openTemplateDetail(tid){
   const locs=templateStorages(t);
   const partTable=ps.length ? `<table><thead><tr><th>Part</th><th>Size</th><th>Qty</th><th>Status</th><th>Storage</th></tr></thead><tbody>${ps.map(p=>`<tr><td><b>${esc(p.part)}</b></td><td>${esc(p.size||"-")}</td><td>${Number(p.qty||1)}</td><td>${statusBadge(p.status||"WAITING_DISTRIBUTION")}</td><td>${esc(p.currentStorage||"-")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">Belum ada rincian part.</p>`;
   $("modalTitle").textContent="Detail Template";
-  $("modalContent").innerHTML=`<div class="card"><h3>${esc(t.buyer)} · ${esc(t.stylekp)}</h3><p>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""} <span class="badge">${esc(locs.length?locs.join(", "):"Belum distribusi")}</span></p><p><b>Rincian Part:</b></p>${partTable}<p class="muted">Dibuat oleh: ${esc(t.createdBy)} · ${dateTimeText(t.createdAt)}</p><div class="actions">${t.hasSketch?`<button onclick="viewSketch('${escAttr(t.id)}')">Lihat Sketch</button>`:""}${isTemplateWaiting(t)?`<button class="good" onclick="closeModal();goDistributeTemplate('${escAttr(t.id)}')">📦 Distribusikan</button>`:""}</div></div><h3>History</h3>${mov.length?mov.map(m=>`<div class="line-item"><b>${esc(m.type)}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · ${esc(m.by||"")} · ${dateTimeText(m.at)}<br>${esc(m.note||"")}</span></div>`).join(""):`<div class="muted">Belum ada movement.</div>`}`;
+  $("modalContent").innerHTML=`<div class="card"><h3>${esc(t.buyer)} · ${esc(t.stylekp)}</h3><p>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""} <span class="badge">${esc(locs.length?locs.join(", "):"Belum distribusi")}</span></p><p><b>Rincian Part:</b></p>${partTable}<p class="muted">Dibuat oleh: ${esc(t.createdBy)} · ${dateTimeText(t.createdAt)}</p><div class="actions">${t.hasSketch?`<button onclick="viewSketch('${escAttr(t.id)}')">Lihat Sketch</button>`:""}${isTemplateWaiting(t)?`<button class="good" onclick="closeModal();goDistributeTemplate('${escAttr(t.id)}')">📦 Distribusikan</button>`:""}${isAdmin()?`<button class="bad" onclick="softDeleteTemplate('${escAttr(t.id)}')">🗑️ Hapus Template</button>`:""}</div></div><h3>History</h3>${mov.length?mov.map(m=>`<div class="line-item"><b>${esc(m.type)}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · ${esc(m.by||"")} · ${dateTimeText(m.at)}<br>${esc(m.note||"")}</span></div>`).join(""):`<div class="muted">Belum ada movement.</div>`}`;
   openModal();
+}
+async function softDeleteTemplate(tid){
+  if(!isAdmin()) return alert("Hapus template khusus admin dan super_admin.");
+  const t=db.templates.find(x=>String(x.id)===String(tid));
+  if(!t) return;
+  if(!confirm(`Hapus template ${t.buyer} · ${t.stylekp} (${t.id})?\nAkan ditandai soft-delete dan disinkronkan ke perangkat lain.`)) return;
+  const now=nowISO();
+  const updatedTpl={...t, deleted:true, updatedAt:now};
+  const updatedParts=partsOf(t.id).map(p=>({...p, deleted:true, updatedAt:now}));
+  await CNCDB.putOne("templates", updatedTpl);
+  if(updatedParts.length) await CNCDB.putMany("parts", updatedParts);
+  await CNCSync.enqueueAndSync("softDeleteTemplate", { id: t.id, updatedAt: now });
+  closeModal();
+  await reloadLocalState();
+  toast("Template dihapus (soft delete) & masuk antrean sync");
 }
 const zoomState={scale:1,x:0,y:0,startX:0,startY:0,pointerX:0,pointerY:0,dragging:false,startScale:1,lastDist:0,pointers:new Map()};
 async function viewSketch(tid){
   const t=db.templates.find(x=>x.id===tid);
   if(!t) return;
   try{
-    if(!t.sketch || !String(t.sketch).startsWith("data:image/")){ setBusy(true,"Mengambil sketch..."); const res=await apiGet("getSketch", {id:tid}); t.sketch=res.sketch||""; }
-    if(!t.sketch) return alert("Sketch belum ada untuk template ini.");
-    openImageViewer(t.sketch, `Sketch Template · ${t.buyer} ${t.stylekp}`);
+    setBusy(true,"Membuka sketch (cache lokal / Drive)...");
+    const list = await CNCSync.fetchSketch(tid);
+    const img = list && list[0] ? list[0] : "";
+    if(!img) return alert("Sketch belum ada untuk template ini.");
+    openImageViewer(img, `Sketch Template · ${t.buyer} ${t.stylekp}`);
   }catch(e){ alert("Gagal buka sketch: "+e.message); }
   finally{ setBusy(false); }
 }
@@ -2876,8 +2997,8 @@ function setDistStorageScanned(){
 }
 async function distributeTemplate(){
   if(distSubmitting) return;
-  const st=$("distStorage")?.value || "";
-  if(!st || normalizeText(st)==="WORKSHOP") return alert("Pilih storage tujuan yang valid.");
+  const st=normalizeText($("distStorage")?.value || "");
+  if(!st || st==="WORKSHOP") return alert("Pilih storage tujuan yang valid.");
   const plan=collectDistributionPlan();
   if(!plan.totalTemplates) return alert("Pilih minimal satu template dan satu part waiting untuk didistribusikan.");
   if(plan.errors.length) return alert(plan.errors.join("\n"));
@@ -2888,34 +3009,119 @@ async function distributeTemplate(){
   renderDistributionSummary();
   setBusy(true, plan.totalTemplates>1 ? `Simpan distribusi ${plan.totalTemplates} template...` : "Simpan distribusi...");
   try{
-    const note=normalizeText($("distNote")?.value || "") || "Distribusi template jadi";
+    const now=nowISO();
+    const baseNote=normalizeText($("distNote")?.value || "") || "Distribusi template jadi";
     const requestId=id("REQ");
-    const payload = plan.items.length===1
-      ? {templateId:plan.items[0].templateId, splitParts:plan.items[0].splitParts, storage:st, by:userName(), note, requestId}
-      : {items:plan.items.map(it=>({templateId:it.templateId, splitParts:it.splitParts})), storage:st, by:userName(), note, requestId};
-    const res=await apiPost("distributeTemplate", payload);
+    const updatedTemplates=[];
+    const updatedParts=[];
+    const createdMovements=[];
+    const payloadItems=[];
+    let anyPartial=false;
+
+    plan.items.forEach(item=>{
+      const t=item.template;
+      const tid=String(t.id);
+      const movId=id("MOV");
+      const currentParts=partsOf(tid).map(p=>({...p}));
+      const splitPayload=[];
+      const splitSummary=[];
+
+      const existingDistByKey=new Map();
+      currentParts.forEach(pp=>{
+        if(isPartDistributed(pp) && normalizeText(pp.currentStorage)===st){
+          const k=`${normalizeText(pp.part)}||${normalizeText(pp.size||"")}`;
+          if(!existingDistByKey.has(k)) existingDistByKey.set(k, pp);
+        }
+      });
+
+      item.splitParts.forEach(sp=>{
+        const partRow=currentParts.find(pp=>isPartWaiting(pp) && ((sp.partId && String(pp.partId)===String(sp.partId)) || (normalizeText(pp.part)===normalizeText(sp.part) && normalizeText(pp.size||"")===normalizeText(sp.size||""))));
+        if(!partRow) return;
+        const maxQty=Math.max(1, Math.round(Number(partRow.qty||1)));
+        const qty=Math.max(1, Math.min(maxQty, Math.round(Number(sp.qty||maxQty))));
+        const k=`${normalizeText(partRow.part)}||${normalizeText(partRow.size||"")}`;
+        const existingDist=existingDistByKey.get(k);
+        let newPartId="";
+
+        if(existingDist){
+          existingDist.qty = Math.max(1, Number(existingDist.qty||0)) + qty;
+          existingDist.distributedAt = now;
+          existingDist.updatedAt = now;
+          updatedParts.push(existingDist);
+          if(qty >= maxQty){
+            partRow.deleted = true;
+            partRow.updatedAt = now;
+            updatedParts.push(partRow);
+          }else{
+            partRow.qty = maxQty - qty;
+            partRow.updatedAt = now;
+            updatedParts.push(partRow);
+          }
+        }else if(qty >= maxQty){
+          partRow.qty = qty;
+          partRow.status = "DISTRIBUTED";
+          partRow.currentStorage = st;
+          partRow.distributedAt = now;
+          partRow.updatedAt = now;
+          updatedParts.push(partRow);
+          existingDistByKey.set(k, partRow);
+        }else{
+          partRow.qty = maxQty - qty;
+          partRow.updatedAt = now;
+          updatedParts.push(partRow);
+          newPartId = id("PRT");
+          const distRow = {
+            partId: newPartId,
+            templateId: tid,
+            part: normalizeText(partRow.part),
+            size: normalizeText(partRow.size||""),
+            qty,
+            createdAt: partRow.createdAt || now,
+            status: "DISTRIBUTED",
+            currentStorage: st,
+            distributedAt: now,
+            updatedAt: now,
+            deleted: false
+          };
+          currentParts.push(distRow);
+          updatedParts.push(distRow);
+          existingDistByKey.set(k, distRow);
+        }
+
+        splitPayload.push({ partId: sp.partId || partRow.partId, part: normalizeText(partRow.part), size: normalizeText(partRow.size||""), qty, newPartId });
+        splitSummary.push(`${normalizeText(partRow.part)}${partRow.size?` [${normalizeText(partRow.size)}]`:""} x${qty}`);
+      });
+
+      const activeParts=currentParts.filter(pp=>!pp.deleted);
+      const remainingWaiting=activeParts.some(isPartWaiting);
+      const distStorages=[...new Set(activeParts.filter(isPartDistributed).map(pp=>normalizeText(pp.currentStorage)).filter(Boolean))].sort();
+      if(remainingWaiting) anyPartial=true;
+
+      const newStatus = activeParts.length ? (remainingWaiting ? "WAITING_DISTRIBUTION" : (distStorages.length ? "DISTRIBUTED" : "OUT")) : "DISTRIBUTED";
+      const newStorage = activeParts.length ? distStorages.join(", ") : st;
+      updatedTemplates.push({ ...t, status: newStatus, currentStorage: newStorage, distributedAt: t.distributedAt || now, updatedAt: now });
+
+      const movNote = splitSummary.length ? `${baseNote} | Split Part/Size/Qty: ${splitSummary.join(", ")}` : baseNote;
+      createdMovements.push({ id: movId, templateId: tid, type: "DISTRIBUTE", from: "WORKSHOP", to: st, by: userName(), note: movNote, at: now });
+      payloadItems.push({ templateId: tid, splitParts: splitPayload, movementId: movId });
+    });
+
+    await CNCDB.putMany("parts", updatedParts);
+    await CNCDB.putMany("templates", updatedTemplates);
+    await CNCDB.putMany("movements", createdMovements);
+
+    const payload = payloadItems.length===1
+      ? { templateId: payloadItems[0].templateId, splitParts: payloadItems[0].splitParts, movementId: payloadItems[0].movementId, storage: st, by: userName(), note: baseNote, requestId, updatedAt: now }
+      : { items: payloadItems, storage: st, by: userName(), note: baseNote, requestId, updatedAt: now };
+    await CNCSync.enqueueAndSync("distributeTemplate", payload);
+
     distSelections.clear();
     selectedTemplateId="";
     if($("distNote")) $("distNote").value="";
-
-    if(res.noCors){
-      toast("Distribusi terkirim, memuat data terbaru...");
-      dataLoaded=false;
-      await syncData("Sinkronisasi hasil distribusi...");
-      return;
-    }
-
-    const updatedTemplates=Array.isArray(res.templates) && res.templates.length ? res.templates : (res.template ? [res.template] : []);
-    updatedTemplates.forEach(applyTemplateUpdate);
-    if(res.partsByTemplate && typeof res.partsByTemplate==="object"){
-      Object.entries(res.partsByTemplate).forEach(([tid, parts])=>replacePartsForTemplate(tid, parts));
-    }else if(Array.isArray(res.parts) && updatedTemplates[0]){
-      replacePartsForTemplate(updatedTemplates[0].id, res.parts);
-    }
-    const updatedMovs=Array.isArray(res.movements) && res.movements.length ? res.movements : (res.movement ? [res.movement] : []);
-    updatedMovs.forEach(applyMovement);
-    finishFastUpdate();
-    toast(res.message || "Template berhasil didistribusikan");
+    await reloadLocalState();
+    toast(anyPartial
+      ? `Distribusi split ke ${st} tersimpan lokal (sisa tetap waiting)`
+      : `Distribusi ${updatedTemplates.length} template ke ${st} tersimpan lokal`);
   }
   catch(e){ alert("Gagal distribusi: "+e.message); }
   finally{ distSubmitting=false; setBusy(false); renderDistributionSummary(); }
@@ -2938,16 +3144,74 @@ function renderMoveTemplates(){
 }
 async function saveMovement(){
   const t=db.templates.find(x=>x.id===selectedMoveTemplateId); if(!t) return alert("Pilih template dulu.");
-  const from=$("moveStorageFrom")?.value || t.currentStorage; const type=$("moveType").value; let to=$("moveStorageTo").value;
-  setBusy(true,"Simpan movement...");
+  const from=normalizeText($("moveStorageFrom")?.value || t.currentStorage);
+  const type=normalizeText($("moveType").value || "TRANSFER");
+  const to=type==="OUT" ? "" : normalizeText($("moveStorageTo").value);
+  if(type!=="OUT" && !to) return alert("Storage tujuan wajib dipilih.");
+  if(type!=="OUT" && from && from===to) return alert("Anti duplicate aktif: Storage asal dan tujuan sama.");
+
+  setBusy(true,"Menyimpan movement ke database lokal...");
   try{
-    const res=await apiPost("moveTemplate", {templateId:t.id,type,from,to,by:userName(),note:$("moveNote").value.trim()});
+    const now=nowISO();
+    const movId=id("MOV");
+    const note=$("moveNote").value.trim();
+    const currentParts=partsOf(t.id).map(p=>({...p}));
+    const updatedParts=[];
+
+    if(currentParts.length){
+      let matching=from ? currentParts.filter(pp=>isPartDistributed(pp) && normalizeText(pp.currentStorage)===from) : currentParts.filter(isPartDistributed);
+      if(!matching.length) matching=currentParts.filter(isPartDistributed);
+
+      const destByKey=new Map();
+      if(type!=="OUT"){
+        currentParts.forEach(pp=>{
+          if(isPartDistributed(pp) && normalizeText(pp.currentStorage)===to){
+            const k=`${normalizeText(pp.part)}||${normalizeText(pp.size||"")}`;
+            if(!destByKey.has(k)) destByKey.set(k, pp);
+          }
+        });
+      }
+
+      matching.forEach(pp=>{
+        if(type==="OUT"){
+          pp.status="OUT"; pp.currentStorage=""; pp.updatedAt=now;
+          updatedParts.push(pp);
+        }else{
+          const k=`${normalizeText(pp.part)}||${normalizeText(pp.size||"")}`;
+          const dest=destByKey.get(k);
+          if(dest && dest.partId!==pp.partId){
+            dest.qty = Math.max(1, Number(dest.qty||0)) + Math.max(1, Number(pp.qty||1));
+            dest.updatedAt=now;
+            updatedParts.push(dest);
+            pp.deleted=true; pp.updatedAt=now;
+            updatedParts.push(pp);
+          }else{
+            pp.status="DISTRIBUTED"; pp.currentStorage=to; pp.updatedAt=now;
+            updatedParts.push(pp);
+            destByKey.set(k, pp);
+          }
+        }
+      });
+    }
+
+    const activeParts=currentParts.filter(pp=>!pp.deleted);
+    let newStatus=type==="OUT" ? "OUT" : "DISTRIBUTED";
+    let newStorage=type==="OUT" ? "" : to;
+    if(activeParts.length){
+      const remainingWaiting=activeParts.some(isPartWaiting);
+      const distStorages=[...new Set(activeParts.filter(isPartDistributed).map(pp=>normalizeText(pp.currentStorage)).filter(Boolean))].sort();
+      newStatus = remainingWaiting ? "WAITING_DISTRIBUTION" : (distStorages.length ? "DISTRIBUTED" : "OUT");
+      newStorage = distStorages.join(", ");
+    }
+
+    await CNCDB.putMany("parts", updatedParts);
+    await CNCDB.putOne("templates", { ...t, status: newStatus, currentStorage: newStorage, updatedAt: now });
+    await CNCDB.putOne("movements", { id: movId, templateId: t.id, type, from, to, by: userName(), note, at: now });
+    await CNCSync.enqueueAndSync("moveTemplate", { templateId: t.id, type, from, to, by: userName(), note, movementId: movId, updatedAt: now });
+
     selectedMoveTemplateId=""; $("moveNote").value="";
-    applyTemplateUpdate(res.template || {id:t.id,status:type==="OUT"?"OUT":"DISTRIBUTED",currentStorage:type==="OUT"?"":to,updatedAt:nowISO()});
-    if(Array.isArray(res.parts)) replacePartsForTemplate(t.id, res.parts);
-    applyMovement(res.movement);
-    finishFastUpdate();
-    toast(res.message || "Movement tersimpan");
+    await reloadLocalState();
+    toast("Movement tersimpan lokal & masuk antrean sync");
   }
   catch(e){ alert("Gagal simpan movement: "+e.message); }
   finally{ setBusy(false); }
@@ -2969,21 +3233,19 @@ function scanBarcode(targetId, callbackName){
   window.__scanTargetId = targetId;
   window.__scanCallbackName = callbackName || "";
 
-  // Mode scan kamera sama seperti fcaform.html untuk APK / WebView
   if (window.WebViewInterface && typeof window.WebViewInterface.setWebViewString === "function") {
     window.WebViewInterface.setWebViewString("SCAN_REQUEST:" + targetId);
     return;
   }
 
-  // Tetap support interface Android lama jika APK memakai bridge Android
-  if(APP_CONFIG.build==="apk" && window.Android){
+  if(window.Android){
+    if(typeof window.Android.scanQr==="function"){ window.Android.scanQr(); return; }
     if(typeof window.Android.scanBarcode==="function"){ window.Android.scanBarcode("onNativeBarcodeResult"); return; }
     if(typeof window.Android.startScan==="function"){ window.Android.startScan("onNativeBarcodeResult"); return; }
     if(typeof window.Android.openScanner==="function"){ window.Android.openScanner("onNativeBarcodeResult"); return; }
   }
 
-  // Mode browser/PC memakai kamera web jika library Html5Qrcode tersedia
-  if(window.Html5Qrcode && APP_CONFIG.build==="pc"){
+  if(window.Html5Qrcode && !isAndroidNative()){
     const readerId = targetId==="scanStorageCode" ? "reader" : (targetId==="importMainStorage" ? "importReader" : (targetId==="distScanCode" ? "distReader" : "moveReader"));
     const box=$(readerId); if(!box) return fallbackPrompt(targetId,callbackName); box.classList.remove("hidden");
     if(scanner){ try{scanner.stop()}catch(e){} }
@@ -3003,23 +3265,21 @@ function fallbackPrompt(targetId, callbackName){ const v=prompt("Masukkan kode Q
 function setScanValue(targetId, value){ const el=$(targetId); if(el) el.value=value||""; }
 function runScanCallback(callbackName){ if(callbackName && window[callbackName]) window[callbackName](); }
 function onNativeBarcodeResult(value){ const target=window.__scanTargetId; setScanValue(target, value); runScanCallback(window.__scanCallbackName); }
+function onNativeQrScanned(value){ onNativeBarcodeResult(value); }
 function onBarcodeScanned(value){ onNativeBarcodeResult(value); }
 function onScanResult(value){ onNativeBarcodeResult(value); }
 function setBarcodeValue(value){ onNativeBarcodeResult(value); }
 
-// Hasil scan dari APK/WebViewInterface: format dari fcaform.html adalah "field=value"
 if (typeof window.WebViewInterface === "object") {
   window.WebViewInterface.setScanResult = function(message) {
     const text = String(message || "");
     let field = window.__scanTargetId;
     let value = text;
-
     if (text.includes("=")) {
       const parts = text.split("=");
       field = parts.shift() || field;
       value = parts.join("=");
     }
-
     setScanValue(field, value);
     runScanCallback(window.__scanCallbackName);
   };
@@ -3030,11 +3290,17 @@ function setMoveFromScanned(){ const code=$("moveScanCode").value.trim(); if(!co
 function renderMaster(){
   if(!$('storageList')) return;
   renderSuggestions();
-  $('storageList').innerHTML = db.storages.length ? db.storages.map(s=>`<div class="line-item"><b>${esc(s.code)}</b><span>${esc(s.name)} · ${esc(s.area||"")}</span></div>`).join("") : `<div class="empty">Belum ada master storage.</div>`;
+  $('storageList').innerHTML = db.storages.length ? db.storages.map(s=>`<div class="line-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><b>${esc(s.code)}</b><span>${esc(s.name)} · ${esc(s.area||"")}</span></div>${(isAdmin() && s.code!=="WORKSHOP")?`<button class="small bad" type="button" onclick="softDeleteStorage('${escAttr(s.code)}')">Hapus</button>`:""}</div>`).join("") : `<div class="empty">Belum ada master storage.</div>`;
 }
 async function loadUsers(){
   if(!isSuperAdmin()) return;
-  try{const res=await apiGet("listUsers");db.users=res.users||[];renderUserManagement();}catch(e){toast("Gagal memuat daftar user: "+e.message);}
+  if(!CNCSync.isOnline()){ toast("Mode offline: daftar user hanya bisa dimuat saat online."); return; }
+  try{
+    const res = await CNCSync.postApi("listUsers", {});
+    db.users = res.users || [];
+    await CNCDB.putMany("users", db.users);
+    renderUserManagement();
+  }catch(e){ toast("Gagal memuat daftar user: "+e.message); }
 }
 function renderUserManagement(){
   if(!$('userList')) return;
@@ -3042,43 +3308,55 @@ function renderUserManagement(){
     $('userList').innerHTML = `<div class="empty">Menu User Management khusus super admin.</div>`;
     return;
   }
-  $('userList').innerHTML = db.users.length ? db.users.map(u=>`<div class="line-item"><b>${esc(u.username)}</b><span>${esc(u.name)} · ${esc(u.role)} · ${String(u.active).toUpperCase()!=="FALSE"?"aktif":"nonaktif"}</span></div>`).join("") : `<div class="empty">Belum ada data user. Klik Sync Data.</div>`;
+  $('userList').innerHTML = db.users.length ? db.users.map(u=>`<div class="line-item"><b>${esc(u.username)}</b><span>${esc(u.name)} · ${esc(u.role)} · ${String(u.active).toUpperCase()!=="FALSE"?"aktif":"nonaktif"}</span></div>`).join("") : `<div class="empty">Belum ada data user. Klik Refresh User saat online.</div>`;
 }
 
 async function addStorage(){
   const code=normalizeText($("storageCode").value), name=$("storageName").value.trim(), area=$("storageArea").value.trim();
   if(!code || !name) return alert("Kode dan nama storage wajib diisi.");
   if(db.storages.some(s=>String(s.code).toUpperCase()===code)) return alert("Anti duplicate aktif: Kode storage sudah ada di master.");
-  setBusy(true,"Tambah storage...");
+  setBusy(true,"Simpan storage ke database lokal...");
   try{
-    const res=await apiPost("addStorage", {code,name,area,by:userName()});
+    const now=nowISO();
+    const stObj={ code, name, area, createdAt: now, updatedAt: now, deleted: false };
+    await CNCDB.putOne("storages", stObj);
+    await CNCSync.enqueueAndSync("upsertStorage", { code, name, area, createdAt: now, updatedAt: now });
     $("storageCode").value=""; $("storageName").value=""; $("storageArea").value="";
-    if(res.storage && !db.storages.some(s=>s.code===res.storage.code)) db.storages.push(res.storage);
-    finishFastUpdate();
-    toast("Storage ditambahkan");
+    await reloadLocalState();
+    toast("Storage ditambahkan & masuk antrean sync");
   }
   catch(e){ alert("Gagal tambah storage: "+e.message); }
   finally{ setBusy(false); }
 }
+async function softDeleteStorage(code){
+  if(!isAdmin()) return alert("Hapus storage khusus admin dan super_admin.");
+  const normCode=normalizeText(code);
+  if(normCode==="WORKSHOP") return alert("WORKSHOP tidak dapat dihapus.");
+  const s=db.storages.find(x=>normalizeText(x.code)===normCode);
+  if(!s) return;
+  if(!confirm(`Hapus storage ${s.code} (${s.name})?\nDitandai soft-delete dan disinkronkan ke perangkat lain.`)) return;
+  const now=nowISO();
+  await CNCDB.putOne("storages", { ...s, deleted: true, updatedAt: now });
+  await CNCSync.enqueueAndSync("softDeleteStorage", { code: s.code, updatedAt: now });
+  await reloadLocalState();
+  toast("Storage dihapus (soft delete)");
+}
 async function addUser(){
   if(!isSuperAdmin()) return alert("Khusus super admin.");
+  if(!CNCSync.isOnline()) return alert("Tambah user memerlukan koneksi online.");
   const username=$("newUsername").value.trim().toLowerCase(), password=$("newPassword").value, name=$("newName").value.trim(), role=$("newRole").value;
   if(!username || !password) return alert("Username dan password wajib.");
+  if(password.length < 10) return alert("Password minimal 10 karakter.");
   if(db.users.some(u=>String(u.username).toLowerCase()===username)) return alert("Anti duplicate aktif: Username sudah ada.");
   setBusy(true,"Tambah user...");
   try{
-    const res=await apiPost("addUser", {username,password,role,name:name||username,active:"TRUE",by:userName()});
+    await CNCSync.postApi("addUser", {username,password,role,name:name||username,active:"TRUE",by:userName()});
     $("newUsername").value=""; $("newPassword").value=""; $("newName").value="";
     await loadUsers();
-    finishFastUpdate();
     toast("User ditambahkan");
   }
   catch(e){ alert("Gagal tambah user: "+e.message); }
   finally{ setBusy(false); }
-}
-function exportJSON(){
-  const blob = new Blob([JSON.stringify(db,null,2)], {type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="cnc_template_tracker_export_ringan_"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href);
 }
 function renderTemplateQrSelection(){
   const box=$("templateQrSelection"); if(!box) return;
@@ -3238,22 +3516,105 @@ function renderFieldUploadPreview(){
   if(!selectedFieldStorage){ box.innerHTML='<div class="empty">Pilih storage dulu, lalu tambah template.</div>'; return; }
   box.innerHTML = `<div class="muted">Preview upload ke <b>${esc(selectedFieldStorage)}</b>: ${rows.length} template valid${errors.length?` · ${errors.length} error`:''}</div>` + (errors.length?`<div class="empty">${errors.slice(0,8).map(esc).join('<br>')}</div>`:'') + (rows.length?`<table><thead><tr><th>Buyer</th><th>Style/KP</th><th>Part</th><th>Catatan</th></tr></thead><tbody>${rows.slice(0,30).map(r=>`<tr><td>${esc(r.buyer)}</td><td>${esc(r.stylekp)}</td><td>${esc(r.parts.map(p=>p.part+(p.qty>1?` x${p.qty}`:'')).join(', '))}</td><td>${esc(r.note||'')}</td></tr>`).join('')}</tbody></table>`:'');
 }
+async function applyBulkImportOffline(rows, opts){
+  opts = opts || {};
+  const now=nowISO();
+  const defaultStorage=normalizeText(opts.defaultStorage||"");
+  const forceDefaultStorage=!!opts.forceDefaultStorage;
+  const createMissingStorage=opts.createMissingStorage!==false;
+  const knownStorages=new Set(db.storages.map(s=>normalizeText(s.code)));
+  const newStorages=[];
+  const putTemplates=[];
+  const putParts=[];
+  const putMovements=[];
+  const outboxRows=[];
+  const errors=[];
+  let inserted=0, updated=0;
+
+  rows.forEach((r, idx)=>{
+    const buyer=normalizeText(r.buyer);
+    const stylekp=normalizeText(r.stylekp);
+    const parts=(r.parts||[]).filter(p=>p && normalizeText(p.part));
+    const st=(forceDefaultStorage && defaultStorage) ? defaultStorage : normalizeText(r.storage || defaultStorage);
+    const note=String(r.note || "Update template existing/lapangan");
+    if(!buyer || !stylekp || !parts.length){ errors.push(`Baris ${idx+1}: Buyer/Style/Part wajib`); return; }
+    if(!st){ errors.push(`Baris ${idx+1}: Storage wajib`); return; }
+    if(!knownStorages.has(st)){
+      if(createMissingStorage){
+        knownStorages.add(st);
+        newStorages.push({ code: st, name: st, area: "Import Lapangan", createdAt: now, updatedAt: now, deleted: false });
+      }else{
+        errors.push(`Baris ${idx+1}: Storage ${st} belum ada di master`);
+        return;
+      }
+    }
+
+    const dup=findDuplicateTemplateLocal(buyer, stylekp, parts);
+    const movId=id("MOV");
+    if(dup){
+      const oldSt=dup.currentStorage || "LAPANGAN";
+      putTemplates.push({ ...dup, status: "DISTRIBUTED", currentStorage: st, distributedAt: dup.distributedAt || now, updatedAt: now, deleted: false });
+      partsOf(dup.id).forEach(pp=>{
+        putParts.push({ ...pp, status: "DISTRIBUTED", currentStorage: st, distributedAt: pp.distributedAt || now, updatedAt: now, deleted: false });
+      });
+      putMovements.push({ id: movId, templateId: dup.id, type: "UPDATE_EXISTING", from: oldSt, to: st, by: userName(), note, at: now });
+      outboxRows.push({ id: dup.id, buyer, stylekp, parts, storage: st, note, movementId: movId });
+      updated++;
+    }else{
+      const tid=id("TPL");
+      const pRows=parts.map(x=>({
+        partId: id("PRT"),
+        templateId: tid,
+        part: normalizeText(x.part),
+        size: normalizeText(x.size || ""),
+        qty: Math.max(1, Math.round(Number(x.qty || 1))),
+        createdAt: now,
+        status: "DISTRIBUTED",
+        currentStorage: st,
+        distributedAt: now,
+        updatedAt: now,
+        deleted: false
+      }));
+      putTemplates.push({ id: tid, buyer, stylekp, status: "DISTRIBUTED", currentStorage: st, hasSketch: false, createdBy: userName(), createdAt: now, updatedAt: now, distributedAt: now, deleted: false });
+      pRows.forEach(p=>putParts.push(p));
+      putMovements.push({ id: movId, templateId: tid, type: "IMPORT_EXISTING", from: "LAPANGAN", to: st, by: userName(), note, at: now });
+      outboxRows.push({ id: tid, buyer, stylekp, parts: pRows, storage: st, note, movementId: movId, createdAt: now });
+      inserted++;
+    }
+  });
+
+  if(newStorages.length) await CNCDB.putMany("storages", newStorages);
+  if(putTemplates.length) await CNCDB.putMany("templates", putTemplates);
+  if(putParts.length) await CNCDB.putMany("parts", putParts);
+  if(putMovements.length) await CNCDB.putMany("movements", putMovements);
+  if(outboxRows.length){
+    await CNCSync.enqueueAndSync("bulkImportExisting", {
+      rows: outboxRows,
+      defaultStorage,
+      forceDefaultStorage,
+      createMissingStorage,
+      by: userName(),
+      updatedAt: now
+    });
+  }
+  await reloadLocalState();
+  return { inserted, updated, errors };
+}
+
 async function saveFieldStorageTemplates(){
   if(!selectedFieldStorage) return alert('Pilih storage dulu.');
   const {rows, errors}=getFieldTemplateRows();
   if(errors.length) return alert('Masih ada data belum lengkap:\n'+errors.slice(0,12).join('\n'));
   if(!rows.length) return alert('Belum ada template yang diisi.');
-  if(!confirm(`Upload ${rows.length} template ke storage ${selectedFieldStorage}?`)) return;
-  setBusy(true,'Upload template ke storage...');
+  if(!confirm(`Simpan ${rows.length} template ke storage ${selectedFieldStorage}?`)) return;
+  setBusy(true,'Menyimpan template ke database lokal...');
   try{
-    const res=await apiPost('bulkImportExisting', {rows, defaultStorage:selectedFieldStorage, forceDefaultStorage:true, createMissingStorage:false, by:userName()});
-    dataLoaded=false;
-    await syncData('Memuat hasil upload...');
+    const res=await applyBulkImportOffline(rows, { defaultStorage: selectedFieldStorage, forceDefaultStorage: true, createMissingStorage: false });
     clearFieldTemplateRows();
     selectFieldStorage(selectedFieldStorage);
-    toast(`Upload selesai: ${res.inserted||0} baru, ${res.updated||0} update`);
-    if(res.errors?.length) alert('Upload selesai dengan catatan:\n'+res.errors.slice(0,10).join('\n'));
-  }catch(e){ alert('Upload gagal: '+e.message); }
+    toast(`Tersimpan lokal: ${res.inserted} baru, ${res.updated} update · masuk antrean sync`);
+    if(res.errors.length) alert('Selesai dengan catatan:\n'+res.errors.slice(0,10).join('\n'));
+  }catch(e){ alert('Simpan gagal: '+e.message); }
   finally{ setBusy(false); }
 }
 
@@ -3303,7 +3664,7 @@ function renderImportPreview(){
   if(!$("importPreview")) return;
   const {rows,errors,mainStorage}=parseExistingImportText();
   const storageInfo = mainStorage ? `Storage utama: <b>${esc(mainStorage)}</b>` : `<b>Storage utama belum diisi</b>`;
-  $("importPreview").innerHTML = `<div class="muted">${storageInfo} · Preview: ${rows.length} template valid${errors.length?` · ${errors.length} baris error`:""}. Data valid akan update/masuk ke storage.</div>` + (errors.length?`<div class="empty">${errors.slice(0,8).map(esc).join("<br>")}</div>`:"") + (rows.length?`<table><thead><tr><th>Buyer</th><th>Style/KP</th><th>Part</th><th>Storage Update</th><th>Catatan</th></tr></thead><tbody>${rows.slice(0,30).map(r=>`<tr><td>${esc(r.buyer)}</td><td>${esc(r.stylekp)}</td><td>${esc(r.parts.map(p=>p.part+(p.qty>1?` x${p.qty}`:"")).join(", "))}</td><td>${esc(r.storage)}</td><td>${esc(r.note||"")}</td></tr>`).join("")}</tbody></table>`:"");
+  $("importPreview").innerHTML = `<div class="muted">${storageInfo} · Preview: ${rows.length} template valid${errors.length?` · ${errors.length} baris error`:""}. Data valid akan disimpan lokal & masuk antrean sync.</div>` + (errors.length?`<div class="empty">${errors.slice(0,8).map(esc).join("<br>")}</div>`:"") + (rows.length?`<table><thead><tr><th>Buyer</th><th>Style/KP</th><th>Part</th><th>Storage Update</th><th>Catatan</th></tr></thead><tbody>${rows.slice(0,30).map(r=>`<tr><td>${esc(r.buyer)}</td><td>${esc(r.stylekp)}</td><td>${esc(r.parts.map(p=>p.part+(p.qty>1?` x${p.qty}`:"")).join(", "))}</td><td>${esc(r.storage)}</td><td>${esc(r.note||"")}</td></tr>`).join("")}</tbody></table>`:"");
 }
 function setImportStorageScanned(){
   const code=normalizeText($("importMainStorage")?.value || "");
@@ -3315,29 +3676,31 @@ async function importExistingTemplates(){
   const {rows,errors,mainStorage}=parseExistingImportText();
   if(errors.length) return alert("Masih ada baris error. Rapikan dulu data import.");
   if(!rows.length) return alert("Belum ada data yang bisa diupdate.");
-  if(!confirm(`Update ${rows.length} template lapangan ke storage ${mainStorage || rows[0].storage}?`)) return;
-  setBusy(true,"Update template lapangan per storage...");
+  if(!confirm(`Simpan ${rows.length} template lapangan ke storage ${mainStorage || rows[0].storage}?`)) return;
+  setBusy(true,"Menyimpan import lapangan ke database lokal...");
   try{
-    const res=await apiPost("bulkImportExisting", {rows, defaultStorage: mainStorage, forceDefaultStorage: !!$("importForceStorage")?.checked, createMissingStorage: !!$("importCreateStorage")?.checked, by:userName()});
-    dataLoaded = false;
-    await syncData("Memuat data terbaru...");
+    const res=await applyBulkImportOffline(rows, {
+      defaultStorage: mainStorage,
+      forceDefaultStorage: !!$("importForceStorage")?.checked,
+      createMissingStorage: !!$("importCreateStorage")?.checked
+    });
     $("existingImportText").value=""; renderImportPreview();
-    toast(`Update selesai: ${res.inserted||0} baru, ${res.updated||0} update`);
-    if(res.errors?.length) alert("Update selesai dengan catatan:\n"+res.errors.slice(0,10).join("\n"));
+    toast(`Tersimpan lokal: ${res.inserted} baru, ${res.updated} update · masuk antrean sync`);
+    if(res.errors.length) alert("Selesai dengan catatan:\n"+res.errors.slice(0,10).join("\n"));
   }catch(e){ alert("Update gagal: "+e.message); }
   finally{ setBusy(false); }
 }
 
-window.addEventListener("DOMContentLoaded",()=>{
-  detectDevice(); // UX/UI auto detect device + kelas layar (xs..xl)
-  loadConnectionConfig();
+window.addEventListener("DOMContentLoaded", async ()=>{
+  detectDevice();
   addPartRow();
-  setupSketchDropZone(); // CTRL+V / drag&drop screenshot ke Upload Sketch
+  setupSketchDropZone();
+  CNCSync.subscribe(updateSyncIndicator);
   updateHeader();
-  // Ingat saya: kalau ada sesi tersimpan, langsung masuk tanpa login ulang
-  if(!tryAutoLogin()) renderAuth();
+  const loggedIn = await tryAutoLogin();
+  if(!loggedIn) renderAuth();
 });
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a185870b3cbcd210',t:'MTc4MzU4MTIyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

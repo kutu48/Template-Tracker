@@ -1,36 +1,42 @@
-# Google Sheets schema & setup
+# Google Sheets Schema & Setup (Offline-First 5.0)
 
-`setup()` membuat tab dan header berikut. Pertahankan nama tab/header persis karena OpenSheet memetakan kolom berdasarkan header.
+`setup()` di `apps-script/Code.gs` membuat dan memelihara seluruh tab berikut secara otomatis. **Jangan publikasikan Spreadsheet ini ke web** — semua komunikasi (login, delta sync, push outbox, sketch Drive) melewati endpoint `POST text/plain` Google Apps Script milik Anda dengan token perangkat di body JSON.
 
-| Tab | Header | Dipakai untuk |
+| Tab | Header | Keterangan |
 |---|---|---|
-| `USERS` | `username, password, role, name, active, createdAt, updatedAt` | Login dan peran. **Jangan publish tab ini.** |
-| `STORAGES` | `code, name, area, createdAt, updatedAt` | Master lokasi/storage. |
-| `TEMPLATES` | `id, buyer, stylekp, status, currentStorage, sketch, createdBy, createdAt, updatedAt, distributedAt` | Master template. `sketch` hanya penanda kosong/`DRIVE`, bukan isi gambar. |
-| `TEMPLATE_PARTS` | `partId, templateId, part, size, qty, createdAt, status, currentStorage, distributedAt, updatedAt` | Part/proses pada template. |
-| `MOVEMENTS` | `id, templateId, type, from, to, by, note, at` | Log pergerakan. UI hanya menampilkan maksimal 5 terbaru. |
-| `SKETCHES` | `templateId, idx, seq, chunk, updatedAt` | Referensi Drive privat di kolom `chunk` dengan format `DRIVE_FILE:<fileId>`. **Jangan publish tab ini.** |
+| `USERS` | `username, password, role, name, active, createdAt, updatedAt` | Akun & peran (`operator`, `admin`, `super_admin`). **Privat, jangan dipublikasikan.** |
+| `SESSIONS` | `tokenHash, username, role, name, deviceId, deviceName, createdAt, expiresAt, lastSeenAt, revoked` | Token perangkat 30 hari (disimpan sebagai hash SHA-256, bukan token mentah). **Privat.** |
+| `STORAGES` | `code, name, area, createdAt, updatedAt, deleted` | Master lokasi/meja. Mendukung soft delete (`deleted = TRUE`) & LWW (`updatedAt`). |
+| `TEMPLATES` | `id, buyer, stylekp, status, currentStorage, sketch, createdBy, createdAt, updatedAt, distributedAt, deleted` | Master template (ID UUID dari klien). `sketch` hanya penanda kosong/`DRIVE`. Mendukung soft delete & LWW. |
+| `TEMPLATE_PARTS` | `partId, templateId, part, size, qty, createdAt, status, currentStorage, distributedAt, updatedAt, deleted` | Part/proses per template (UUID klien). Mendukung split distribution, auto-merge, soft delete, & LWW. |
+| `MOVEMENTS` | `id, templateId, type, from, to, by, note, at` | Log pergerakan **append-only** (dedupe berdasarkan UUID `id` klien). |
+| `SKETCHES` | `templateId, idx, seq, chunk, updatedAt, deleted` | Referensi file Drive privat (`DRIVE_FILE:<fileId>`). **Privat.** |
 
-## Koneksi OpenSheet
+## Akun Awal
 
-Frontend membaca empat tab: `STORAGES`, `TEMPLATES`, `TEMPLATE_PARTS`, dan `MOVEMENTS`. Tab harus bisa dibaca lewat OpenSheet. Pilih publikasi tab yang diperlukan saja. `USERS` dan `SKETCHES` tetap privat; URL Apps Script menjalankan login/aksi tulis sebagai pemilik.
-
-## Akun awal
-
-Tidak ada kredensial default. Setelah `setup()` dijalankan, tambahkan satu row secara manual pada tab `USERS`, misalnya dengan kolom:
+Tidak ada password default. Setelah `setup()` dijalankan satu kali dari editor Apps Script, tambahkan 1 baris di tab `USERS`:
 
 ```text
-username: nama-admin
+username: admin
 password: password-kuat-minimal-10-karakter
 role: super_admin
-name: Nama Admin
+name: Super Admin
 active: TRUE
-createdAt: (kosong atau tanggal saat ini)
-updatedAt: (kosong atau tanggal saat ini)
+createdAt: (boleh kosong)
+updatedAt: (boleh kosong)
 ```
 
-Password awal plaintext hanya sementara di tab privat; setelah login pertama kode menggantinya dengan hash SHA-256 bersalt. User yang dibuat lewat aplikasi langsung tersimpan sebagai hash.
+Password plaintext sementara pada baris awal akan otomatis diganti menjadi hash `sha256$<salt>$<digest>` pada login pertama. Semua user yang dibuat lewat aplikasi langsung tersimpan dalam bentuk hash.
 
-## Migrasi sketch lama
+## Token Perangkat 30 Hari & Offline
 
-Saat `setup()` berjalan, Apps Script mengubah gambar data URL di `TEMPLATES.sketch` dan chunk lama di `SKETCHES` menjadi file di folder Drive `CNC Template Tracker - Sketches`, lalu menyimpan referensi Drive. Pastikan kuota Drive cukup dan beri izin Drive pada Apps Script. File tidak dibagikan publik; aplikasi mengambil foto lewat Apps Script setelah login.
+- Saat login online, backend membuat token acak, menyimpan hash SHA-256 ke tab `SESSIONS` dengan masa berlaku **30 hari**, dan mengirim token ke perangkat.
+- Perangkat menyimpan sesi di IndexedDB sehingga pengguna tetap bisa membuka aplikasi, menambah/mendistribusi/memindahkan template, dan memotret sketch saat offline.
+- Saat tombol **Logout** ditekan (ketika online) atau akun dinonaktifkan (`active = FALSE`), token perangkat terkait langsung dicabut (`revoked = TRUE`).
+
+## Migrasi dari Versi Lama (v4.x)
+
+1. Salin `apps-script/Code.gs` versi 5.0 ke project Apps Script yang terikat pada Spreadsheet.
+2. Jalankan `setup()` sekali — header baru (`deleted` & tab `SESSIONS`) ditambahkan tanpa menghapus data lama, dan sketch base64 lama otomatis dipindahkan ke folder Drive `CNC Template Tracker - Sketches`.
+3. Deploy sebagai **Web app → New version** (*Execute as: Me*, *Who has access: Anyone*).
+4. Anda dapat mematikan *Publish to web* pada tab Spreadsheet jika sebelumnya pernah diaktifkan untuk OpenSheet.

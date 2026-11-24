@@ -1,13 +1,26 @@
-# CNC Template Tracker — Android Studio
+# CNC Template Tracker — Android Studio (Capacitor Offline-First)
 
-APK ini adalah WebView wrapper dari versi web yang di-host. Cetak memakai Android Print Framework; pilihan printer berasal dari layanan cetak yang terpasang/terdeteksi Android.
+APK ini membundel seluruh folder `public/` langsung ke dalam aset APK melalui **Capacitor** (`android/app/src/main/assets/public/`), sehingga **`APP_URL` dan hosting HTTPS tidak lagi diperlukan**.
 
-1. Deploy folder `public/` ke hosting HTTPS yang dapat diakses HP.
-2. Edit `APP_URL` di `android/gradle.properties` menjadi URL `index.html` hasil deploy.
-3. Buka folder `android/` di Android Studio dan lakukan Gradle Sync.
-4. Untuk APK: **Build → Generate Signed Bundle / APK → APK**; buat/pilih keystore sendiri.
-5. Instal APK pada HP. Pemindaian QR memakai ZXing; cetak dapat diarahkan ke printer yang muncul di Android Print Service atau disimpan sebagai PDF.
+## Fitur Native di `MainActivity.kt`
 
-Printer termal hanya muncul bila Android memiliki Print Service/driver yang kompatibel. Cetak dari browser PC menggunakan dialog print browser, termasuk opsi **Save as PDF**.
+- **Asset lokal offline-first:** Dijalankan melalui Capacitor `BridgeActivity` (`https://localhost`), mendukung IndexedDB dan CORS `POST text/plain` langsung ke Google Apps Script.
+- **File Chooser (Kamera + Galeri + JSON):** `onShowFileChooser` + `FileProvider` sudah diimplementasikan sehingga upload foto sketch (kamera langsung / galeri) dan import backup JSON berjalan normal.
+- **Penyimpanan Sketch Lokal:** Foto sketch disimpan sebagai file lokal di folder internal aplikasi (`files/sketches/`) via `Android.saveSketchFile` / `Android.readSketchFile` / `Android.deleteSketchFiles`.
+- **Share QR Text:** `Android.shareQRText` membuka menu berbagi Android (WhatsApp, dll.).
+- **QR Scanner & Print:** Pemindaian QR memakai ZXing (`Android.scanQr`) dan cetak memakai Android Print Framework (`window.print` / `Android.printCurrentPage` / `Android.printQRToPdf` — termasuk **Save as PDF** dan printer thermal yang terpasang di Android Print Service).
+
+## Langkah Build APK
+
+1. *(Opsional)* Isi URL Web App Apps Script di `public/config.js` sebelum sync. Anda juga bisa mengaturnya nanti langsung di dalam aplikasi lewat **⚙️ Pengaturan Server**.
+2. Jalankan di root project:
+   ```sh
+   npm install
+   npm run cap:sync
+   ```
+   Perintah ini menyalin seluruh folder `public/` ke `android/app/src/main/assets/public/` dan memperbarui konfigurasi Capacitor Android.
+3. Buka folder `android/` di **Android Studio** (atau jalankan `npm run cap:open`).
+4. Tunggu Gradle Sync selesai, lalu pilih **Build → Generate Signed Bundle / APK → APK** (gunakan keystore milik Anda sendiri).
+5. Instal APK pada HP. Login sekali saat online untuk mengaktifkan token perangkat 30 hari; setelah itu aplikasi bisa dipakai penuh saat offline dan sync otomatis saat kembali online.
 
 Jangan commit keystore, password keystore, atau URL/kredensial privat ke repositori publik.

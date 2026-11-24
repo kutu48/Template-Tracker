@@ -5,3 +5,7 @@ local.properties
 build/
 *.apk
 *.aab
+*.keystore
+*.jks
+node_modules/
+browser-data/

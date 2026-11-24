@@ -1,12 +1,24 @@
 {
-  "name": "cnc-template-tracker-sheets",
-  "version": "4.0.2",
+  "name": "cnc-template-tracker-offline",
+  "version": "5.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node src/static-server.js",
     "dev": "node --watch src/static-server.js",
-    "check": "node scripts/check-project.mjs"
+    "check": "node scripts/check-project.mjs",
+    "cap:copy": "cap copy android",
+    "cap:sync": "cap sync android",
+    "cap:open": "cap open android"
   },
-  "engines": { "node": ">=20" }
+  "dependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/core": "^7.6.10"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }
