@@ -168,6 +168,12 @@
     if (Array.isArray(res.movements) && res.movements.length) {
       tasks.push(global.CNCDB.putMany('movements', res.movements));
     }
+    if (res.acrylic && res.acrylic.id) {
+      tasks.push(global.CNCDB.putOne('acrylics', res.acrylic));
+    }
+    if (res.acrylicLog && res.acrylicLog.id) {
+      tasks.push(global.CNCDB.putOne('acrylicLogs', res.acrylicLog));
+    }
     return Promise.all(tasks);
   }
 

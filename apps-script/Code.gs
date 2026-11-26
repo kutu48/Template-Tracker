@@ -29,10 +29,12 @@ const SHEETS = {
   USERS: ['username', 'password', 'role', 'name', 'active', 'createdAt', 'updatedAt'],
   SESSIONS: ['tokenHash', 'username', 'role', 'name', 'deviceId', 'deviceName', 'createdAt', 'expiresAt', 'lastSeenAt', 'revoked'],
   STORAGES: ['code', 'name', 'area', 'createdAt', 'updatedAt', 'deleted'],
-  TEMPLATES: ['id', 'buyer', 'stylekp', 'status', 'currentStorage', 'sketch', 'createdBy', 'createdAt', 'updatedAt', 'distributedAt', 'deleted'],
+  TEMPLATES: ['id', 'buyer', 'stylekp', 'status', 'currentStorage', 'sketch', 'createdBy', 'createdAt', 'updatedAt', 'distributedAt', 'deleted', 'acrylicSource', 'acrylicId', 'acrylicQty', 'acrylicSourceTemplateId', 'acrylicSpec'],
   TEMPLATE_PARTS: ['partId', 'templateId', 'part', 'size', 'qty', 'createdAt', 'status', 'currentStorage', 'distributedAt', 'updatedAt', 'deleted'],
   MOVEMENTS: ['id', 'templateId', 'type', 'from', 'to', 'by', 'note', 'at'],
-  SKETCHES: ['templateId', 'idx', 'seq', 'chunk', 'updatedAt', 'deleted']
+  SKETCHES: ['templateId', 'idx', 'seq', 'chunk', 'updatedAt', 'deleted'],
+  ACRYLIC_STOCKS: ['id', 'length', 'width', 'unit', 'thicknessMm', 'color', 'qtyIn', 'qtyUsed', 'qtyAvailable', 'note', 'createdBy', 'createdAt', 'updatedAt', 'deleted'],
+  ACRYLIC_LOGS: ['id', 'acrylicId', 'templateId', 'sourceType', 'sourceTemplateId', 'qty', 'sizeLabel', 'by', 'note', 'at']
 };
 
 function setup() {
@@ -46,7 +48,7 @@ function setup() {
     version: APP_VERSION,
     migratedSketch: migrated,
     migratedChunks: migratedChunks,
-    message: 'Setup selesai. Spreadsheet (termasuk tab SESSIONS & kolom soft-delete) + Drive privat siap.'
+    message: 'Setup selesai. Spreadsheet (termasuk SESSIONS, ACRYLIC_STOCKS, ACRYLIC_LOGS & soft-delete) + Drive privat siap.'
   });
 }
 
@@ -129,6 +131,12 @@ function doPost(e) {
     if (action === 'deleteStorage' || action === 'softDeleteStorage') {
       return withWriteLock_(function () { return softDeleteStorage_(payload, session); }, 12000);
     }
+    if (action === 'stockInAcrylic' || action === 'upsertAcrylic') {
+      return withWriteLock_(function () { return stockInAcrylic_(payload, session); }, 12000);
+    }
+    if (action === 'deleteAcrylic' || action === 'softDeleteAcrylic') {
+      return withWriteLock_(function () { return softDeleteAcrylic_(payload, session); }, 12000);
+    }
     if (action === 'addUser') {
       return withWriteLock_(function () { return addUser_(payload); }, 12000);
     }
@@ -188,7 +196,7 @@ function hasActionPermission_(role, action) {
   if (['addUser', 'resetPassword', 'listUsers', 'toggleUserActive'].indexOf(action) >= 0) {
     return role === 'super_admin';
   }
-  if (['updateTemplate', 'deleteTemplate', 'softDeleteTemplate', 'deleteStorage', 'softDeleteStorage', 'deleteSketch'].indexOf(action) >= 0) {
+  if (['updateTemplate', 'deleteTemplate', 'softDeleteTemplate', 'deleteStorage', 'softDeleteStorage', 'deleteSketch', 'deleteAcrylic', 'softDeleteAcrylic'].indexOf(action) >= 0) {
     return role === 'admin' || role === 'super_admin';
   }
   return true;
@@ -406,6 +414,8 @@ function syncDelta_(p) {
   hydratePartStatuses_(allParts, allTemplates);
   var allStorages = read_('STORAGES');
   var allMovements = read_('MOVEMENTS');
+  var allAcrylics = read_('ACRYLIC_STOCKS');
+  var allAcrylicLogs = read_('ACRYLIC_LOGS');
   var sketchMeta = getActiveSketchMeta_();
 
   var templates = allTemplates.filter(function (t) {
@@ -428,7 +438,12 @@ function syncDelta_(p) {
       createdAt: toIso_(t.createdAt),
       updatedAt: toIso_(t.updatedAt || t.createdAt),
       distributedAt: toIso_(t.distributedAt),
-      deleted: isTrue_(t.deleted)
+      deleted: isTrue_(t.deleted),
+      acrylicSource: String(t.acrylicSource || ''),
+      acrylicId: String(t.acrylicId || ''),
+      acrylicQty: Number(t.acrylicQty || 0),
+      acrylicSourceTemplateId: String(t.acrylicSourceTemplateId || ''),
+      acrylicSpec: String(t.acrylicSpec || '')
     };
   });
 
@@ -486,6 +501,19 @@ function syncDelta_(p) {
     };
   });
 
+  var acrylics = allAcrylics.filter(function (a) {
+    if (!a.id) return false;
+    if (!isDelta) return true;
+    var u = Math.max(parseTimeMs_(a.updatedAt), parseTimeMs_(a.createdAt));
+    return u > sinceMs;
+  }).map(cleanAcrylicRow_);
+
+  var acrylicLogs = allAcrylicLogs.filter(function (l) {
+    if (!l.id) return false;
+    if (!isDelta) return true;
+    return parseTimeMs_(l.at) > sinceMs;
+  }).map(cleanAcrylicLogRow_);
+
   return json_({
     ok: true,
     version: APP_VERSION,
@@ -496,7 +524,9 @@ function syncDelta_(p) {
       storages: storages,
       templates: templates,
       parts: parts,
-      movements: movements
+      movements: movements,
+      acrylics: acrylics,
+      acrylicLogs: acrylicLogs
     }
   });
 }
@@ -553,6 +583,8 @@ function executeOutboxOp_(opId, type, data, session) {
     else if (type === 'moveTemplate') rawOut = moveTemplateCore_(data, session);
     else if (type === 'upsertStorage' || type === 'addStorage') rawOut = upsertStorageCore_(data, session);
     else if (type === 'softDeleteStorage' || type === 'deleteStorage') rawOut = softDeleteStorageCore_(data, session);
+    else if (type === 'stockInAcrylic' || type === 'upsertAcrylic') rawOut = stockInAcrylicCore_(data, session);
+    else if (type === 'softDeleteAcrylic' || type === 'deleteAcrylic') rawOut = softDeleteAcrylicCore_(data, session);
     else if (type === 'bulkImportExisting') rawOut = bulkImportExistingCore_(data, session);
     else if (type === 'uploadSketch') rawOut = uploadSketchCore_(data, session);
     else if (type === 'deleteSketch') rawOut = deleteSketchCore_(data, session);
@@ -627,9 +659,14 @@ function upsertTemplateCore_(p, session) {
   var nowIso = toIso_(p.updatedAt) || new Date().toISOString();
   var createdIso = toIso_(p.createdAt) || nowIso;
 
+  var acrylicSource = String(p.acrylicSource || '').trim().toUpperCase();
+  var acrylicId = String(p.acrylicId || '').trim();
+  var acrylicQty = Math.max(0, Number(p.acrylicQty || 0));
+  var acrylicSourceTemplateId = String(p.acrylicSourceTemplateId || '').trim();
+  var acrylicSpec = String(p.acrylicSpec || '').trim();
+
   var existing = findRow_('TEMPLATES', 'id', templateId);
   if (existing) {
-    // Aturan konflik: update terbaru menang (LWW berdasarkan updatedAt)
     if (parseTimeMs_(existing.updatedAt) > parseTimeMs_(nowIso)) {
       return {
         ok: true,
@@ -644,7 +681,12 @@ function upsertTemplateCore_(p, session) {
       status: String(p.status || existing.status || 'WAITING_DISTRIBUTION').toUpperCase(),
       currentStorage: p.currentStorage != null ? String(p.currentStorage) : existing.currentStorage,
       updatedAt: nowIso,
-      deleted: isTrue_(p.deleted) ? 'TRUE' : 'FALSE'
+      deleted: isTrue_(p.deleted) ? 'TRUE' : 'FALSE',
+      acrylicSource: acrylicSource || existing.acrylicSource || '',
+      acrylicId: acrylicId || existing.acrylicId || '',
+      acrylicQty: acrylicQty || Number(existing.acrylicQty || 0),
+      acrylicSourceTemplateId: acrylicSourceTemplateId || existing.acrylicSourceTemplateId || '',
+      acrylicSpec: acrylicSpec || existing.acrylicSpec || ''
     });
     if (parts.length) {
       replaceTemplatePartsLww_(templateId, parts, nowIso);
@@ -666,6 +708,60 @@ function upsertTemplateCore_(p, session) {
     };
   }
 
+  // Validasi & pemotongan stok akrilik jika memakai stok lembar baru (NEW_SHEET)
+  var updatedAcrylic = null;
+  var createdAcrylicLog = null;
+  var logId = String(p.acrylicLogId || id_('ACL'));
+  var logAlreadyExists = !!findRow_('ACRYLIC_LOGS', 'id', logId);
+
+  if (acrylicSource === 'NEW_SHEET' && acrylicId && acrylicQty > 0 && !logAlreadyExists) {
+    var acrRow = findRow_('ACRYLIC_STOCKS', 'id', acrylicId);
+    if (!acrRow || isTrue_(acrRow.deleted)) {
+      return { ok: false, retryable: false, message: 'Stok akrilik tidak ditemukan: ' + acrylicId };
+    }
+    var curAvail = roundQty_(Number(acrRow.qtyAvailable || 0));
+    if (acrylicQty > curAvail + 0.0001) {
+      return { ok: false, retryable: false, message: 'Stok akrilik tidak mencukupi (tersedia ' + curAvail + ', diminta ' + acrylicQty + ').' };
+    }
+    var newUsed = roundQty_(Number(acrRow.qtyUsed || 0) + acrylicQty);
+    var newAvail = roundQty_(Math.max(0, Number(acrRow.qtyIn || 0) - newUsed));
+    update_('ACRYLIC_STOCKS', acrRow._row, {
+      qtyUsed: newUsed,
+      qtyAvailable: newAvail,
+      updatedAt: nowIso
+    });
+    if (!acrylicSpec) acrylicSpec = formatAcrylicLabel_(acrRow);
+    updatedAcrylic = cleanAcrylicRow_(findRow_('ACRYLIC_STOCKS', 'id', acrylicId));
+    createdAcrylicLog = {
+      id: logId,
+      acrylicId: acrylicId,
+      templateId: templateId,
+      sourceType: 'NEW_SHEET',
+      sourceTemplateId: '',
+      qty: roundQty_(acrylicQty),
+      sizeLabel: acrylicSpec,
+      by: user,
+      note: 'Pemakaian stok akrilik untuk ' + buyer + ' · ' + stylekp,
+      at: nowIso
+    };
+    append_('ACRYLIC_LOGS', createdAcrylicLog);
+  } else if (acrylicSource === 'LEFTOVER' && !logAlreadyExists) {
+    // Sisa akrilik template lain: TIDAK mengurangi stok lembar baru, hanya catat traceability log
+    createdAcrylicLog = {
+      id: logId,
+      acrylicId: acrylicId || '',
+      templateId: templateId,
+      sourceType: 'LEFTOVER',
+      sourceTemplateId: acrylicSourceTemplateId,
+      qty: 0,
+      sizeLabel: acrylicSpec || 'Sisa Akrilik',
+      by: user,
+      note: 'Memakai sisa akrilik template ' + (acrylicSourceTemplateId || '-') + ' untuk ' + buyer + ' · ' + stylekp,
+      at: nowIso
+    };
+    append_('ACRYLIC_LOGS', createdAcrylicLog);
+  }
+
   var tplStatus = String(p.status || 'WAITING_DISTRIBUTION').toUpperCase();
   var tplStorage = String(p.currentStorage || '');
   append_('TEMPLATES', {
@@ -679,7 +775,12 @@ function upsertTemplateCore_(p, session) {
     createdAt: createdIso,
     updatedAt: nowIso,
     distributedAt: toIso_(p.distributedAt) || '',
-    deleted: 'FALSE'
+    deleted: 'FALSE',
+    acrylicSource: acrylicSource,
+    acrylicId: acrylicId,
+    acrylicQty: acrylicQty,
+    acrylicSourceTemplateId: acrylicSourceTemplateId,
+    acrylicSpec: acrylicSpec
   });
 
   var partRows = parts.map(function (x) {
@@ -712,9 +813,157 @@ function upsertTemplateCore_(p, session) {
     distributedAt: toIso_(p.distributedAt) || '',
     hasSketch: sketches.length > 0,
     sketchCount: sketches.length,
-    deleted: false
+    deleted: false,
+    acrylicSource: acrylicSource,
+    acrylicId: acrylicId,
+    acrylicQty: acrylicQty,
+    acrylicSourceTemplateId: acrylicSourceTemplateId,
+    acrylicSpec: acrylicSpec
   };
-  return { ok: true, status: 'applied', id: templateId, template: lite, parts: partRows, message: 'Template tersimpan.' };
+  return {
+    ok: true,
+    status: 'applied',
+    id: templateId,
+    template: lite,
+    parts: partRows,
+    acrylic: updatedAcrylic,
+    acrylicLog: createdAcrylicLog,
+    message: 'Template tersimpan.'
+  };
+}
+
+function stockInAcrylic_(p, session) {
+  var out = stockInAcrylicCore_(p, session);
+  out.version = APP_VERSION;
+  return json_(out);
+}
+
+function stockInAcrylicCore_(p, session) {
+  p = p || {};
+  var length = Number(p.length || 0);
+  var width = Number(p.width || 0);
+  var unit = String(p.unit || 'cm').trim().toLowerCase() === 'mm' ? 'mm' : 'cm';
+  var thicknessMm = Number(p.thicknessMm || p.thickness || 0);
+  var color = norm_(p.color || 'BENING');
+  var addQty = roundQty_(Number(p.addQty != null ? p.addQty : (p.qtyIn || p.qty || 0)));
+  var note = String(p.note || '').trim();
+  var user = String((session && session.username) || p.by || p.createdBy || 'system');
+  var nowIso = toIso_(p.updatedAt) || new Date().toISOString();
+  var createdIso = toIso_(p.createdAt) || nowIso;
+  var logId = String(p.logId || id_('ACL'));
+
+  if (!isFinite(length) || length <= 0 || !isFinite(width) || width <= 0 || !isFinite(thicknessMm) || thicknessMm <= 0) {
+    return { ok: false, retryable: false, message: 'Ukuran panjang, lebar, dan tebal akrilik wajib diisi (> 0).' };
+  }
+  if (!isFinite(addQty) || addQty <= 0) {
+    return { ok: false, retryable: false, message: 'Jumlah lembar masuk minimal > 0.' };
+  }
+
+  // Cek idempotensi logId (agar retry tidak menambah stok 2x)
+  if (findRow_('ACRYLIC_LOGS', 'id', logId)) {
+    var existingById = p.id ? findRow_('ACRYLIC_STOCKS', 'id', String(p.id)) : null;
+    return { ok: true, status: 'applied', duplicateRequest: true, acrylic: cleanAcrylicRow_(existingById), message: 'Stok akrilik masuk sudah tercatat sebelumnya.' };
+  }
+
+  // Cari stok eksisting by id atau spesifikasi identik (panjang x lebar x unit x tebal x warna)
+  var target = p.id ? findRow_('ACRYLIC_STOCKS', 'id', String(p.id)) : null;
+  if (!target) {
+    target = read_('ACRYLIC_STOCKS').find(function (a) {
+      return !isTrue_(a.deleted) &&
+        Number(a.length) === length &&
+        Number(a.width) === width &&
+        String(a.unit || 'cm').toLowerCase() === unit &&
+        Number(a.thicknessMm) === thicknessMm &&
+        norm_(a.color || 'BENING') === color;
+    });
+  }
+
+  var acrylicId;
+  if (target && target._row) {
+    acrylicId = String(target.id);
+    var nextIn = roundQty_(Number(target.qtyIn || 0) + addQty);
+    var curUsed = roundQty_(Number(target.qtyUsed || 0));
+    var nextAvail = roundQty_(Math.max(0, nextIn - curUsed));
+    update_('ACRYLIC_STOCKS', target._row, {
+      qtyIn: nextIn,
+      qtyAvailable: nextAvail,
+      note: note || target.note || '',
+      updatedAt: nowIso,
+      deleted: 'FALSE'
+    });
+  } else {
+    acrylicId = String(p.id || id_('ACR')).trim();
+    append_('ACRYLIC_STOCKS', {
+      id: acrylicId,
+      length: length,
+      width: width,
+      unit: unit,
+      thicknessMm: thicknessMm,
+      color: color,
+      qtyIn: addQty,
+      qtyUsed: 0,
+      qtyAvailable: addQty,
+      note: note,
+      createdBy: user,
+      createdAt: createdIso,
+      updatedAt: nowIso,
+      deleted: 'FALSE'
+    });
+  }
+
+  var sizeLabel = formatAcrylicLabel_({ length: length, width: width, unit: unit, thicknessMm: thicknessMm, color: color });
+  var logRow = {
+    id: logId,
+    acrylicId: acrylicId,
+    templateId: '',
+    sourceType: 'IN',
+    sourceTemplateId: '',
+    qty: addQty,
+    sizeLabel: sizeLabel,
+    by: user,
+    note: note || 'Stok akrilik masuk',
+    at: nowIso
+  };
+  append_('ACRYLIC_LOGS', logRow);
+  return {
+    ok: true,
+    status: 'applied',
+    acrylic: cleanAcrylicRow_(findRow_('ACRYLIC_STOCKS', 'id', acrylicId)),
+    acrylicLog: logRow,
+    message: 'Stok akrilik berhasil ditambahkan (+' + addQty + ' lembar).'
+  };
+}
+
+function softDeleteAcrylic_(p, session) {
+  var out = softDeleteAcrylicCore_(p, session);
+  out.version = APP_VERSION;
+  return json_(out);
+}
+
+function softDeleteAcrylicCore_(p, session) {
+  var id = String(p.id || p.acrylicId || '').trim();
+  if (!id) return { ok: false, retryable: false, message: 'ID akrilik wajib.' };
+  var role = String((session && session.role) || '').toLowerCase();
+  if (role !== 'admin' && role !== 'super_admin') {
+    return { ok: false, retryable: false, message: 'Hapus data akrilik khusus admin dan super_admin.' };
+  }
+  var row = findRow_('ACRYLIC_STOCKS', 'id', id);
+  if (!row) return { ok: true, status: 'applied', id: id, message: 'Stok akrilik sudah tidak ada.' };
+  var incomingIso = toIso_(p.updatedAt) || new Date().toISOString();
+  if (parseTimeMs_(row.updatedAt) > parseTimeMs_(incomingIso)) {
+    return { ok: true, status: 'stale', acrylic: cleanAcrylicRow_(row), message: 'Server memiliki perubahan akrilik lebih baru.' };
+  }
+  update_('ACRYLIC_STOCKS', row._row, { deleted: 'TRUE', updatedAt: incomingIso });
+  return { ok: true, status: 'applied', acrylic: cleanAcrylicRow_(findRow_('ACRYLIC_STOCKS', 'id', id)), message: 'Data akrilik ditandai terhapus.' };
+}
+
+function roundQty_(v) {
+  return Math.round(Number(v || 0) * 100) / 100;
+}
+
+function formatAcrylicLabel_(a) {
+  if (!a) return '';
+  return a.length + ' x ' + a.width + ' ' + (a.unit || 'cm') + ' · ' + a.thicknessMm + ' mm' + (a.color ? ' (' + norm_(a.color) + ')' : '');
 }
 
 function updateTemplate_(p, session) {
@@ -1874,7 +2123,12 @@ function cleanTemplateRow_(t) {
     createdAt: toIso_(t.createdAt),
     updatedAt: toIso_(t.updatedAt || t.createdAt),
     distributedAt: toIso_(t.distributedAt),
-    deleted: isTrue_(t.deleted)
+    deleted: isTrue_(t.deleted),
+    acrylicSource: String(t.acrylicSource || ''),
+    acrylicId: String(t.acrylicId || ''),
+    acrylicQty: Number(t.acrylicQty || 0),
+    acrylicSourceTemplateId: String(t.acrylicSourceTemplateId || ''),
+    acrylicSpec: String(t.acrylicSpec || '')
   };
 }
 
@@ -1903,6 +2157,41 @@ function cleanStorageRow_(s) {
     createdAt: toIso_(s.createdAt),
     updatedAt: toIso_(s.updatedAt || s.createdAt),
     deleted: isTrue_(s.deleted)
+  };
+}
+
+function cleanAcrylicRow_(a) {
+  if (!a) return null;
+  return {
+    id: String(a.id || ''),
+    length: Number(a.length || 0),
+    width: Number(a.width || 0),
+    unit: String(a.unit || 'cm').toLowerCase() === 'mm' ? 'mm' : 'cm',
+    thicknessMm: Number(a.thicknessMm || 0),
+    color: norm_(a.color || 'BENING'),
+    qtyIn: roundQty_(Number(a.qtyIn || 0)),
+    qtyUsed: roundQty_(Number(a.qtyUsed || 0)),
+    qtyAvailable: roundQty_(Number(a.qtyAvailable || 0)),
+    note: String(a.note || ''),
+    createdBy: String(a.createdBy || ''),
+    createdAt: toIso_(a.createdAt),
+    updatedAt: toIso_(a.updatedAt || a.createdAt),
+    deleted: isTrue_(a.deleted)
+  };
+}
+
+function cleanAcrylicLogRow_(l) {
+  return {
+    id: String(l.id || ''),
+    acrylicId: String(l.acrylicId || ''),
+    templateId: String(l.templateId || ''),
+    sourceType: String(l.sourceType || '').toUpperCase(),
+    sourceTemplateId: String(l.sourceTemplateId || ''),
+    qty: roundQty_(Number(l.qty || 0)),
+    sizeLabel: String(l.sizeLabel || ''),
+    by: String(l.by || ''),
+    note: String(l.note || ''),
+    at: toIso_(l.at)
   };
 }
 

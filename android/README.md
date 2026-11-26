@@ -8,7 +8,7 @@ APK ini membundel seluruh folder `public/` langsung ke dalam aset APK melalui **
 - **File Chooser (Kamera + Galeri + JSON):** `onShowFileChooser` + `FileProvider` sudah diimplementasikan sehingga upload foto sketch (kamera langsung / galeri) dan import backup JSON berjalan normal.
 - **Penyimpanan Sketch Lokal:** Foto sketch disimpan sebagai file lokal di folder internal aplikasi (`files/sketches/`) via `Android.saveSketchFile` / `Android.readSketchFile` / `Android.deleteSketchFiles`.
 - **Share QR Text:** `Android.shareQRText` membuka menu berbagi Android (WhatsApp, dll.).
-- **QR Scanner & Print:** Pemindaian QR memakai ZXing (`Android.scanQr`) dan cetak memakai Android Print Framework (`window.print` / `Android.printCurrentPage` / `Android.printQRToPdf` — termasuk **Save as PDF** dan printer thermal yang terpasang di Android Print Service).
+- **QR Scanner & Print (`Android.printHtml`):** Pemindaian QR memakai ZXing (`Android.scanQr`) dan cetak memakai `Android.printHtml(html, jobName, paperType)` yang me-render dokumen cetak bersih (dengan QR PNG `<img>`, bebas blank `<canvas>`) pada WebView cetak khusus dengan `PrintAttributes` eksplisit untuk **A4**, **Thermal 58 mm**, dan **Thermal 80 mm** (mendukung **Save as PDF** serta printer Bluetooth/Wi-Fi di Android Print Service).
 
 ## Langkah Build APK
 

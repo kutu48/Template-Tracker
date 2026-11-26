@@ -7,13 +7,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.print.PrintAttributes
 import android.print.PrintManager
 import android.provider.MediaStore
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
@@ -28,6 +29,8 @@ class MainActivity : BridgeActivity() {
 
     private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingCameraUri: Uri? = null
+    // Simpan referensi kuat ke WebView cetak agar tidak di-GC sebelum PrintManager selesai
+    private var activePrintWebView: WebView? = null
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -83,7 +86,7 @@ class MainActivity : BridgeActivity() {
         }
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
-        // File chooser lengkap (Kamera + Galeri + File JSON backup) agar upload sketch & import backup berjalan normal
+        // File chooser lengkap (Kamera + Galeri + File JSON backup)
         webView.webChromeClient = object : BridgeWebChromeClient(capBridge) {
             override fun onShowFileChooser(
                 view: WebView?,
@@ -141,24 +144,22 @@ class MainActivity : BridgeActivity() {
                 }
             }
         }
-
-        // Override window.print() agar memanggil Android Print Framework secara native
-        webView.post {
-            webView.evaluateJavascript(
-                "window.print=function(){if(window.Android&&window.Android.printCurrentPage){window.Android.printCurrentPage();}};",
-                null
-            )
-        }
     }
 
-    override fun onResume() {
-        super.onResume()
-        bridge?.webView?.post {
-            bridge?.webView?.evaluateJavascript(
-                "window.print=function(){if(window.Android&&window.Android.printCurrentPage){window.Android.printCurrentPage();}};",
-                null
+    private fun buildPrintAttributes(paperType: String): PrintAttributes {
+        val builder = PrintAttributes.Builder()
+            .setColorMode(PrintAttributes.COLOR_MODE_COLOR)
+            .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+        when (paperType.trim().uppercase()) {
+            "58" -> builder.setMediaSize(
+                PrintAttributes.MediaSize("THERMAL_58MM", "Thermal 58mm", 2283, 11811)
             )
+            "80" -> builder.setMediaSize(
+                PrintAttributes.MediaSize("THERMAL_80MM", "Thermal 80mm", 3150, 11811)
+            )
+            else -> builder.setMediaSize(PrintAttributes.MediaSize.ISO_A4)
         }
+        return builder.build()
     }
 
     private fun sketchDir(): File {
@@ -190,12 +191,56 @@ class MainActivity : BridgeActivity() {
             scanQr()
         }
 
+        /**
+         * Cetak dokumen HTML bersih menggunakan WebView khusus cetak + PrintAttributes.
+         * Mengatasi bug WebView Android di mana window.print() tidak berjalan dan elemen <canvas> QR tercetak kosong.
+         */
+        @JavascriptInterface
+        fun printHtml(htmlContent: String, jobName: String?, paperType: String?) {
+            runOnUiThread {
+                try {
+                    val safeJob = (jobName ?: "CNC Template Tracker").trim().ifEmpty { "CNC Template Tracker" }
+                    val safePaper = (paperType ?: "A4").trim()
+                    val printWebView = WebView(this@MainActivity)
+                    printWebView.settings.apply {
+                        javaScriptEnabled = false
+                        allowFileAccess = false
+                        allowContentAccess = false
+                    }
+                    printWebView.webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView, url: String?) {
+                            try {
+                                val pm = getSystemService(PRINT_SERVICE) as PrintManager
+                                val adapter = view.createPrintDocumentAdapter(safeJob)
+                                val attrs = buildPrintAttributes(safePaper)
+                                pm.print(safeJob, adapter, attrs)
+                            } catch (e: Exception) {
+                                Toast.makeText(this@MainActivity, "Gagal membuka dialog print: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                    activePrintWebView = printWebView
+                    printWebView.loadDataWithBaseURL("https://localhost/", htmlContent, "text/html", "UTF-8", null)
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Print gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
         @JavascriptInterface
         fun printCurrentPage() {
             runOnUiThread {
-                val webView = bridge?.webView ?: return@runOnUiThread
-                val pm = getSystemService(PRINT_SERVICE) as PrintManager
-                pm.print("CNC Template Tracker", webView.createPrintDocumentAdapter("CNC Template Tracker"), null)
+                try {
+                    val webView = bridge?.webView ?: return@runOnUiThread
+                    val pm = getSystemService(PRINT_SERVICE) as PrintManager
+                    pm.print(
+                        "CNC Template Tracker",
+                        webView.createPrintDocumentAdapter("CNC Template Tracker"),
+                        buildPrintAttributes("A4")
+                    )
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainActivity, "Print gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
 

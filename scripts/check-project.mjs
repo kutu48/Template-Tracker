@@ -50,7 +50,7 @@ if (/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]{20,}/.test(html)) {
   throw new Error('Found hard-coded Apps Script Web App URL in public/index.html (move to config.js)');
 }
 
-// 3. Validasi fitur inti offline-first di frontend & backend
+// 3. Validasi fitur inti offline-first, UI Blue Navy, Login Pop-up, Akrilik, & Print APK
 for (const needle of [
   './config.js',
   './db.js',
@@ -62,11 +62,18 @@ for (const needle of [
   'openServerSettingsModal',
   'exportBackupFile',
   'setupAutoBackupFolder',
+  '--navy-900',
+  'loginModal',
+  'openLoginModal',
+  'page-acrylic',
+  'saveAcrylicStockIn',
+  'materializeQrImages',
+  'Android.printHtml',
 ]) {
   if (!html.includes(needle)) throw new Error(`Missing frontend feature in public/index.html: ${needle}`);
 }
 
-for (const needle of ['indexedDB', 'outbox', 'exportBackupObject', 'importBackupObject', 'pickAutoBackupFolder', 'saveSketchLocal']) {
+for (const needle of ['indexedDB', 'outbox', 'acrylics', 'acrylicLogs', 'exportBackupObject', 'importBackupObject', 'pickAutoBackupFolder', 'saveSketchLocal']) {
   if (!dbJs.includes(needle)) throw new Error(`Missing local DB feature in public/db.js: ${needle}`);
 }
 
@@ -76,6 +83,8 @@ for (const needle of ['text/plain;charset=utf-8', 'pushOutbox', 'syncDelta', 'fe
 
 for (const needle of [
   'SESSIONS',
+  'ACRYLIC_STOCKS',
+  'ACRYLIC_LOGS',
   'TOKEN_TTL_DAYS = 30',
   'MAX_SKETCH_BYTES = 1024 * 1024',
   'DRIVE_FILE:',
@@ -84,6 +93,8 @@ for (const needle of [
   'function requireSession_(',
   'function createPasswordHash_(',
   'function verifyPassword_(',
+  'function stockInAcrylicCore_(',
+  'function softDeleteAcrylicCore_(',
   'deleted',
 ]) {
   if (!gas.includes(needle)) throw new Error(`Missing backend feature in apps-script/Code.gs: ${needle}`);
@@ -98,9 +109,9 @@ if (cap.webDir !== 'public') throw new Error('capacitor.config.json webDir must 
 if (gradleProps.includes('APP_URL') || appGradle.includes('APP_URL')) {
   throw new Error('Android config still references obsolete APP_URL');
 }
-for (const needle of ['BridgeActivity', 'fun shareQRText(', 'onShowFileChooser', 'fun saveSketchFile(', 'fun readSketchFile(']) {
+for (const needle of ['BridgeActivity', 'fun shareQRText(', 'fun printHtml(', 'buildPrintAttributes', 'onShowFileChooser', 'fun saveSketchFile(', 'fun readSketchFile(']) {
   if (!mainKt.includes(needle)) throw new Error(`Missing Android bridge/Capacitor feature in MainActivity.kt: ${needle}`);
 }
 await access(rel('android/app/src/main/res/xml/file_paths.xml'));
 
-console.log(`OK: parsed config.js, db.js, sync.js, ${inlineScripts.length} inline scripts, and Code.gs; offline-first PC & Capacitor Android checks passed.`);
+console.log(`OK: parsed config.js, db.js, sync.js, ${inlineScripts.length} inline scripts, and Code.gs; offline-first PC, Capacitor Android printHtml, Blue Navy UI, and Akrilik flow checks passed.`);

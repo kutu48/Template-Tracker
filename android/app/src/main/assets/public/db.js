@@ -6,8 +6,8 @@
   'use strict';
 
   var DB_NAME = 'cnc_template_tracker_v5';
-  var DB_VERSION = 1;
-  var STORES = ['storages', 'templates', 'parts', 'movements', 'users', 'sketches', 'outbox', 'meta', 'session'];
+  var DB_VERSION = 2;
+  var STORES = ['storages', 'templates', 'parts', 'movements', 'acrylics', 'acrylicLogs', 'users', 'sketches', 'outbox', 'meta', 'session'];
 
   var idbInstance = null;
   var memoryFallback = null;
@@ -57,7 +57,7 @@
 
   function keyFieldOf(storeName) {
     if (storeName === 'storages') return 'code';
-    if (storeName === 'templates' || storeName === 'movements') return 'id';
+    if (storeName === 'templates' || storeName === 'movements' || storeName === 'acrylics' || storeName === 'acrylicLogs') return 'id';
     if (storeName === 'parts') return 'partId';
     if (storeName === 'users') return 'username';
     if (storeName === 'sketches') return 'templateId';
@@ -79,8 +79,11 @@
           STORES.forEach(function (name) {
             if (!db.objectStoreNames.contains(name)) {
               var st = db.createObjectStore(name, { keyPath: keyFieldOf(name) });
-              if (name === 'parts' || name === 'movements') {
+              if (name === 'parts' || name === 'movements' || name === 'acrylicLogs') {
                 st.createIndex('byTemplate', 'templateId', { unique: false });
+              }
+              if (name === 'acrylicLogs') {
+                st.createIndex('byAcrylic', 'acrylicId', { unique: false });
               }
               if (name === 'outbox') {
                 st.createIndex('byCreatedAt', 'createdAt', { unique: false });
@@ -280,7 +283,9 @@
       getAll('parts'),
       getAll('movements'),
       getAll('users'),
-      getAll('outbox')
+      getAll('outbox'),
+      getAll('acrylics'),
+      getAll('acrylicLogs')
     ]).then(function (res) {
       return {
         storages: res[0],
@@ -288,14 +293,16 @@
         parts: res[2],
         movements: res[3],
         users: res[4],
-        outbox: res[5].sort(function (a, b) { return parseMs(a.createdAt) - parseMs(b.createdAt); })
+        outbox: res[5].sort(function (a, b) { return parseMs(a.createdAt) - parseMs(b.createdAt); }),
+        acrylics: res[6],
+        acrylicLogs: res[7]
       };
     });
   }
 
   // Merge delta dari server ke IndexedDB memakai aturan konflik:
-  // - movements: append-only (dedupe UUID id)
-  // - templates, parts, storages: update terbaru menang (LWW berdasarkan updatedAt), tidak menimpa record yg masih pending di outbox dengan timestamp lebih baru
+  // - movements & acrylicLogs: append-only (dedupe UUID id)
+  // - templates, parts, storages, acrylics: update terbaru menang (LWW berdasarkan updatedAt), tidak menimpa record yg masih pending di outbox dengan timestamp lebih baru
   function mergeServerDelta(delta, pendingOutbox) {
     delta = delta || {};
     var pendingIds = new Set();
@@ -304,6 +311,7 @@
       var p = op.payload || {};
       if (p.id) pendingIds.add(String(p.id));
       if (p.templateId) pendingIds.add(String(p.templateId));
+      if (p.acrylicId) pendingIds.add(String(p.acrylicId));
       if (p.code) pendingIds.add(String(p.code).toUpperCase());
       if (Array.isArray(p.items)) p.items.forEach(function (it) { if (it.templateId) pendingIds.add(String(it.templateId)); });
     });
@@ -330,12 +338,12 @@
       });
     }
 
-    function mergeMovementsAppendOnly(incomingMovs) {
-      if (!Array.isArray(incomingMovs) || !incomingMovs.length) return Promise.resolve(0);
-      return getAll('movements').then(function (localMovs) {
-        var seen = new Set(localMovs.map(function (m) { return String(m.id); }));
-        var toAdd = incomingMovs.filter(function (m) { return m && m.id && !seen.has(String(m.id)); });
-        return putMany('movements', toAdd).then(function () { return toAdd.length; });
+    function mergeAppendOnlyStore(storeName, incomingRows) {
+      if (!Array.isArray(incomingRows) || !incomingRows.length) return Promise.resolve(0);
+      return getAll(storeName).then(function (localRows) {
+        var seen = new Set(localRows.map(function (m) { return String(m.id); }));
+        var toAdd = incomingRows.filter(function (m) { return m && m.id && !seen.has(String(m.id)); });
+        return putMany(storeName, toAdd).then(function () { return toAdd.length; });
       });
     }
 
@@ -343,9 +351,18 @@
       mergeLwwStore('storages', delta.storages, function (r) { return r.code; }),
       mergeLwwStore('templates', delta.templates, function (r) { return r.id; }),
       mergeLwwStore('parts', delta.parts, function (r) { return r.partId; }),
-      mergeMovementsAppendOnly(delta.movements)
+      mergeAppendOnlyStore('movements', delta.movements),
+      mergeLwwStore('acrylics', delta.acrylics, function (r) { return r.id; }),
+      mergeAppendOnlyStore('acrylicLogs', delta.acrylicLogs)
     ]).then(function (counts) {
-      return { storages: counts[0], templates: counts[1], parts: counts[2], movements: counts[3] };
+      return {
+        storages: counts[0],
+        templates: counts[1],
+        parts: counts[2],
+        movements: counts[3],
+        acrylics: counts[4],
+        acrylicLogs: counts[5]
+      };
     });
   }
 
@@ -466,11 +483,13 @@
       getAll('sketches'),
       getAll('outbox'),
       getMeta('lastSyncAt', ''),
-      getEffectiveConfig()
+      getEffectiveConfig(),
+      getAll('acrylics'),
+      getAll('acrylicLogs')
     ]).then(function (res) {
       return {
         format: 'cnc-template-tracker-backup',
-        version: '5.0.0',
+        version: '5.1.0',
         exportedAt: nowIso(),
         lastSyncAt: res[6] || '',
         config: { apiUrl: res[7].apiUrl || '', spreadsheetId: res[7].spreadsheetId || '' },
@@ -480,7 +499,9 @@
           parts: res[2],
           movements: res[3],
           sketches: res[4],
-          outbox: res[5]
+          outbox: res[5],
+          acrylics: res[8],
+          acrylicLogs: res[9]
         }
       };
     });
@@ -493,7 +514,7 @@
     var d = obj.data;
     var isReplace = mode === 'replace';
     var start = isReplace
-      ? Promise.all(['storages', 'templates', 'parts', 'movements', 'sketches', 'outbox'].map(clearStore))
+      ? Promise.all(['storages', 'templates', 'parts', 'movements', 'sketches', 'outbox', 'acrylics', 'acrylicLogs'].map(clearStore))
       : Promise.resolve();
 
     return start.then(function () {
@@ -504,7 +525,9 @@
           putMany('parts', d.parts || []),
           putMany('movements', d.movements || []),
           putMany('sketches', d.sketches || []),
-          putMany('outbox', d.outbox || [])
+          putMany('outbox', d.outbox || []),
+          putMany('acrylics', d.acrylics || []),
+          putMany('acrylicLogs', d.acrylicLogs || [])
         ]);
       }
       return mergeServerDelta(d, []).then(function () {
@@ -527,7 +550,9 @@
         storages: (d.storages || []).length,
         templates: (d.templates || []).length,
         parts: (d.parts || []).length,
-        movements: (d.movements || []).length
+        movements: (d.movements || []).length,
+        acrylics: (d.acrylics || []).length,
+        acrylicLogs: (d.acrylicLogs || []).length
       };
     });
   }

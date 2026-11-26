@@ -4,239 +4,669 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-<title>CNC Template Tracker Cloud</title>
+<title>CNC Template Tracker — Offline-First</title>
 <style>
-:root{--bg:#101417;--card:#1d2327;--card2:#2a3136;--line:#465057;--text:#f3f4ef;--muted:#aeb7b1;--accent:#d4af37;--good:#2f6b45;--good2:#3f8f5d;--bad:#b24b42;--warn:#b45309;--shadow:0 12px 28px rgba(0,0,0,.28)}
-*{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top,#263036 0,#101417 45%,#090c0d 100%);color:var(--text)}
-header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#14191c,#2e383d 55%,#1f3f2d);padding:12px 14px;border-bottom:1px solid rgba(212,175,55,.35)}
-.app-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.brand h1{margin:0;font-size:17px}.brand small,.muted{color:var(--muted);font-size:13px}.sync-head{font-size:12px;text-align:right;color:#ffe9a3}.wrap{padding:14px;max-width:1180px;margin:auto}.hidden{display:none!important}
-.card{background:linear-gradient(180deg,rgba(42,49,54,.96),rgba(25,31,34,.98));border:1px solid rgba(184,192,194,.22);border-radius:18px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px}.card h2,.card h3{margin:0 0 10px}.home-hero{background:linear-gradient(135deg,#2f6b45 0%,#2a3136 55%,#d4af37 160%);border:1px solid rgba(212,175,55,.35);border-radius:22px;padding:18px;margin-bottom:12px}.home-hero h2{margin:0 0 8px;font-size:22px}
-label{display:block;margin:10px 0 5px;color:var(--muted);font-size:13px}input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(184,192,194,.22);background:#111719;color:var(--text);outline:none;font-size:15px}textarea{min-height:76px}input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
-button{border:0;border-radius:13px;padding:12px 13px;background:linear-gradient(135deg,#2b3337,#465057);color:var(--text);cursor:pointer;font-weight:700;font-size:14px}button.good{background:linear-gradient(135deg,var(--good),var(--good2));color:#f5fff7}button.bad{background:var(--bad);color:#fff}button.warn,button.accent,.bottom-nav button.active{background:linear-gradient(135deg,#b88a17,var(--accent));color:#171205}button.small{padding:8px 10px;border-radius:10px;font-size:12px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.actions button{flex:0 0 auto}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.topline{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.searchbar{margin:10px 0}.summary-box{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.mini{background:rgba(2,6,23,.65);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:11px;text-align:center}.mini b{font-size:22px;display:block}.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.menu-card{background:linear-gradient(180deg,#242c30,#171d20);border:1px solid rgba(184,192,194,.22);border-radius:18px;padding:14px;cursor:pointer;min-height:105px;display:flex;flex-direction:column;justify-content:space-between}.menu-card:hover{border-color:var(--accent)}.icon{font-size:28px}.menu-card span{font-size:12px;color:var(--muted)}
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#111719,#242c30);border-top:1px solid rgba(212,175,55,.35);display:grid;grid-template-columns:repeat(4,1fr);z-index:20;padding:7px;gap:6px}.bottom-nav button{padding:9px 6px;font-size:12px;border-radius:12px}.spacer-bottom{height:74px}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#0e7490;color:white;font-size:12px;margin:2px}.badge.good{background:#15803d}.badge.bad{background:#b91c1c}.badge.warn{background:#b45309}.empty{border:1px dashed rgba(184,192,194,.3);border-radius:14px;padding:16px;color:var(--muted);text-align:center}.line-item{border:1px solid rgba(184,192,194,.18);background:rgba(15,23,42,.45);border-radius:14px;padding:10px;margin:8px 0}.line-item b{display:block}.line-item span,.line-item small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
-table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left;font-size:13px;vertical-align:top}th{color:var(--muted);font-size:12px}.part-row{display:grid;grid-template-columns:1fr 86px auto;gap:8px;margin:8px 0}.template-pick-card{border:1px solid rgba(184,192,194,.22);background:linear-gradient(180deg,#20282c,#151a1d);border-radius:14px;padding:12px;cursor:pointer;margin-bottom:8px}.template-pick-card:hover,.template-pick-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(212,175,55,.16)}.template-pick-card span,.template-pick-card small{display:block;color:var(--muted);font-size:12px;margin-top:3px}.storage-card{border-left:5px solid var(--accent);cursor:pointer;min-height:125px}.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-end;z-index:50}.modal .box{width:100%;max-height:88vh;overflow:auto;background:#0f172a;border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:14px}.modal.image-mode{align-items:stretch;background:rgba(0,0,0,.92);z-index:120}.modal.image-mode .box{height:100vh;max-height:none;border-radius:0;border-top:0;padding:10px;display:flex;flex-direction:column}.photo-view{max-width:none;max-height:none;border-radius:14px;border:1px solid var(--line);user-select:none;-webkit-user-drag:none;touch-action:none}.image-zoom-toolbar{position:sticky;top:0;z-index:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(15,23,42,.92);border:1px solid rgba(184,192,194,.18);border-radius:14px;padding:8px;margin-bottom:8px}.image-zoom-wrap{flex:1;min-height:340px;overflow:hidden;background:#05070a;border:1px solid rgba(184,192,194,.22);border-radius:16px;display:flex;align-items:center;justify-content:center;touch-action:none}.image-zoom-wrap img{max-width:100%;max-height:100%;transform-origin:center center;cursor:grab;will-change:transform}.image-zoom-wrap img.dragging{cursor:grabbing}.zoom-percent{font-weight:800;color:#ffe9a3;min-width:54px;text-align:center}.zoom-hint{font-size:12px;color:var(--muted);margin-top:8px}
-.qr-select-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px;max-height:330px;overflow:auto;padding:2px}.qr-check-card{display:flex;gap:10px;align-items:flex-start;background:linear-gradient(180deg,#20282c,#151a1d);border:1px solid rgba(184,192,194,.22);border-radius:14px;padding:11px;cursor:pointer}.selected-counter{border:1px solid rgba(212,175,55,.45);background:rgba(212,175,55,.10);color:#ffe9a3;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700}.qr-print-area{background:white;color:black;padding:10mm;width:min(210mm,100%);min-height:297mm;margin:auto;display:grid;gap:5mm;align-content:start}.qr-label{border:1px solid #111;border-radius:6px;padding:5mm;text-align:center;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:55mm}.qr-title{font-weight:800;font-size:16px}.qr-real-holder canvas,.qr-real-holder img{width:34mm!important;height:34mm!important}.qr-fallback{border:2px dashed #111;padding:15px;margin:5px;font-weight:800}.scan-status{padding:8px 10px;border-radius:12px;background:rgba(212,175,55,.10);border:1px solid rgba(212,175,55,.35);margin-top:8px;color:#ffe9a3;font-size:13px}.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:#111719;border:1px solid rgba(212,175,55,.45);color:#ffe9a3;border-radius:999px;padding:10px 14px;z-index:1000;font-size:13px;box-shadow:var(--shadow)}.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:999;display:flex;align-items:center;justify-content:center;padding:18px}.loading-box{width:min(360px,92vw);background:linear-gradient(180deg,#242c30,#111719);border:1px solid rgba(212,175,55,.35);border-radius:18px;padding:18px;box-shadow:var(--shadow);text-align:center}.bar{height:10px;background:#101417;border-radius:999px;overflow:hidden;border:1px solid rgba(184,192,194,.22);margin-top:10px}.bar span{display:block;height:100%;width:38%;border-radius:999px;background:linear-gradient(135deg,#b88a17,var(--accent));animation:loadbar 1s infinite alternate}@keyframes loadbar{from{transform:translateX(-40%)}to{transform:translateX(200%)}}
-@media(max-width:700px){.app-head{align-items:flex-start}.sync-head{max-width:45%;font-size:11px}.wrap{padding:10px}.card{padding:12px;border-radius:16px}.row{grid-template-columns:1fr}.summary-box{grid-template-columns:repeat(3,1fr)}.menu-grid{grid-template-columns:repeat(2,1fr)}.actions button{flex:1 1 130px}.part-row{grid-template-columns:1fr 72px 54px}th:nth-child(4),td:nth-child(4){display:none}.topline{align-items:flex-start}.qr-select-panel{grid-template-columns:1fr}}
-
-.brand-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:5px 0 3px}.brand-tools button{padding:7px 10px;font-size:12px}.brand-tools span{font-size:12px;color:#ffe9a3;background:rgba(212,175,55,.10);border:1px solid rgba(212,175,55,.28);border-radius:999px;padding:6px 9px}.field-row{border:1px solid rgba(184,192,194,.18);background:rgba(15,23,42,.35);border-radius:14px;padding:10px;margin:8px 0}.field-row-grid{display:grid;grid-template-columns:1fr 1fr 1.4fr 76px auto;gap:8px;align-items:end}.field-row-grid label{margin-top:0}.storage-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(212,175,55,.20)}
-@media(max-width:800px){.field-row-grid{grid-template-columns:1fr}.brand-tools{margin-top:6px}.brand-tools span{font-size:11px}.sync-head{font-size:11px}}
-
-
-
-/* === V5 HP/TABLET COMPACT PATCH - 2026-07-06 ===
-   Fokus: form lebih pendek di HP/tablet, pilihan banyak tetap enak, dan input angka otomatis keyboard number. */
-@media(max-width:900px){
-  body{font-size:14px}
-  header{padding:9px 10px}
-  .brand h1{font-size:15px}
-  .wrap{padding:8px}
-  .card{padding:10px;border-radius:14px;margin-bottom:9px}
-  .home-hero{padding:13px;border-radius:16px}
-  .home-hero h2{font-size:18px}
-  label{margin:6px 0 3px;font-size:12px}
-  input,select,textarea{padding:10px;border-radius:10px;font-size:16px;min-height:40px}
-  textarea{min-height:58px}
-  button{padding:10px 10px;border-radius:11px;font-size:13px}
-  button.small{padding:7px 8px;font-size:11px}
-  .actions{gap:6px;margin-top:9px}
-  .actions button{flex:1 1 112px}
-  .topline{margin-bottom:7px;gap:6px}
-  .summary-box{gap:6px;margin-top:9px}
-  .mini{padding:8px;border-radius:12px}
-  .mini b{font-size:18px}
-  .menu-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-  .menu-card{min-height:88px;padding:10px;border-radius:14px}
-  .menu-card .icon{font-size:23px}
-  .menu-card b{font-size:12px;line-height:1.2}
-  .menu-card span{font-size:10.5px;line-height:1.25}
-  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-  .storage-card{min-height:auto;padding:10px}
-  .line-item{padding:8px;margin:6px 0;border-radius:12px}
-  .part-row{grid-template-columns:minmax(0,1fr) 66px 54px;gap:6px;margin:6px 0}
-  .part-row .part-qty{text-align:center;padding-left:6px;padding-right:6px}
-  .field-row{padding:8px;margin:6px 0;border-radius:12px}
-  .field-row-grid{grid-template-columns:1fr 1fr!important;gap:6px!important;align-items:end}
-  .field-row-grid > div:nth-child(3){grid-column:1 / -1}
-  .field-row-grid > div:nth-child(4){grid-column:1 / 2}
-  .field-row-grid > button{grid-column:2 / 3;height:40px;align-self:end}
-  #fieldTemplateFormCard > .actions,
-  #page-templateInput .actions:last-child,
-  #page-importExisting .actions{
-    position:sticky;
-    bottom:70px;
-    z-index:8;
-    background:linear-gradient(180deg,rgba(16,20,23,.30),rgba(16,20,23,.96));
-    padding:8px 0 2px;
-    backdrop-filter:blur(8px);
-  }
-  #fieldUploadPreview,.qr-select-panel{max-height:260px;overflow:auto}
-  table{display:block;overflow-x:auto;white-space:nowrap}
-  th,td{padding:7px;font-size:12px}
+:root{
+  --navy-950:#09172e;
+  --navy-900:#0f2342;
+  --navy-800:#16335e;
+  --navy-700:#1e457e;
+  --navy-600:#2557a3;
+  --navy-100:#e7effa;
+  --navy-50:#f2f6fc;
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --card2:#f8fafd;
+  --line:#dbe3ef;
+  --line-strong:#c3d1e6;
+  --text:#0f172a;
+  --muted:#52627a;
+  --accent:#1e457e;
+  --accent2:#2557a3;
+  --good:#0f766e;
+  --good2:#15803d;
+  --bad:#b91c1c;
+  --warn:#b45309;
+  --shadow:0 8px 24px rgba(15,35,66,.07);
+  --shadow-lg:0 16px 36px rgba(15,35,66,.12);
+  --ui-scale:1;--font-base:15px;--font-small:13px;--font-h2:21px;--control-h:44px;--control-pad:12px;--menu-min:155px;--gap-base:12px;--radius-base:16px;
 }
-@media(max-width:430px){
-  .bottom-nav{padding:5px;gap:4px}
-  .bottom-nav button{font-size:11px;padding:8px 4px}
-  .menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .grid{grid-template-columns:1fr}
-  .summary-box{grid-template-columns:repeat(3,1fr)}
-  .part-row{grid-template-columns:minmax(0,1fr) 58px 50px}
-  .field-row-grid{grid-template-columns:1fr 74px!important}
-  .field-row-grid > div:nth-child(1),
-  .field-row-grid > div:nth-child(2),
-  .field-row-grid > div:nth-child(3){grid-column:1 / -1}
-  .field-row-grid > div:nth-child(4){grid-column:1 / 2}
-  .field-row-grid > button{grid-column:2 / 3}
-}
-input[type="number"]{-moz-appearance:textfield;text-align:center;font-weight:700}
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-
-/* === V8 FLUTTER-MODERN PATCH - 2026-07-09 ===
-   Material 3 feel: smooth motion, elevation, ripple-ish press, skeleton shimmer,
-   auto-detect device (body[data-device]), part-row + size, crop sketch, movement history. */
-body{font-family:'Segoe UI',Roboto,'Helvetica Neue',system-ui,-apple-system,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
-.page{animation:pageIn .28s cubic-bezier(.2,.8,.2,1)}
-@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.card,.menu-card,.storage-card,.template-pick-card,.line-item{transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s,border-color .18s}
-.menu-card:active,.storage-card:active,.template-pick-card:active{transform:scale(.97)}
-.menu-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.4)}
-button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease;position:relative;overflow:hidden}
-button:active{transform:scale(.96);filter:brightness(1.12)}
-button.good{box-shadow:0 6px 16px rgba(47,107,69,.35)}
-button.warn,button.accent{box-shadow:0 6px 16px rgba(212,175,55,.25)}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(212,175,55,.18)}
-.bottom-nav{backdrop-filter:blur(14px);background:rgba(17,23,25,.88);border-radius:22px 22px 0 0;box-shadow:0 -8px 26px rgba(0,0,0,.45)}
-.bottom-nav button{transition:all .2s cubic-bezier(.2,.8,.2,1)}
-.bottom-nav button.active{transform:translateY(-3px)}
-.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.chip{border:1px solid rgba(184,192,194,.3);background:rgba(255,255,255,.04);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-.chip.active{background:linear-gradient(135deg,#b88a17,var(--accent));color:#171205;border-color:transparent}
-.remember-row{display:flex;align-items:center;gap:9px;margin-top:12px;cursor:pointer;user-select:none}
-.remember-row label{margin:0;cursor:pointer;color:var(--text);font-size:14px}
-.remember-row input{width:20px;height:20px;flex:0 0 auto}
-.skeleton{border-radius:14px;background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.12) 50%,rgba(255,255,255,.05) 75%);background-size:200% 100%;animation:shimmer 1.15s infinite;height:58px;margin:8px 0}
-@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
-.load-more-btn{width:100%;margin-top:10px;background:rgba(212,175,55,.10);border:1px dashed rgba(212,175,55,.45);color:#ffe9a3}
-.part-head{display:grid;grid-template-columns:1.4fr .8fr 70px 62px;gap:8px;margin:8px 0 2px;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
-.part-row{grid-template-columns:1.4fr .8fr 70px auto!important}
-@media(max-width:700px){.part-row{grid-template-columns:1.2fr .8fr 56px 50px!important}.part-head{grid-template-columns:1.2fr .8fr 56px 50px}}
-.sketch-preview-box{margin-top:10px;border:1px dashed rgba(212,175,55,.4);border-radius:16px;padding:10px;text-align:center}
-.sketch-preview-box img{max-width:100%;max-height:230px;border-radius:12px;border:1px solid rgba(184,192,194,.25)}
-.crop-viewport{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:#05070a;border:2px solid var(--accent);border-radius:16px;touch-action:none;margin:10px 0}
-.crop-viewport img{position:absolute;left:0;top:0;transform-origin:0 0;cursor:grab;user-select:none;-webkit-user-drag:none;max-width:none}
-.crop-grid{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,transparent calc(33% - 1px),rgba(255,255,255,.22) 33%,transparent calc(33% + 1px),transparent calc(66% - 1px),rgba(255,255,255,.22) 66%,transparent calc(66% + 1px)),linear-gradient(to bottom,transparent calc(33% - 1px),rgba(255,255,255,.22) 33%,transparent calc(33% + 1px),transparent calc(66% - 1px),rgba(255,255,255,.22) 66%,transparent calc(66% + 1px))}
-.crop-zoom-row{display:flex;align-items:center;gap:10px}
-.crop-zoom-row input[type=range]{flex:1;accent-color:var(--accent);padding:0;height:26px}
-.mh-item{display:flex;gap:10px;align-items:flex-start}
-.mh-icon{flex:0 0 38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;background:rgba(212,175,55,.12);border:1px solid rgba(212,175,55,.3)}
-.movement-menu-card{cursor:pointer}
-.movement-menu-card:hover{border-color:var(--accent)}
-/* === PASTE ZONE (CTRL+V screenshot) === */
-.paste-zone{margin-top:10px;border:2px dashed rgba(212,175,55,.45);border-radius:16px;padding:16px 14px;display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px;cursor:pointer;outline:none;transition:all .18s cubic-bezier(.2,.8,.2,1);background:rgba(212,175,55,.05)}
-.paste-zone b{color:#ffe9a3}
-.paste-zone:hover,.paste-zone:focus{border-color:var(--accent);background:rgba(212,175,55,.10);box-shadow:0 0 0 3px rgba(212,175,55,.14)}
-.paste-zone.dragover{border-style:solid;border-color:var(--accent);background:rgba(212,175,55,.16);transform:scale(1.01)}
-.paste-zone.flash{animation:pasteFlash .55s ease}
-@keyframes pasteFlash{0%{background:rgba(63,143,93,.35);border-color:var(--good2)}100%{background:rgba(212,175,55,.05)}}
-.paste-zone-icon{font-size:26px;flex:0 0 auto}
-body[data-device="mobile"] .paste-zone{font-size:12px;padding:12px}
-
-/* === AUTO DETECT LAYAR: skala font/form/menu ideal per ukuran ===
-   detectDevice() mengukur lebar + pointer, lalu set:
-   - body[data-device]  : mobile / tablet / desktop
-   - body[data-screen]  : xs / sm / md / lg / xl
-   - --ui-scale, --font-base, --control-h, --gap-base (CSS variables)
-   Semua font, input, button, menu ikut variabel ini. */
-:root{--ui-scale:1;--font-base:15px;--font-small:13px;--font-h2:21px;--control-h:44px;--control-pad:12px;--menu-min:150px;--gap-base:12px;--radius-base:16px}
+*{box-sizing:border-box}
 html{font-size:var(--font-base)}
-body{font-size:var(--font-base)}
-label{font-size:var(--font-small)}
-.muted,.brand small{font-size:var(--font-small)}
+body{margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',system-ui,-apple-system,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:var(--font-base);-webkit-tap-highlight-color:transparent;line-height:1.45}
+
+/* === HEADER (BLUE NAVY) === */
+header{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--navy-950) 0%,var(--navy-900) 55%,var(--navy-700) 100%);color:#fff;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 6px 20px rgba(9,23,46,.18)}
+.app-head{display:flex;justify-content:space-between;gap:12px;align-items:center;max-width:1320px;margin:0 auto;flex-wrap:wrap}
+.brand-row{display:flex;align-items:center;gap:10px}
+.brand-logo{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);display:flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto;cursor:pointer}
+.brand h1{margin:0;font-size:17px;font-weight:800;letter-spacing:-.2px;color:#fff;cursor:pointer}
+.brand small{color:rgba(226,236,252,.82);font-size:12px}
+.brand-tools{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:6px}
+.brand-tools .last-sync-tag{font-size:11.5px;color:#dbeafe;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 9px}
+.sync-head{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right;font-size:12px;color:#dbeafe}
+.head-auth-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.user-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.btn-header-login{background:#fff!important;color:var(--navy-900)!important;border:0;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.btn-header-login:hover{background:var(--navy-50)!important}
+
+.wrap{padding:16px;max-width:1240px;margin:0 auto}
+.hidden{display:none!important}
+.muted{color:var(--muted);font-size:var(--font-small)}
+
+/* === CARDS & HERO === */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-base);padding:calc(var(--gap-base) + 4px);box-shadow:var(--shadow);margin-bottom:var(--gap-base);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.card h2,.card h3{margin:0 0 8px;color:var(--navy-900);letter-spacing:-.2px}
 .card h2,.home-hero h2{font-size:var(--font-h2)}
 .card h3{font-size:calc(var(--font-h2) - 4px)}
-input,select,textarea{min-height:var(--control-h);padding:calc(var(--control-pad) - 2px) var(--control-pad);font-size:var(--font-base);border-radius:calc(var(--radius-base) - 4px)}
-button{min-height:var(--control-h);padding:calc(var(--control-pad) - 2px) calc(var(--control-pad) + 1px);font-size:calc(var(--font-base) - 1px);border-radius:calc(var(--radius-base) - 3px)}
-button.small{min-height:calc(var(--control-h) - 12px);padding:6px 10px;font-size:calc(var(--font-small) - 1px)}
-.card{padding:calc(var(--gap-base) + 2px);border-radius:var(--radius-base);margin-bottom:var(--gap-base)}
-.menu-grid{grid-template-columns:repeat(auto-fit,minmax(var(--menu-min),1fr));gap:calc(var(--gap-base) - 2px)}
-.menu-card{padding:calc(var(--gap-base) + 2px);min-height:calc(105px * var(--ui-scale));border-radius:var(--radius-base)}
-.menu-card .icon{font-size:calc(28px * var(--ui-scale))}
-.menu-card b{font-size:calc(var(--font-base) - 1px)}
-.menu-card span{font-size:calc(var(--font-small) - 1px)}
-.mini b{font-size:calc(22px * var(--ui-scale))}
-th,td{font-size:calc(var(--font-small) + 0px)}
-.bottom-nav button{font-size:calc(var(--font-small) - 1px);min-height:auto}
 
-/* Ukuran layar: xs (HP kecil) → xl (monitor besar) */
-body[data-screen="xs"]{--ui-scale:.88;--font-base:13.5px;--font-small:11.5px;--font-h2:17px;--control-h:42px;--control-pad:10px;--menu-min:126px;--gap-base:9px;--radius-base:14px}
-body[data-screen="sm"]{--ui-scale:.94;--font-base:14.5px;--font-small:12.5px;--font-h2:19px;--control-h:44px;--control-pad:11px;--menu-min:140px;--gap-base:10px;--radius-base:15px}
-body[data-screen="md"]{--ui-scale:1;--font-base:15px;--font-small:13px;--font-h2:21px;--control-h:46px;--control-pad:12px;--menu-min:160px;--gap-base:12px;--radius-base:16px}
-body[data-screen="lg"]{--ui-scale:1.05;--font-base:15.5px;--font-small:13.5px;--font-h2:22px;--control-h:46px;--control-pad:13px;--menu-min:185px;--gap-base:14px;--radius-base:18px}
-body[data-screen="xl"]{--ui-scale:1.12;--font-base:16.5px;--font-small:14px;--font-h2:24px;--control-h:50px;--control-pad:14px;--menu-min:210px;--gap-base:16px;--radius-base:20px}
+.home-hero{background:linear-gradient(135deg,var(--navy-950) 0%,var(--navy-900) 52%,var(--navy-600) 100%);color:#fff;border-radius:22px;padding:20px;margin-bottom:14px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.home-hero::after{content:"";position:absolute;right:-50px;top:-50px;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 70%);pointer-events:none}
+.home-hero h2{margin:0 0 6px;color:#fff;font-weight:800}
+.home-hero .muted{color:rgba(226,236,252,.84)}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.hero-quick-btns{display:flex;gap:8px;flex-wrap:wrap}
+.hero-quick-btns button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.26);min-height:38px;padding:7px 12px;font-size:12.5px}
+.hero-quick-btns button:hover{background:rgba(255,255,255,.24)}
+.hero-quick-btns button.hero-primary{background:#fff;color:var(--navy-900);border-color:#fff}
 
-/* Touch device: kontrol lebih tinggi biar gampang dipencet jari */
-body[data-touch="1"]{--control-h:48px}
-body[data-touch="1"][data-screen="xs"]{--control-h:46px}
-body[data-touch="1"] button.small{min-height:38px}
+/* === INTERACTIVE KPI CARDS === */
+.summary-box{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:16px}
+.mini{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.20);border-radius:15px;padding:12px 10px;text-align:left;cursor:pointer;transition:transform .16s ease,background .16s ease,border-color .16s ease;backdrop-filter:blur(6px)}
+.mini:hover{transform:translateY(-2px);background:rgba(255,255,255,.20);border-color:rgba(255,255,255,.45)}
+.mini:active{transform:scale(.97)}
+.mini .mini-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:rgba(226,236,252,.9);margin-bottom:4px}
+.mini b{font-size:calc(24px * var(--ui-scale));display:block;color:#fff;line-height:1.1}
+.mini span{font-size:11.5px;color:rgba(226,236,252,.82);display:block;margin-top:3px}
 
-/* Auto-detect device tuning */
-body[data-device="desktop"] .wrap{max-width:1280px}
-body[data-device="desktop"] .bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(560px,94vw);border-radius:22px;bottom:12px;border:1px solid rgba(212,175,55,.35)}
-body[data-device="desktop"] .spacer-bottom{height:92px}
-body[data-device="desktop"] .row{grid-template-columns:1fr 1fr}
-body[data-device="tablet"] .menu-grid{grid-template-columns:repeat(3,1fr)}
-body[data-device="mobile"] .card{border-radius:20px}
-body[data-screen="xl"] .wrap{max-width:1380px}
-body[data-screen="xs"] .summary-box{gap:6px}
-body[data-screen="xs"] .bottom-nav button{padding:7px 3px}
+/* === INTERACTIVE DASHBOARD ANALYTICS === */
+.dash-analytics-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;margin-bottom:12px}
+.chart-row{padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);margin:7px 0;cursor:pointer;transition:all .16s ease}
+.chart-row:hover,.chart-row.active{border-color:var(--navy-600);background:var(--navy-50);box-shadow:0 4px 12px rgba(30,69,126,.09)}
+.chart-row-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;margin-bottom:6px}
+.chart-row-head b{color:var(--navy-900)}
+.chart-track{height:9px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.chart-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--navy-900),var(--navy-600));transition:width .35s cubic-bezier(.2,.8,.2,1)}
+.chart-fill.good{background:linear-gradient(90deg,#0f766e,#16a34a)}
+.chart-fill.warn{background:linear-gradient(90deg,#b45309,#f59e0b)}
+.chart-fill.bad{background:linear-gradient(90deg,#b91c1c,#ef4444)}
+.drilldown-box{margin-top:10px;padding:12px;border-radius:14px;background:var(--navy-50);border:1px solid var(--line-strong)}
 
-@media print{body{background:white!important;color:black!important}header,.bottom-nav,.no-print,.wrap > section:not(#page-printqr):not(#page-templateQrPrint){display:none!important}#page-printqr,#page-templateQrPrint{display:block!important}.qr-print-area{width:210mm!important;min-height:297mm!important}.template-qr-print-area{background:#fff;color:#000;padding:0;margin:0}.template-qr-label{color:#000;border:0;border-bottom:1px dashed #999;border-radius:0;break-inside:avoid;page-break-inside:avoid}.wrap{padding:0;max-width:none}.card{border:0;box-shadow:none;padding:0}@page{size:A4 portrait;margin:0}}
-.template-qr-print-area{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;background:#fff;color:#000;padding:8mm;width:210mm;min-height:297mm;margin:auto;align-content:start}.template-qr-label{border:1px solid #111;border-radius:3mm;padding:4mm;text-align:center;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4mm;min-height:70mm;font-family:Arial,sans-serif}.template-qr-label img,.template-qr-label canvas{width:32mm!important;height:32mm!important}.template-qr-style{font-size:12pt;font-weight:800;line-height:1.2}.template-qr-process{font-size:9pt;line-height:1.25;max-width:100%;overflow-wrap:anywhere}.template-qr-ct{font-size:11pt;font-weight:800}.template-qr-id{font-size:7pt;color:#333}.template-qr-roll{grid-template-columns:1fr;width:auto;min-height:0;padding:0;gap:0}.template-qr-roll .template-qr-label{min-height:0;break-after:page;page-break-after:always;padding:3mm}.template-qr-roll[data-width="58"] .template-qr-label{width:54mm}.template-qr-roll[data-width="80"] .template-qr-label{width:76mm}.template-qr-roll[data-width="58"] .template-qr-label img,.template-qr-roll[data-width="58"] .template-qr-label canvas{width:28mm!important;height:28mm!important}.template-qr-roll[data-width="80"] .template-qr-label img,.template-qr-roll[data-width="80"] .template-qr-label canvas{width:36mm!important;height:36mm!important}
-.template-qr-select-card{display:block}.template-qr-select-card>label{display:flex;gap:10px;align-items:flex-start}.template-qr-select-card .ct-entry{margin-left:30px}.template-qr-select-card .ct-entry label{margin-top:5px}.template-qr-select-card .ct-entry input{max-width:260px}
-.badge.partial{background:#0369a1;color:#fff}
-.dist-group-title{font-size:12px;font-weight:800;color:#ffe9a3;letter-spacing:.3px;text-transform:uppercase;margin:12px 0 6px;padding:4px 8px;border-left:3px solid var(--accent);background:rgba(212,175,55,.08);border-radius:6px}
+/* === INPUTS & BUTTONS === */
+label{display:block;margin:10px 0 5px;color:var(--navy-900);font-size:var(--font-small);font-weight:600}
+input,select,textarea{width:100%;min-height:var(--control-h);padding:calc(var(--control-pad) - 2px) var(--control-pad);border-radius:calc(var(--radius-base) - 4px);border:1px solid var(--line-strong);background:#fff;color:var(--text);outline:none;font-size:var(--font-base);transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--navy-600);box-shadow:0 0 0 3px rgba(37,87,163,.16)}
+input[readonly]{background:var(--card2);color:var(--muted)}
+textarea{min-height:76px;resize:vertical}
+input[type=checkbox],input[type=radio]{width:19px;height:19px;accent-color:var(--navy-700);min-height:auto}
+input[type="number"]{-moz-appearance:textfield;text-align:center;font-weight:700}
+input[type="number"]::-webkit-outer-spin-button,input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+button{border:1px solid var(--line-strong);border-radius:calc(var(--radius-base) - 4px);min-height:var(--control-h);padding:calc(var(--control-pad) - 2px) calc(var(--control-pad) + 2px);background:#fff;color:var(--navy-900);cursor:pointer;font-weight:700;font-size:calc(var(--font-base) - 1px);transition:transform .12s ease,background .15s ease,box-shadow .15s ease,border-color .15s ease;position:relative;overflow:hidden}
+button:hover{background:var(--navy-50);border-color:var(--navy-600)}
+button:active{transform:scale(.97)}
+button.primary,button.good{background:linear-gradient(135deg,var(--navy-900),var(--navy-700));color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(15,35,66,.20)}
+button.primary:hover,button.good:hover{background:linear-gradient(135deg,var(--navy-950),var(--navy-600));color:#fff}
+button.success{background:linear-gradient(135deg,#0f766e,#15803d);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(15,118,110,.22)}
+button.bad{background:linear-gradient(135deg,#b91c1c,#dc2626);color:#fff;border-color:transparent}
+button.bad:hover{background:#991b1b;color:#fff}
+button.warn,button.accent{background:linear-gradient(135deg,var(--navy-700),var(--navy-600));color:#fff;border-color:transparent}
+button.small{min-height:calc(var(--control-h) - 12px);padding:6px 11px;border-radius:10px;font-size:calc(var(--font-small) - 1px)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.actions button{flex:0 0 auto}
+
+/* === LAYOUT GRIDS === */
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.topline{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.searchbar{margin:10px 0}
+
+/* === MENU GRID === */
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(var(--menu-min),1fr));gap:10px;margin-bottom:12px}
+.menu-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-base);padding:14px;cursor:pointer;min-height:106px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.menu-card:hover{transform:translateY(-3px);border-color:var(--navy-600);box-shadow:var(--shadow-lg)}
+.menu-card:active{transform:scale(.97)}
+.menu-card .icon{width:42px;height:42px;border-radius:12px;background:var(--navy-100);color:var(--navy-900);display:flex;align-items:center;justify-content:center;font-size:21px;margin-bottom:8px}
+.menu-card b{font-size:14px;color:var(--navy-900);display:block}
+.menu-card span{font-size:12px;color:var(--muted);margin-top:2px;display:block}
+
+/* === BOTTOM NAVIGATION === */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:25;padding:7px 8px;gap:6px;box-shadow:0 -8px 24px rgba(15,35,66,.08)}
+.bottom-nav button{padding:8px 4px;font-size:12px;border-radius:12px;min-height:auto;border:1px solid transparent;background:transparent;color:var(--muted);font-weight:700}
+.bottom-nav button:hover{background:var(--navy-50);color:var(--navy-900)}
+.bottom-nav button.active{background:linear-gradient(135deg,var(--navy-900),var(--navy-700));color:#fff;border-color:transparent;box-shadow:0 6px 14px rgba(15,35,66,.22);transform:translateY(-2px)}
+.spacer-bottom{height:82px}
+
+/* === BADGES, TABLES & LIST ITEMS === */
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--navy-100);color:var(--navy-900);font-size:11.5px;font-weight:700;margin:2px}
+.badge.good{background:#dcfce7;color:#166534}
+.badge.bad{background:#fee2e2;color:#991b1b}
+.badge.warn{background:#fef3c7;color:#92400e}
+.badge.partial{background:#e0f2fe;color:#075985}
+.badge.acrylic{background:#ede9fe;color:#5b21b6}
+.badge.leftover{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}
+
+.empty{border:1px dashed var(--line-strong);border-radius:14px;padding:18px;color:var(--muted);text-align:center;background:var(--card2)}
+.line-item{border:1px solid var(--line);background:var(--card2);border-radius:14px;padding:11px 12px;margin:8px 0;transition:border-color .15s,background .15s}
+.line-item:hover{border-color:var(--line-strong);background:#fff}
+.line-item b{display:block;color:var(--navy-900)}
+.line-item span,.line-item small{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
+
+table{width:100%;border-collapse:collapse;margin-top:10px;background:#fff;border-radius:12px;overflow:hidden}
+th,td{border-bottom:1px solid var(--line);padding:10px 9px;text-align:left;font-size:13px;vertical-align:top}
+th{background:var(--navy-50);color:var(--navy-900);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+tr:hover td{background:#fafcff}
+
+/* === PARTS, CARDS, MODALS === */
+.part-head{display:grid;grid-template-columns:1.4fr .8fr 70px 62px;gap:8px;margin:8px 0 2px;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.part-row{display:grid;grid-template-columns:1.4fr .8fr 70px auto;gap:8px;margin:8px 0}
+.template-pick-card{border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px;cursor:pointer;margin-bottom:8px;transition:all .15s ease}
+.template-pick-card:hover,.template-pick-card.selected{border-color:var(--navy-600);background:var(--navy-50);box-shadow:0 0 0 2px rgba(37,87,163,.16)}
+.template-pick-card b{color:var(--navy-900)}
+.template-pick-card span,.template-pick-card small{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.storage-card{border-left:5px solid var(--navy-700);cursor:pointer;min-height:118px}
+.storage-card.selected{border-color:var(--navy-600);background:var(--navy-50);box-shadow:0 0 0 2px rgba(37,87,163,.2)}
+
+/* === MODALS === */
+.modal{position:fixed;inset:0;background:rgba(9,23,46,.56);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:60;padding:14px}
+.modal .box{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 24px 56px rgba(9,23,46,.28);animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.modal.login-modal .box{width:min(460px,100%);padding:22px}
+.login-modal-head{background:linear-gradient(135deg,var(--navy-950),var(--navy-700));color:#fff;margin:-22px -22px 16px;padding:18px 22px;border-radius:19px 19px 0 0;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.login-modal-head h2{margin:0;color:#fff;font-size:19px}
+.login-modal-head button{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.25)}
+
+.modal.image-mode{align-items:stretch;background:rgba(9,17,30,.94);z-index:120;padding:0}
+.modal.image-mode .box{width:100%;height:100vh;max-height:none;border-radius:0;border:0;padding:10px;display:flex;flex-direction:column;background:#09111e;color:#fff}
+.modal.image-mode .box h2{color:#fff}
+.photo-view{max-width:none;max-height:none;border-radius:14px;border:1px solid rgba(255,255,255,.18);user-select:none;-webkit-user-drag:none;touch-action:none}
+.image-zoom-toolbar{position:sticky;top:0;z-index:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(15,35,66,.92);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:8px;margin-bottom:8px}
+.image-zoom-wrap{flex:1;min-height:340px;overflow:hidden;background:#05070a;border:1px solid rgba(255,255,255,.16);border-radius:16px;display:flex;align-items:center;justify-content:center;touch-action:none}
+.image-zoom-wrap img{max-width:100%;max-height:100%;transform-origin:center center;cursor:grab;will-change:transform}
+.image-zoom-wrap img.dragging{cursor:grabbing}
+.zoom-percent{font-weight:800;color:#dbeafe;min-width:54px;text-align:center}
+.zoom-hint{font-size:12px;color:#cbd5e1;margin-top:8px}
+
+/* === CHIPS, PASTE ZONE, CROP, SKETCH, STATUS === */
+.chip-row{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}
+.chip{border:1px solid var(--line-strong);background:#fff;color:var(--navy-900);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;user-select:none}
+.chip:hover{background:var(--navy-50);border-color:var(--navy-600)}
+.chip.active{background:linear-gradient(135deg,var(--navy-900),var(--navy-700));color:#fff;border-color:transparent;box-shadow:0 4px 10px rgba(15,35,66,.18)}
+
+.acrylic-mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.acrylic-mode-card{border:1.5px solid var(--line-strong);border-radius:14px;padding:11px;cursor:pointer;background:#fff;transition:all .15s ease}
+.acrylic-mode-card:hover{border-color:var(--navy-600);background:var(--navy-50)}
+.acrylic-mode-card.active{border-color:var(--navy-800);background:var(--navy-100);box-shadow:0 0 0 2px rgba(30,69,126,.16)}
+.acrylic-mode-card b{display:block;font-size:13px;color:var(--navy-900)}
+.acrylic-mode-card small{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.acrylic-box{border:1px solid var(--line-strong);background:var(--navy-50);border-radius:16px;padding:12px;margin:12px 0}
+
+.scan-status{padding:10px 12px;border-radius:12px;background:var(--navy-50);border:1px solid var(--line-strong);margin-top:8px;color:var(--navy-900);font-size:13px}
+.selected-counter{border:1px solid var(--navy-600);background:var(--navy-100);color:var(--navy-900);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800}
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--navy-900);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:999px;padding:10px 16px;z-index:1000;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg)}
+.loading-overlay{position:fixed;inset:0;background:rgba(9,23,46,.55);backdrop-filter:blur(3px);z-index:999;display:flex;align-items:center;justify-content:center;padding:18px}
+.loading-box{width:min(360px,92vw);background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow-lg);text-align:center;color:var(--navy-900)}
+.bar{height:10px;background:var(--navy-100);border-radius:999px;overflow:hidden;margin-top:12px}
+.bar span{display:block;height:100%;width:38%;border-radius:999px;background:linear-gradient(135deg,var(--navy-900),var(--navy-600));animation:loadbar 1s infinite alternate}
+@keyframes loadbar{from{transform:translateX(-40%)}to{transform:translateX(200%)}}
+
+.page{animation:pageIn .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.skeleton{border-radius:14px;background:linear-gradient(90deg,#edf2f8 25%,#e2eaf5 50%,#edf2f8 75%);background-size:200% 100%;animation:shimmer 1.15s infinite;height:58px;margin:8px 0}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.load-more-btn{width:100%;margin-top:10px;background:var(--navy-50);border:1px dashed var(--navy-600);color:var(--navy-900)}
+
+.sketch-preview-box{margin-top:10px;border:1px dashed var(--navy-600);border-radius:16px;padding:12px;text-align:center;background:#fff}
+.sketch-preview-box img{max-width:100%;max-height:230px;border-radius:12px;border:1px solid var(--line)}
+.crop-viewport{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:#0f172a;border:2px solid var(--navy-700);border-radius:16px;touch-action:none;margin:10px 0}
+.crop-viewport img{position:absolute;left:0;top:0;transform-origin:0 0;cursor:grab;user-select:none;-webkit-user-drag:none;max-width:none}
+.crop-grid{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to right,transparent calc(33% - 1px),rgba(255,255,255,.3) 33%,transparent calc(33% + 1px),transparent calc(66% - 1px),rgba(255,255,255,.3) 66%,transparent calc(66% + 1px)),linear-gradient(to bottom,transparent calc(33% - 1px),rgba(255,255,255,.3) 33%,transparent calc(33% + 1px),transparent calc(66% - 1px),rgba(255,255,255,.3) 66%,transparent calc(66% + 1px))}
+.crop-zoom-row{display:flex;align-items:center;gap:10px}
+.crop-zoom-row input[type=range]{flex:1;accent-color:var(--navy-700);padding:0;height:26px}
+.mh-item{display:flex;gap:10px;align-items:flex-start}
+.mh-icon{flex:0 0 38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--navy-100);border:1px solid var(--line-strong)}
+.movement-menu-card{cursor:pointer}
+.movement-menu-card:hover{border-color:var(--navy-600)}
+.paste-zone{margin-top:10px;border:2px dashed var(--navy-600);border-radius:16px;padding:15px 14px;display:flex;gap:12px;align-items:center;color:var(--muted);font-size:13px;cursor:pointer;outline:none;transition:all .18s ease;background:var(--navy-50)}
+.paste-zone b{color:var(--navy-900)}
+.paste-zone:hover,.paste-zone:focus{border-color:var(--navy-900);background:var(--navy-100);box-shadow:0 0 0 3px rgba(30,69,126,.14)}
+.paste-zone.dragover{border-style:solid;border-color:var(--navy-900);background:var(--navy-100);transform:scale(1.01)}
+.paste-zone.flash{animation:pasteFlash .55s ease}
+@keyframes pasteFlash{0%{background:#dcfce7;border-color:#15803d}100%{background:var(--navy-50)}}
+.paste-zone-icon{font-size:26px;flex:0 0 auto}
+
+/* === DISTRIBUTION SPLIT & FIELD UPDATE === */
+.field-row{border:1px solid var(--line);background:var(--card2);border-radius:14px;padding:10px;margin:8px 0}
+.field-row-grid{display:grid;grid-template-columns:1fr 1fr 1.4fr 76px auto;gap:8px;align-items:end}
+.field-row-grid label{margin-top:0}
+.dist-group-title{font-size:12px;font-weight:800;color:var(--navy-900);letter-spacing:.3px;text-transform:uppercase;margin:12px 0 6px;padding:5px 10px;border-left:4px solid var(--navy-700);background:var(--navy-100);border-radius:6px}
 .dist-pick-row{display:flex;gap:10px;align-items:flex-start}
 .dist-pick-row input[type=checkbox]{margin-top:3px;flex:0 0 auto}
 .dist-pick-body{flex:1;min-width:0}
-.dist-split-card{border:1px solid rgba(212,175,55,.35);background:rgba(15,23,42,.55);border-radius:14px;padding:12px;margin:10px 0}
+.dist-split-card{border:1px solid var(--line-strong);background:var(--navy-50);border-radius:14px;padding:12px;margin:10px 0}
 .dist-split-head{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-.dist-part-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 10px;border:1px solid rgba(184,192,194,.16);border-radius:12px;background:rgba(17,23,25,.65);margin:6px 0}
+.dist-part-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;margin:6px 0}
 .dist-part-row.unchecked{opacity:.52}
 .dist-part-info{min-width:0}
-.dist-part-info b{display:block;font-size:13.5px}
+.dist-part-info b{display:block;font-size:13.5px;color:var(--navy-900)}
 .dist-part-info small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
 .dist-qty-ctrl{display:flex;align-items:center;gap:5px}
 .dist-qty-ctrl button{min-height:34px;padding:4px 10px;font-size:14px;border-radius:9px}
 .dist-qty-ctrl input{width:64px;min-height:34px;padding:4px 6px;text-align:center;font-size:14px}
-.dist-alert{border-radius:12px;padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.4}
-.dist-alert.warn{background:rgba(180,83,9,.18);border:1px solid rgba(245,158,11,.55);color:#fde68a}
-.dist-alert.bad{background:rgba(185,28,28,.22);border:1px solid rgba(239,68,68,.6);color:#fecaca}
-.dist-alert.good{background:rgba(47,107,69,.22);border:1px solid rgba(63,143,93,.55);color:#bbf7d0}
-.dist-alert.info{background:rgba(14,116,144,.2);border:1px solid rgba(56,189,248,.45);color:#bae6fd}
-@media(max-width:600px){.dist-part-row{grid-template-columns:auto 1fr}.dist-qty-ctrl{grid-column:2 / 3;justify-content:flex-start;margin-top:4px}}
-.sync-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 9px;border:1px solid rgba(255,255,255,.2)}
-.sync-pill.online{background:rgba(47,107,69,.28);border-color:rgba(63,143,93,.6);color:#bbf7d0}
-.sync-pill.offline{background:rgba(185,28,28,.28);border-color:rgba(239,68,68,.6);color:#fecaca}
-.sync-pill.pending{background:rgba(180,83,9,.28);border-color:rgba(245,158,11,.6);color:#fde68a;cursor:pointer}
-.sync-pill.error{background:rgba(185,28,28,.35);border-color:rgba(239,68,68,.75);color:#fecaca;cursor:pointer}
-.sync-pill.clean{background:rgba(14,116,144,.22);border-color:rgba(56,189,248,.45);color:#bae6fd;cursor:pointer}
+.dist-alert{border-radius:12px;padding:10px 12px;margin:10px 0;font-size:13px;line-height:1.45;font-weight:500}
+.dist-alert.warn{background:#fffbeb;border:1px solid #f59e0b;color:#92400e}
+.dist-alert.bad{background:#fef2f2;border:1px solid #ef4444;color:#991b1b}
+.dist-alert.good{background:#f0fdf4;border:1px solid #22c55e;color:#166534}
+.dist-alert.info{background:#eff6ff;border:1px solid #60a5fa;color:#1e40af}
+
+/* === SYNC PILLS === */
+.sync-pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px;border:1px solid rgba(255,255,255,.22);min-height:auto}
+.sync-pill.online{background:rgba(34,197,94,.22);border-color:rgba(134,239,172,.5);color:#dcfce7}
+.sync-pill.offline{background:rgba(239,68,68,.26);border-color:rgba(252,165,165,.5);color:#fee2e2}
+.sync-pill.pending{background:rgba(245,158,11,.26);border-color:rgba(253,224,71,.5);color:#fef3c7;cursor:pointer}
+.sync-pill.error{background:rgba(239,68,68,.32);border-color:rgba(252,165,165,.7);color:#fee2e2;cursor:pointer}
+.sync-pill.clean{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#e0f2fe;cursor:pointer}
+
+/* === QR SELECTION & PRINT AREAS === */
+.qr-select-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px;max-height:330px;overflow:auto;padding:2px}
+.qr-check-card{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px;cursor:pointer;transition:border-color .15s,background .15s}
+.qr-check-card:hover{border-color:var(--navy-600);background:var(--navy-50)}
+.qr-check-card b{color:var(--navy-900);display:block}
+.qr-check-card span{color:var(--muted);font-size:12px;display:block;margin-top:2px}
+.qr-print-area{background:white;color:black;padding:10mm;width:min(210mm,100%);min-height:120mm;margin:12px auto 0;display:grid;gap:5mm;align-content:start;border:1px solid var(--line);border-radius:14px}
+.qr-label{border:1px solid #111;border-radius:6px;padding:5mm;text-align:center;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:55mm}
+.qr-title{font-weight:800;font-size:15px}
+.qr-real-holder canvas,.qr-real-holder img{width:34mm!important;height:34mm!important;display:block;margin:2mm auto}
+.qr-fallback{border:2px dashed #111;padding:15px;margin:5px;font-weight:800}
+
+.template-qr-print-area{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;background:#fff;color:#000;padding:8mm;width:min(210mm,100%);min-height:120mm;margin:12px auto 0;align-content:start;border:1px solid var(--line);border-radius:14px}
+.template-qr-label{border:1px solid #111;border-radius:3mm;padding:4mm;text-align:center;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4mm;min-height:70mm;font-family:Arial,sans-serif;background:#fff;color:#000}
+.template-qr-label img,.template-qr-label canvas{width:32mm!important;height:32mm!important;display:block}
+.template-qr-style{font-size:12pt;font-weight:800;line-height:1.2}
+.template-qr-process{font-size:9pt;line-height:1.25;max-width:100%;overflow-wrap:anywhere}
+.template-qr-ct{font-size:11pt;font-weight:800}
+.template-qr-id{font-size:7pt;color:#333}
+.template-qr-roll{grid-template-columns:1fr;width:auto;min-height:0;padding:4mm;gap:3mm}
+.template-qr-roll .template-qr-label{min-height:0;break-after:page;page-break-after:always;padding:3mm}
+.template-qr-roll[data-width="58"] .template-qr-label{width:54mm}
+.template-qr-roll[data-width="80"] .template-qr-label{width:76mm}
+.template-qr-roll[data-width="58"] .template-qr-label img,.template-qr-roll[data-width="58"] .template-qr-label canvas{width:28mm!important;height:28mm!important}
+.template-qr-roll[data-width="80"] .template-qr-label img,.template-qr-roll[data-width="80"] .template-qr-label canvas{width:36mm!important;height:36mm!important}
+.template-qr-select-card{display:block}
+.template-qr-select-card>label{display:flex;gap:10px;align-items:flex-start;margin:0;font-weight:500}
+.template-qr-select-card .ct-entry{margin-left:30px}
+.template-qr-select-card .ct-entry label{margin-top:6px}
+.template-qr-select-card .ct-entry input{max-width:260px}
+
+/* === AUTO DEVICE & RESPONSIVE === */
+body[data-screen="xs"]{--ui-scale:.88;--font-base:13.5px;--font-small:11.5px;--font-h2:17px;--control-h:42px;--control-pad:10px;--menu-min:130px;--gap-base:9px;--radius-base:14px}
+body[data-screen="sm"]{--ui-scale:.94;--font-base:14.5px;--font-small:12.5px;--font-h2:19px;--control-h:44px;--control-pad:11px;--menu-min:145px;--gap-base:10px;--radius-base:15px}
+body[data-screen="md"]{--ui-scale:1;--font-base:15px;--font-small:13px;--font-h2:21px;--control-h:44px;--control-pad:12px;--menu-min:160px;--gap-base:12px;--radius-base:16px}
+body[data-screen="lg"]{--ui-scale:1.03;--font-base:15px;--font-small:13px;--font-h2:22px;--control-h:44px;--control-pad:12px;--menu-min:175px;--gap-base:14px;--radius-base:17px}
+body[data-screen="xl"]{--ui-scale:1.06;--font-base:15.5px;--font-small:13.5px;--font-h2:23px;--control-h:46px;--control-pad:13px;--menu-min:195px;--gap-base:15px;--radius-base:18px}
+body[data-touch="1"]{--control-h:46px}
+body[data-device="desktop"] .wrap{max-width:1280px}
+body[data-device="desktop"] .bottom-nav{left:50%;right:auto;transform:translateX(-50%);width:min(620px,94vw);border-radius:20px;bottom:12px;border:1px solid var(--line-strong);box-shadow:0 12px 32px rgba(15,35,66,.16)}
+body[data-device="desktop"] .spacer-bottom{height:96px}
+body[data-screen="xl"] .wrap{max-width:1360px}
+
+@media(max-width:960px){
+  .summary-box{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .dash-analytics-grid{grid-template-columns:1fr}
+  .acrylic-mode-grid{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+  header{padding:9px 11px}
+  .wrap{padding:10px}
+  .home-hero{padding:15px;border-radius:18px}
+  .row,.row-3{grid-template-columns:1fr}
+  .field-row-grid{grid-template-columns:1fr 1fr!important;gap:6px!important}
+  .field-row-grid > div:nth-child(3){grid-column:1 / -1}
+  .field-row-grid > div:nth-child(4){grid-column:1 / 2}
+  .field-row-grid > button{grid-column:2 / 3;height:40px}
+  table{display:block;overflow-x:auto;white-space:nowrap}
+  th,td{padding:8px;font-size:12px}
+  .part-row{grid-template-columns:1.2fr .8fr 58px 50px}
+  .part-head{grid-template-columns:1.2fr .8fr 58px 50px}
+}
+@media(max-width:600px){
+  .summary-box{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dist-part-row{grid-template-columns:auto 1fr}
+  .dist-qty-ctrl{grid-column:2 / 3;justify-content:flex-start;margin-top:4px}
+  .bottom-nav{padding:5px;gap:4px}
+  .bottom-nav button{font-size:11px;padding:7px 2px}
+  .modal{align-items:flex-end;padding:0}
+  .modal .box{border-radius:20px 20px 0 0;max-height:92vh}
+  .modal.login-modal{align-items:center;padding:12px}
+  .modal.login-modal .box{border-radius:20px}
+}
+
+/* === PRINT CSS: hanya cetak target aktif (tanpa halaman kosong ekstra) === */
+@media print{
+  body{background:#fff!important;color:#000!important}
+  header,.bottom-nav,.no-print,.modal,.toast,.loading-overlay,.spacer-bottom{display:none!important}
+  .wrap{padding:0!important;max-width:none!important;margin:0!important}
+  .wrap > section{display:none!important}
+  body[data-print-target="qr"] #page-printqr{display:block!important}
+  body[data-print-target="templateQr"] #page-templateQrPrint{display:block!important}
+  body:not([data-print-target]) #page-printqr:not(.hidden),
+  body:not([data-print-target]) #page-templateQrPrint:not(.hidden){display:block!important}
+  .card{border:0!important;box-shadow:none!important;padding:0!important;margin:0!important}
+  .qr-print-area{border:0!important;border-radius:0!important;width:210mm!important;min-height:0!important;padding:6mm!important;margin:0!important}
+  .template-qr-print-area{border:0!important;border-radius:0!important;background:#fff!important;color:#000!important;padding:0!important;margin:0!important;min-height:0!important}
+  .template-qr-label{color:#000!important;border:1px solid #111!important;break-inside:avoid;page-break-inside:avoid}
+  @page{size:A4 portrait;margin:6mm}
+}
 </style>
 </head>
 <body>
-<header class="no-print"><div class="app-head"><div class="brand"><h1>CNC Template Tracker</h1><div class="brand-tools"><span class="sync-pill online" id="syncNetBadge">🟢 Online</span><button class="sync-pill clean hidden" id="syncQueueBadge" type="button" onclick="openOutboxModal()">✓ 0 tertunda</button><button class="small good hidden" id="btnHeaderSync" type="button" onclick="syncNowManual()">🔄 Sync Sekarang</button><span id="headerLastSync">Sync: -</span></div></div><div class="sync-head"><div id="headerSyncStatus">Mode Offline-First</div><div id="whoami"></div><button class="small bad hidden" id="btnHeaderLogout" type="button" onclick="logout()" style="margin-top:6px">Logout</button></div></div></header>
-<section class="wrap" id="page-login"><div class="card" style="max-width:520px;margin:34px auto"><h2>Login</h2><p class="muted">Mode Offline-First: data tersimpan lokal di perangkat &amp; sync delta ke Google Sheets. Login mengaktifkan token perangkat 30 hari.</p><label>Username</label><input id="loginUser" value="" autocomplete="username"/><label>Password</label><input id="loginPass" type="password" value="" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"/><div class="actions"><button class="good" type="button" onclick="login()">Masuk</button><button id="btnPingCloud" type="button" onclick="testConnection()">Tes Koneksi</button><button type="button" onclick="openServerSettingsModal()">⚙️ Pengaturan Server</button></div><div class="scan-status" id="loginStatus"></div></div></section>
-<main class="wrap hidden" id="app">
-<section class="page" id="page-home"><div class="home-hero"><h2>Dashboard Template CNC</h2><div class="muted" id="homeSyncSummary">Database lokal siap offline</div><div class="summary-box"><div class="mini"><b id="sumTemplates">0</b><span>Total</span></div><div class="mini"><b id="sumWaiting">0</b><span>Waiting</span></div><div class="mini"><b id="sumDistributed">0</b><span>Distributed</span></div></div></div><div class="menu-grid"><div class="menu-card" onclick="showPage('dashboardStorage')"><div class="icon">📊</div><b>Dashboard Storage</b><span>Isi tiap storage + filter master</span></div><div class="menu-card" onclick="showPage('templateInput')"><div class="icon">➕</div><b>Input Template</b><span>Buyer, Style/KP, multi part, sketch</span></div><div class="menu-card" onclick="showPage('distribution')"><div class="icon">📦</div><b>Distribusi</b><span>Split &amp; assign storage</span></div><div class="menu-card" onclick="showPage('storage')"><div class="icon">📷</div><b>Scan / Storage</b><span>Cek isi meja</span></div><div class="menu-card" onclick="showPage('movement')"><div class="icon">🔁</div><b>Movement</b><span>Pindah antar storage</span></div><div class="menu-card" onclick="showPage('templateList')"><div class="icon">📋</div><b>List Template</b><span>Filter cepat</span></div><div class="menu-card" onclick="showPage('templateQrPrint')"><div class="icon">🏷️</div><b>Print QR Template</b><span>Style/KP · proses · CT</span></div><div class="menu-card" onclick="showPage('master')"><div class="icon">⚙️</div><b>Master &amp; Backup</b><span>Storage, QR, server, backup</span></div><div class="menu-card" id="menuUserManagement" onclick="showPage('userManagement')"><div class="icon">👥</div><b>User Management</b><span>Super admin only</span></div><div class="menu-card" onclick="showPage('fieldUpdate')"><div class="icon">🧾</div><b>Update Lapangan</b><span>Klik storage → tambah 10+ template</span></div><div class="menu-card" onclick="showPage('importExisting')"><div class="icon">📥</div><b>Import Lapangan</b><span>Paste Excel / CSV massal</span></div><div class="menu-card" onclick="syncNowManual()"><div class="icon">☁️</div><b>Sync Sekarang</b><span>Upload outbox &amp; unduh delta</span></div></div><div class="card movement-menu-card" onclick="showPage('movementHistory')"><div class="topline"><div><h3>🕘 Movement Terakhir</h3><div class="muted">Tampilkan maksimal 5 movement terbaru</div></div><button class="small warn" type="button" onclick="event.stopPropagation();showPage('movementHistory')">Buka →</button></div><div id="recentMovements"></div></div></section>
+<header class="no-print">
+  <div class="app-head">
+    <div class="brand">
+      <div class="brand-row">
+        <div class="brand-logo" onclick="showPage('home')" title="Kembali ke Dashboard">📐</div>
+        <div>
+          <h1 onclick="showPage('home')">CNC Template Tracker</h1>
+          <small>Offline-First · Blue Navy Edition</small>
+        </div>
+      </div>
+      <div class="brand-tools">
+        <span class="sync-pill online" id="syncNetBadge">🟢 Online</span>
+        <button class="sync-pill clean hidden" id="syncQueueBadge" type="button" onclick="openOutboxModal()">✓ Tersinkron</button>
+        <button class="small hidden" id="btnHeaderSync" type="button" onclick="syncNowManual()" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.28)">🔄 Sync</button>
+        <span class="last-sync-tag" id="headerLastSync">Sync: -</span>
+      </div>
+    </div>
+    <div class="sync-head">
+      <div id="headerSyncStatus">Dashboard Interaktif · Offline-First</div>
+      <div class="head-auth-row">
+        <span class="user-chip" id="whoami">Mode Tamu</span>
+        <button class="small btn-header-login" id="btnHeaderLogin" type="button" onclick="openLoginModal()">🔐 Login</button>
+        <button class="small bad hidden" id="btnHeaderLogout" type="button" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+<section class="page" id="page-home">
+  <div class="home-hero">
+    <div class="hero-top">
+      <div>
+        <h2>Dashboard Template CNC &amp; Akrilik</h2>
+        <div class="muted" id="homeSyncSummary">Database lokal siap offline · login untuk simpan &amp; sync ke Google Sheets</div>
+      </div>
+      <div class="hero-quick-btns">
+        <button class="hero-primary" type="button" onclick="showPage('templateInput')">➕ Input Template</button>
+        <button type="button" onclick="showPage('acrylic')">🧱 Stok Akrilik</button>
+        <button type="button" onclick="showPage('distribution')">📦 Distribusi</button>
+        <button type="button" onclick="showPage('storage')">📷 Scan Storage</button>
+      </div>
+    </div>
+    <div class="summary-box">
+      <div class="mini" onclick="openFilteredTemplates('')" title="Lihat semua template">
+        <div class="mini-top"><span>Total Template</span><span>📋</span></div>
+        <b id="sumTemplates">0</b>
+        <span>Semua aktif</span>
+      </div>
+      <div class="mini" onclick="showPage('distribution')" title="Buka Distribusi Waiting">
+        <div class="mini-top"><span>Waiting</span><span>⏳</span></div>
+        <b id="sumWaiting">0</b>
+        <span>Siap distribusi</span>
+      </div>
+      <div class="mini" onclick="openFilteredTemplates('DISTRIBUTED')" title="Lihat template sudah distribusi">
+        <div class="mini-top"><span>Distributed</span><span>✅</span></div>
+        <b id="sumDistributed">0</b>
+        <span>Di meja/storage</span>
+      </div>
+      <div class="mini" onclick="showPage('acrylic')" title="Kelola stok bahan baku akrilik">
+        <div class="mini-top"><span>Stok Akrilik</span><span>🧱</span></div>
+        <b id="sumAcrylicAvail">0</b>
+        <span id="sumAcrylicSub">lembar tersedia</span>
+      </div>
+      <div class="mini" onclick="openFilteredTemplates('LEFTOVER')" title="Lihat template dari sisa akrilik">
+        <div class="mini-top"><span>Sisa Akrilik</span><span>♻️</span></div>
+        <b id="sumLeftoverTpl">0</b>
+        <span>template hemat bahan</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Dashboard Filter & Analytics -->
+  <div class="card">
+    <div class="topline">
+      <div>
+        <h3>📊 Filter &amp; Analitik Interaktif</h3>
+        <div class="muted">Filter langsung untuk melihat isi storage, rincian Buyer/Style, dan sisa bahan baku akrilik.</div>
+      </div>
+      <div class="actions" style="margin-top:0">
+        <button class="small" type="button" onclick="resetHomeFilter()">Reset Filter</button>
+        <button class="small primary" type="button" onclick="showPage('dashboardStorage')">Buka Full View →</button>
+      </div>
+    </div>
+    <div class="grid">
+      <div><label style="margin-top:4px">Buyer</label><select id="homeBuyerFilter" onchange="renderHomeAnalytics()"><option value="">Semua Buyer</option></select></div>
+      <div><label style="margin-top:4px">Style / KP</label><select id="homeStyleFilter" onchange="renderHomeAnalytics()"><option value="">Semua Style / KP</option></select></div>
+      <div><label style="margin-top:4px">Storage</label><select id="homeStorageFilter" onchange="renderHomeAnalytics()"><option value="">Semua Storage</option></select></div>
+      <div><label style="margin-top:4px">Cari Cepat</label><input id="homeQuickSearch" oninput="renderHomeAnalyticsDebounced()" placeholder="Buyer, Style, Part, Akrilik..."/></div>
+    </div>
+  </div>
+
+  <div class="dash-analytics-grid">
+    <div class="card">
+      <div class="topline">
+        <div><h3>🗄️ Sebaran Template per Storage</h3><div class="muted">Klik baris storage untuk lihat detail isinya</div></div>
+        <span class="selected-counter" id="homeStorageCounter">0 storage</span>
+      </div>
+      <div id="homeStorageChart"></div>
+      <div id="homeStorageDrilldown" class="drilldown-box hidden"></div>
+    </div>
+    <div class="card">
+      <div class="topline">
+        <div><h3>🧱 Ringkasan Stok Akrilik</h3><div class="muted">Pemakaian stok baru vs sisa template lain</div></div>
+        <button class="small primary" type="button" onclick="showPage('acrylic')">Kelola →</button>
+      </div>
+      <div id="homeAcrylicSummary"></div>
+    </div>
+  </div>
+
+  <div class="menu-grid">
+    <div class="menu-card" onclick="showPage('acrylic')"><div class="icon">🧱</div><b>Stok Akrilik</b><span>Input ukuran P×L×T &amp; log pemakaian</span></div>
+    <div class="menu-card" onclick="showPage('templateInput')"><div class="icon">➕</div><b>Input Template</b><span>Multi part, bahan akrilik, sketch</span></div>
+    <div class="menu-card" onclick="showPage('distribution')"><div class="icon">📦</div><b>Distribusi</b><span>Split part/size/qty &amp; anti-duplikat</span></div>
+    <div class="menu-card" onclick="showPage('dashboardStorage')"><div class="icon">📊</div><b>Dashboard Storage</b><span>Isi tiap storage + filter master</span></div>
+    <div class="menu-card" onclick="showPage('storage')"><div class="icon">📷</div><b>Scan / Storage</b><span>Cek isi meja via QR</span></div>
+    <div class="menu-card" onclick="showPage('movement')"><div class="icon">🔁</div><b>Movement</b><span>Pindah antar storage / repair</span></div>
+    <div class="menu-card" onclick="showPage('templateList')"><div class="icon">📋</div><b>List Template</b><span>Cari semua template &amp; sketch</span></div>
+    <div class="menu-card" onclick="showPage('templateQrPrint')"><div class="icon">🏷️</div><b>Print QR Template</b><span>A4 &amp; Thermal 58/80 mm + CT</span></div>
+    <div class="menu-card" onclick="showPage('fieldUpdate')"><div class="icon">🧾</div><b>Update Lapangan</b><span>Klik storage → tambah 10+ template</span></div>
+    <div class="menu-card" onclick="showPage('importExisting')"><div class="icon">📥</div><b>Import Lapangan</b><span>Paste Excel / CSV massal</span></div>
+    <div class="menu-card" onclick="showPage('master')"><div class="icon">⚙️</div><b>Master &amp; Backup</b><span>Storage, QR, server, backup JSON</span></div>
+    <div class="menu-card hidden" id="menuUserManagement" onclick="showPage('userManagement')"><div class="icon">👥</div><b>User Management</b><span>Khusus super admin</span></div>
+  </div>
+
+  <div class="card movement-menu-card" onclick="showPage('movementHistory')">
+    <div class="topline">
+      <div><h3>🕘 5 Movement Terakhir</h3><div class="muted">Aktivitas terbaru dari database lokal</div></div>
+      <button class="small primary" type="button" onclick="event.stopPropagation();showPage('movementHistory')">Buka History →</button>
+    </div>
+    <div id="recentMovements"></div>
+  </div>
+</section>
+
+<!-- === NEW PAGE: STOK AKRILIK === -->
+<section class="page hidden" id="page-acrylic">
+  <div class="card">
+    <div class="topline">
+      <div>
+        <h2>🧱 Stok &amp; Record Bahan Baku Akrilik</h2>
+        <div class="muted">Catat stok akrilik masuk (Panjang × Lebar × Tebal). Pemakaian di Input Template otomatis mengurangi stok baru, sedangkan sisa template lain tercatat tanpa mengurangi stok baru.</div>
+      </div>
+      <button class="small" onclick="showPage('home')">← Home</button>
+    </div>
+    <div class="grid" style="margin-top:8px">
+      <div class="line-item" style="margin:0"><small>Jenis Ukuran Aktif</small><b id="acrStatTypes" style="font-size:20px">0</b></div>
+      <div class="line-item" style="margin:0"><small>Total Masuk (Lembar)</small><b id="acrStatIn" style="font-size:20px">0</b></div>
+      <div class="line-item" style="margin:0"><small>Terpakai (Lembar)</small><b id="acrStatUsed" style="font-size:20px">0</b></div>
+      <div class="line-item" style="margin:0;border-color:var(--navy-600);background:var(--navy-50)"><small>Sisa Tersedia (Lembar)</small><b id="acrStatAvail" style="font-size:20px;color:var(--navy-800)">0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="topline">
+      <h3>➕ Input Akrilik Masuk</h3>
+      <span class="badge acrylic" id="acrFormModeBadge">Ukuran sama akan otomatis menambah stok</span>
+    </div>
+    <div class="row-3">
+      <div><label>Panjang</label><input id="acrLength" type="number" step="0.1" min="0.1" placeholder="Contoh: 122"/></div>
+      <div><label>Lebar</label><input id="acrWidth" type="number" step="0.1" min="0.1" placeholder="Contoh: 244"/></div>
+      <div><label>Satuan Ukuran</label><select id="acrUnit"><option value="cm">cm (Sentimeter)</option><option value="mm">mm (Milimeter)</option></select></div>
+    </div>
+    <div class="row-3">
+      <div>
+        <label>Tebal Akrilik (mm)</label>
+        <input id="acrThickness" type="number" step="0.1" min="0.5" placeholder="Contoh: 3"/>
+        <div class="chip-row" style="margin-top:6px">
+          <span class="chip" onclick="setAcrThickness(2)">2 mm</span>
+          <span class="chip" onclick="setAcrThickness(3)">3 mm</span>
+          <span class="chip" onclick="setAcrThickness(4)">4 mm</span>
+          <span class="chip" onclick="setAcrThickness(5)">5 mm</span>
+          <span class="chip" onclick="setAcrThickness(6)">6 mm</span>
+          <span class="chip" onclick="setAcrThickness(8)">8 mm</span>
+          <span class="chip" onclick="setAcrThickness(10)">10 mm</span>
+        </div>
+      </div>
+      <div>
+        <label>Warna / Jenis (opsional)</label>
+        <input id="acrColor" list="acrColorSuggest" placeholder="Contoh: Bening / Putih Susu"/>
+        <datalist id="acrColorSuggest"><option value="BENING"></option><option value="PUTIH SUSU"></option><option value="HITAM"></option><option value="BIRU"></option><option value="MERAH"></option></datalist>
+      </div>
+      <div>
+        <label>Qty Lembar Masuk</label>
+        <input id="acrQty" type="number" step="0.25" min="0.01" value="1" placeholder="Jumlah lembar"/>
+      </div>
+    </div>
+    <label>Catatan / Supplier (opsional)</label>
+    <input id="acrNote" placeholder="Contoh: PO #102 / Supplier A / Gudang Bahan"/>
+    <div class="actions">
+      <button class="good" type="button" onclick="saveAcrylicStockIn()">💾 Simpan Stok Akrilik Masuk</button>
+      <button type="button" onclick="clearAcrylicForm()">Clear</button>
+      <button type="button" onclick="syncNowManual()">🔄 Sync Sekarang</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="topline">
+      <h3>📦 Daftar Stok Akrilik</h3>
+      <div class="chip-row" id="acrFilterChips" style="margin:0">
+        <span class="chip active" data-filter="all" onclick="setAcrylicStockFilter('all',this)">Semua</span>
+        <span class="chip" data-filter="available" onclick="setAcrylicStockFilter('available',this)">Tersedia</span>
+        <span class="chip" data-filter="low" onclick="setAcrylicStockFilter('low',this)">Menipis (≤2)</span>
+        <span class="chip" data-filter="empty" onclick="setAcrylicStockFilter('empty',this)">Habis</span>
+      </div>
+    </div>
+    <input id="acrSearch" oninput="renderAcrylicPage()" placeholder="Cari ukuran, tebal (misal 3mm), warna, catatan..."/>
+    <div id="acrylicStockList" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="topline">
+      <h3>🕘 Riwayat Akrilik (Masuk, Pemakaian Baru &amp; Sisa Template)</h3>
+      <div class="chip-row" id="acrLogFilterChips" style="margin:0">
+        <span class="chip active" data-log="ALL" onclick="setAcrylicLogFilter('ALL',this)">Semua</span>
+        <span class="chip" data-log="IN" onclick="setAcrylicLogFilter('IN',this)">Stok Masuk</span>
+        <span class="chip" data-log="NEW_SHEET" onclick="setAcrylicLogFilter('NEW_SHEET',this)">Pakai Baru</span>
+        <span class="chip" data-log="LEFTOVER" onclick="setAcrylicLogFilter('LEFTOVER',this)">Sisa Template</span>
+      </div>
+    </div>
+    <div id="acrylicLogList"></div>
+  </div>
+</section>
+
 <section class="page hidden" id="page-movementHistory"><div class="card"><div class="topline"><h2>🕘 5 Movement Terakhir / History</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Maksimal <b>5 movement terbaru</b> ditampilkan dari database lokal. Filter tetap tersedia; hasilnya dibatasi ke 5 baris.</div><div class="chip-row" id="mhPeriodChips"><span class="chip active" data-days="-1" onclick="setMhPeriod(-1,this)">Semua</span><span class="chip" data-days="7" onclick="setMhPeriod(7,this)">7 Hari</span><span class="chip" data-days="30" onclick="setMhPeriod(30,this)">30 Hari</span><span class="chip" data-days="90" onclick="setMhPeriod(90,this)">3 Bulan</span><span class="chip" data-days="0" onclick="setMhPeriod(0,this)">Custom Tanggal</span></div><div class="row hidden" id="mhCustomDateRow"><div><label>Dari Tanggal</label><input type="date" id="mhFrom"/></div><div><label>Sampai Tanggal</label><input type="date" id="mhTo"/></div></div><div class="row"><div><label>Jenis Movement</label><select id="mhType" onchange="renderMovementHistory()"><option value="">Semua Jenis</option><option value="DISTRIBUTE">Distribusi</option><option value="TRANSFER">Transfer</option><option value="REPAIR">Repair</option><option value="RETURN">Return</option><option value="OUT">Keluar</option><option value="IMPORT_EXISTING">Import Lapangan</option><option value="UPDATE_EXISTING">Update Lapangan</option></select></div><div><label>Storage (asal/tujuan)</label><select id="mhStorage" onchange="renderMovementHistory()"><option value="">Semua Storage</option></select></div></div><label>Cari (buyer / style / user / catatan / ID)</label><input id="mhSearch" oninput="renderMovementHistoryDebounced()" placeholder="Contoh: PUMA, KP-123, operator01..."/><div class="actions"><button class="good" onclick="applyMovementHistoryFilter()">🔍 Terapkan Filter</button><button onclick="resetMovementHistoryFilter()">Reset</button></div><div id="mhInfo" class="scan-status hidden"></div><div id="mhList"></div></div></section>
-<section class="page hidden" id="page-dashboardStorage"><div class="card"><div class="topline"><h2>Dashboard Isi Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Menampilkan isi masing-masing storage. </div><div class="grid"><div><label>Filter Storage</label><select id="dashStorageFilter" onchange="renderDashboardStorage()"><option value="">Semua Storage</option></select></div><div><label>Filter Buyer</label><select id="dashBuyerFilter" onchange="renderDashboardStorage()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="dashStyleFilter" onchange="renderDashboardStorage()"><option value="">Semua Style / KP</option></select></div><div><label>Filter Part</label><select id="dashPartFilter" onchange="renderDashboardStorage()"><option value="">Semua Part</option></select></div></div><div class="actions"><button onclick="resetDashboardStorageFilter()">Reset Filter</button><button onclick="syncNowManual()">Sync Sekarang</button><button class="bad" onclick="logout()">Logout</button></div><div id="dashboardStorageBox"></div></div></section>
-<section class="page hidden" id="page-templateInput"><div class="card"><div class="topline"><h2>Input Template Baru</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Disimpan ke database lokal dulu (bisa offline) lalu disinkronkan otomatis ke Google Sheets &amp; Drive.</div><label>Buyer</label><input id="buyer" list="buyerSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Buyer"/><datalist id="buyerSuggest"></datalist><label>Style / KP</label><input id="stylekp" list="styleSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Style / KP"/><datalist id="styleSuggest"></datalist><label>Part Template</label><datalist id="partSuggest"></datalist><div class="part-head"><span>Nama Template / Part</span><span>Size</span><span>Qty</span><span></span></div><div id="partRows"></div><div class="actions"><button onclick="addPartRow()" type="button">+ Tambah Part</button></div><label>Upload Sketch</label><input accept="image/*" capture="environment" id="sketch" type="file" onchange="onSketchSelected(this)"/><div class="paste-zone" id="sketchPasteZone" tabindex="0" onclick="this.focus()" title="Klik area ini lalu tekan CTRL+V"><div class="paste-zone-icon">📋</div><div><b>CTRL+V</b> paste screenshot (Print Screen / Snipping Tool) di sini<br><small class="muted">atau drag &amp; drop file gambar ke area ini · di HP: tekan lama → Tempel</small></div></div><div class="sketch-preview-box hidden" id="sketchPreviewBox"><img id="sketchPreviewImg" alt="Preview sketch"/><div class="actions" style="justify-content:center"><button class="small warn" type="button" onclick="openSketchCrop()">✂️ Crop / Atur Ulang</button><button class="small bad" type="button" onclick="clearSketch()">Hapus Sketch</button></div><div class="muted" id="sketchPreviewInfo"></div></div><div class="actions"><button class="good" onclick="saveTemplate()">Simpan Template</button><button onclick="clearTemplateForm()">Clear</button></div></div></section>
+<section class="page hidden" id="page-dashboardStorage"><div class="card"><div class="topline"><h2>Dashboard Isi Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="muted">Menampilkan isi masing-masing storage secara real-time dari database lokal.</div><div class="grid"><div><label>Filter Storage</label><select id="dashStorageFilter" onchange="renderDashboardStorage()"><option value="">Semua Storage</option></select></div><div><label>Filter Buyer</label><select id="dashBuyerFilter" onchange="renderDashboardStorage()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="dashStyleFilter" onchange="renderDashboardStorage()"><option value="">Semua Style / KP</option></select></div><div><label>Filter Part</label><select id="dashPartFilter" onchange="renderDashboardStorage()"><option value="">Semua Part</option></select></div></div><div class="actions"><button onclick="resetDashboardStorageFilter()">Reset Filter</button><button class="good" onclick="syncNowManual()">🔄 Sync Sekarang</button></div><div id="dashboardStorageBox"></div></div></section>
+
+<section class="page hidden" id="page-templateInput">
+  <div class="card">
+    <div class="topline"><h2>Input Template Baru</h2><button class="small" onclick="showPage('home')">← Home</button></div>
+    <div class="muted">Disimpan ke database lokal dulu (bisa offline) lalu disinkronkan otomatis ke Google Sheets &amp; Drive.</div>
+    <div class="row">
+      <div><label>Buyer</label><input id="buyer" list="buyerSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Buyer"/><datalist id="buyerSuggest"></datalist></div>
+      <div><label>Style / KP</label><input id="stylekp" list="styleSuggest" onblur="normalizeInputLive(this)" placeholder="Ketik / pilih Style / KP"/><datalist id="styleSuggest"></datalist></div>
+    </div>
+    <label>Part Template</label><datalist id="partSuggest"></datalist>
+    <div class="part-head"><span>Nama Template / Part</span><span>Size</span><span>Qty</span><span></span></div>
+    <div id="partRows"></div>
+    <div class="actions"><button onclick="addPartRow()" type="button">+ Tambah Part</button></div>
+
+    <!-- BAHAN BAKU AKRILIK -->
+    <div class="acrylic-box">
+      <div class="topline" style="margin-bottom:6px">
+        <div><b>🧱 Bahan Baku Akrilik</b><div class="muted">Pilih apakah template memakai stok akrilik baru atau sisa potongan template lain.</div></div>
+        <button class="small" type="button" onclick="showPage('acrylic')">+ Input Stok Akrilik</button>
+      </div>
+      <div class="acrylic-mode-grid" id="tplAcrylicModeGrid">
+        <div class="acrylic-mode-card active" data-mode="NEW_SHEET" onclick="setTemplateAcrylicMode('NEW_SHEET')">
+          <b>🧱 Pakai Stok Akrilik Baru</b>
+          <small>Otomatis mengurangi stok akrilik tersedia</small>
+        </div>
+        <div class="acrylic-mode-card" data-mode="LEFTOVER" onclick="setTemplateAcrylicMode('LEFTOVER')">
+          <b>♻️ Sisa Akrilik Template Lain</b>
+          <small>Tidak mengurangi stok baru, tetap tercatat</small>
+        </div>
+        <div class="acrylic-mode-card" data-mode="NONE" onclick="setTemplateAcrylicMode('NONE')">
+          <b>➖ Tanpa Catat Akrilik</b>
+          <small>Lewati pencatatan bahan baku akrilik</small>
+        </div>
+      </div>
+
+      <div id="tplAcrylicNewBox">
+        <div class="row">
+          <div>
+            <label>Pilih Stok Akrilik (Ukuran × Tebal)</label>
+            <select id="tplAcrylicId" onchange="updateTplAcrylicPreview()"></select>
+          </div>
+          <div>
+            <label>Qty Lembar Dipakai</label>
+            <input id="tplAcrylicQty" type="number" step="0.25" min="0.01" value="1" oninput="updateTplAcrylicPreview()"/>
+            <div class="chip-row" style="margin-top:5px">
+              <span class="chip" onclick="setTplAcrylicQty(0.25)">0.25 lbr</span>
+              <span class="chip" onclick="setTplAcrylicQty(0.5)">0.5 lbr</span>
+              <span class="chip" onclick="setTplAcrylicQty(1)">1 lbr</span>
+              <span class="chip" onclick="setTplAcrylicQty(2)">2 lbr</span>
+            </div>
+          </div>
+        </div>
+        <div id="tplAcrylicPreview" class="dist-alert info" style="margin-bottom:0"></div>
+      </div>
+
+      <div id="tplAcrylicLeftoverBox" class="hidden">
+        <label>Cari Template Asal Sisa Akrilik</label>
+        <input id="tplLeftoverSearch" oninput="renderTemplateAcrylicOptions()" placeholder="Ketik Buyer, Style/KP, atau ID template asal..."/>
+        <label>Pilih Template Asal Sisa Akrilik</label>
+        <select id="tplLeftoverSourceId" onchange="updateTplAcrylicPreview()"></select>
+        <label>Keterangan Sisa Akrilik (opsional)</label>
+        <input id="tplLeftoverNote" placeholder="Contoh: Sisa potongan 40×60 cm tebal 3mm"/>
+        <div class="dist-alert good" style="margin-bottom:0">♻️ Pemakaian dari sisa template lain <b>tidak mengurangi stok akrilik baru</b>, namun tetap direkam di riwayat akrilik untuk traceability.</div>
+      </div>
+    </div>
+
+    <label>Upload Sketch</label><input accept="image/*" capture="environment" id="sketch" type="file" onchange="onSketchSelected(this)"/>
+    <div class="paste-zone" id="sketchPasteZone" tabindex="0" onclick="this.focus()" title="Klik area ini lalu tekan CTRL+V"><div class="paste-zone-icon">📋</div><div><b>CTRL+V</b> paste screenshot (Print Screen / Snipping Tool) di sini<br><small class="muted">atau drag &amp; drop file gambar ke area ini · di HP: tekan lama → Tempel</small></div></div>
+    <div class="sketch-preview-box hidden" id="sketchPreviewBox"><img id="sketchPreviewImg" alt="Preview sketch"/><div class="actions" style="justify-content:center"><button class="small warn" type="button" onclick="openSketchCrop()">✂️ Crop / Atur Ulang</button><button class="small bad" type="button" onclick="clearSketch()">Hapus Sketch</button></div><div class="muted" id="sketchPreviewInfo"></div></div>
+    <div class="actions"><button class="good" onclick="saveTemplate()">💾 Simpan Template</button><button onclick="clearTemplateForm()">Clear</button></div>
+  </div>
+</section>
+
 <div class="modal" id="cropModal"><div class="box"><div class="topline"><h2>✂️ Crop Sketch</h2><button class="bad small" onclick="closeCropModal(false)">Batal</button></div><div class="muted">Geser gambar untuk atur posisi, gunakan slider / pinch untuk zoom. Area di dalam kotak yang akan disimpan.</div><div class="crop-viewport" id="cropViewport"><img id="cropImage" alt="Crop"/><div class="crop-grid"></div></div><div class="crop-zoom-row"><span>➖</span><input type="range" id="cropZoom" min="100" max="400" value="100" oninput="setCropZoom(this.value)"/><span>➕</span></div><div class="actions"><button class="good" onclick="applyCrop()">✔ Pakai Hasil Crop</button><button onclick="resetCrop()">Reset</button><button class="bad" onclick="closeCropModal(false)">Batal</button></div></div></div>
-<section class="page hidden" id="page-templateList"><div class="card"><div class="topline"><h2>List Semua Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Cari kombinasi</label><input id="templateSearch" oninput="renderTemplatesDebounced()" placeholder="Buyer Style/KP Part Storage ID"/></div><div><label>Status</label><select id="templateStatusFilter" onchange="renderTemplates()"><option value="">Semua</option><option value="WAITING_DISTRIBUTION">Menunggu Distribusi</option><option value="DISTRIBUTED">Sudah Distribusi</option><option value="OUT">Keluar</option></select></div></div><div id="templateListBox"></div></div></section>
+<section class="page hidden" id="page-templateList"><div class="card"><div class="topline"><h2>List Semua Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Cari kombinasi</label><input id="templateSearch" oninput="renderTemplatesDebounced()" placeholder="Buyer, Style/KP, Part, Storage, Akrilik, ID"/></div><div><label>Status / Sumber</label><select id="templateStatusFilter" onchange="renderTemplates()"><option value="">Semua</option><option value="WAITING_DISTRIBUTION">Menunggu Distribusi</option><option value="DISTRIBUTED">Sudah Distribusi</option><option value="OUT">Keluar</option><option value="LEFTOVER">♻️ Dari Sisa Akrilik Template Lain</option><option value="NEW_SHEET">🧱 Dari Stok Akrilik Baru</option></select></div></div><div id="templateListBox"></div></div></section>
 <section class="page hidden" id="page-distribution"><div class="card"><div class="topline"><div><h2>Distribusi Template Jadi</h2><div class="muted">Pilih 1 atau banyak template waiting, lalu atur split part (nama, size, qty) dan storage tujuan. Anti-duplikat aktif otomatis.</div></div><div style="display:flex;gap:6px;align-items:center"><span class="selected-counter"><span id="distCount">0</span> waiting</span><button class="small" onclick="showPage('home')">← Home</button></div></div><div class="grid"><div><label>Filter Buyer</label><select id="distBuyerFilter" onchange="onDistBuyerFilterChange()"><option value="">Semua Buyer</option></select></div><div><label>Filter Style / KP</label><select id="distStyleFilter" onchange="renderDistribution()"><option value="">Semua Style / KP</option></select></div><div><label>Cari Part / Size / ID</label><input id="distSearch" oninput="renderDistributionDebounced()" placeholder="Contoh: FRONT BODY, M, TPL-..."/></div></div><div class="actions"><button class="small" type="button" onclick="selectAllFilteredDistribution(true)">Pilih Semua Tampil</button><button class="small" type="button" onclick="selectAllFilteredDistribution(false)">Kosongkan Pilihan</button><button class="small" type="button" onclick="resetDistributionFilter()">Reset Filter</button><button class="small" type="button" onclick="syncNowManual()">🔄 Sync</button></div><div id="distTemplateList" style="margin-top:10px"></div></div><div class="card hidden" id="distSplitPanel"><div class="topline"><div><h3>✂️ Pengaturan Split Distribution (Part · Size · Qty)</h3><div class="muted">Centang part dan atur qty yang akan dipindahkan sekarang. Sisa qty/part tetap berstatus WAITING_DISTRIBUTION.</div></div><span class="selected-counter"><span id="distSelectedCount">0</span> dipilih</span></div><div id="distSplitBody"></div><div class="row"><div><label>Tujuan Meja / Storage</label><select id="distStorage" onchange="renderDistributionSummary()"></select></div><div class="actions" style="align-self:end"><input id="distScanCode" class="hidden" value=""/><button class="good" type="button" onclick="scanBarcode('distScanCode','setDistStorageScanned')">📷 Scan QR Storage</button></div></div><div class="hidden" id="distReader"></div><div id="distSummary"></div><label>Catatan</label><textarea id="distNote" placeholder="Opsional (otomatis dilengkapi rincian split part/size/qty)"></textarea><div class="actions"><button class="good" id="btnDistributeSubmit" type="button" onclick="distributeTemplate()">📦 Distribusikan</button><button type="button" onclick="selectAllFilteredDistribution(false)">Batal Pilihan</button></div></div></section>
-<section class="page hidden" id="page-storage"><div class="card"><div class="topline"><h2>Scan / Cek Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="scanStorageCode" placeholder="Contoh: CNC-MEJA-01"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('scanStorageCode','openScannedStorage')">Scan QR</button><button onclick="openScannedStorage()">Buka</button></div></div><div class="hidden" id="reader"></div><div class="scan-status"></div></div><div class="card"><label>Cari Storage</label><input class="searchbar" id="storageSearch" oninput="renderStorage()" placeholder="Cari meja/storage"/><div class="grid" id="storageGrid"></div></div></section>
+<section class="page hidden" id="page-storage"><div class="card"><div class="topline"><h2>Scan / Cek Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="scanStorageCode" placeholder="Contoh: CNC-MEJA-01"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('scanStorageCode','openScannedStorage')">Scan QR</button><button onclick="openScannedStorage()">Buka</button></div></div><div class="hidden" id="reader"></div><div class="scan-status">Scan QR storage atau klik salah satu kartu storage di bawah untuk memeriksa isi meja.</div></div><div class="card"><label>Cari Storage</label><input class="searchbar" id="storageSearch" oninput="renderStorage()" placeholder="Cari meja/storage"/><div class="grid" id="storageGrid"></div></div></section>
 <section class="page hidden" id="page-movement"><div class="card"><div class="topline"><h2>Movement Template</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Scan Storage Asal</label><input id="moveScanCode" placeholder="Scan / isi storage asal"/></div><div class="actions" style="align-self:end"><button class="good" onclick="scanBarcode('moveScanCode','setMoveFromScanned')">Scan</button></div></div><div class="hidden" id="moveReader"></div><label>Dari Storage</label><select id="moveStorageFrom" onchange="selectedMoveTemplateId='';renderMoveTemplates()"></select><label>Pilih Template</label><div id="moveTemplateList"></div><div class="row"><div><label>Jenis Movement</label><select id="moveType"><option value="TRANSFER">Transfer antar storage</option><option value="REPAIR">Repair</option><option value="RETURN">Return</option><option value="OUT">Keluar dari storage</option></select></div><div><label>Ke / Tujuan</label><select id="moveStorageTo"></select></div></div><label>Catatan</label><textarea id="moveNote" placeholder="Opsional"></textarea><div class="actions"><button class="good" onclick="saveMovement()">Simpan Movement</button></div></div></section>
-<section class="page hidden" id="page-master"><div class="card"><div class="topline"><h2>Master Storage / Setting</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="storageCode" list="storageSuggest" placeholder="CNC-MEJA-03" onblur="normalizeInputLive(this)"/></div><div><label>Nama Storage</label><input id="storageName" placeholder="Meja CNC 03"/></div></div><label>Area</label><input id="storageArea" placeholder="Area CNC / Storage"/><div class="actions"><button class="good" onclick="addStorage()">Tambah Storage</button><button onclick="syncNowManual()">🔄 Sync Sekarang</button><button onclick="syncNowManual(true)">⬇️ Full Sync Ulang</button><button class="warn" onclick="showPage('importExisting')">Import Lapangan</button><button onclick="showPage('printqr')">Print QR</button><button onclick="showPage('userManagement')">User Management</button><button type="button" onclick="openServerSettingsModal()">⚙️ Pengaturan Server</button><button type="button" onclick="openOutboxModal()">🧾 Antrean Sync</button><button class="bad" onclick="logout()">Logout</button></div><h3>List Storage</h3><div id="storageList"></div></div><div class="card"><h3>💾 Backup &amp; Restore Lokal (IndexedDB)</h3><div class="muted">Data lokal tersimpan di perangkat. Gunakan Export/Import JSON atau Auto-Backup ke folder (PC) untuk mencegah kehilangan data jika cache browser dibersihkan.</div><div class="actions"><button class="good" type="button" onclick="exportBackupFile()">📤 Export Backup JSON</button><button type="button" onclick="$('importBackupFile').click()">📥 Import Backup JSON</button><input id="importBackupFile" type="file" accept=".json,application/json" class="hidden" onchange="onImportBackupSelected(this)"/></div><div id="autoBackupBox" class="scan-status" style="margin-top:10px">Memeriksa status auto-backup...</div><div class="actions" id="autoBackupActions"><button type="button" onclick="setupAutoBackupFolder()">📁 Pilih Folder Auto-Backup (PC)</button><button type="button" onclick="runAutoBackupNow()">💾 Backup ke Folder Sekarang</button><button class="bad small" type="button" onclick="disableAutoBackupFolderUI()">Matikan Auto-Backup</button></div></div></section>
-<section class="page hidden" id="page-userManagement"><div class="card"><div class="topline"><h2>User Management</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="scan-status">Manajemen akun membutuhkan koneksi online (khusus super_admin).</div><div class="row"><div><label>Username</label><input id="newUsername" placeholder="operator01"/></div><div><label>Password</label><input id="newPassword" type="password" placeholder="Minimal 10 karakter"/></div></div><div class="row"><div><label>Nama</label><input id="newName" placeholder="Nama user"/></div><div><label>Role</label><select id="newRole"><option value="operator">operator</option><option value="admin">admin</option><option value="super_admin">super_admin</option></select></div></div><div class="actions"><button class="good" onclick="addUser()">Tambah User</button><button onclick="loadUsers()">Refresh User</button><button class="bad" onclick="logout()">Logout</button></div><div id="userList"></div></div></section>
+<section class="page hidden" id="page-master"><div class="card"><div class="topline"><h2>Master Storage / Setting</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="row"><div><label>Kode QR Storage</label><input id="storageCode" list="storageSuggest" placeholder="CNC-MEJA-03" onblur="normalizeInputLive(this)"/></div><div><label>Nama Storage</label><input id="storageName" placeholder="Meja CNC 03"/></div></div><label>Area</label><input id="storageArea" placeholder="Area CNC / Storage"/><div class="actions"><button class="good" onclick="addStorage()">Tambah Storage</button><button onclick="syncNowManual()">🔄 Sync Sekarang</button><button onclick="syncNowManual(true)">⬇️ Full Sync Ulang</button><button class="warn" onclick="showPage('importExisting')">Import Lapangan</button><button onclick="showPage('printqr')">Print QR</button><button onclick="showPage('userManagement')">User Management</button><button type="button" onclick="openServerSettingsModal()">⚙️ Pengaturan Server</button><button type="button" onclick="openOutboxModal()">🧾 Antrean Sync</button></div><h3>List Storage</h3><div id="storageList"></div></div><div class="card"><h3>💾 Backup &amp; Restore Lokal (IndexedDB)</h3><div class="muted">Data lokal tersimpan di perangkat. Gunakan Export/Import JSON atau Auto-Backup ke folder (PC) untuk mencegah kehilangan data jika cache browser dibersihkan.</div><div class="actions"><button class="good" type="button" onclick="exportBackupFile()">📤 Export Backup JSON</button><button type="button" onclick="$('importBackupFile').click()">📥 Import Backup JSON</button><input id="importBackupFile" type="file" accept=".json,application/json" class="hidden" onchange="onImportBackupSelected(this)"/></div><div id="autoBackupBox" class="scan-status" style="margin-top:10px">Memeriksa status auto-backup...</div><div class="actions" id="autoBackupActions"><button type="button" onclick="setupAutoBackupFolder()">📁 Pilih Folder Auto-Backup (PC)</button><button type="button" onclick="runAutoBackupNow()">💾 Backup ke Folder Sekarang</button><button class="bad small" type="button" onclick="disableAutoBackupFolderUI()">Matikan Auto-Backup</button></div></div></section>
+<section class="page hidden" id="page-userManagement"><div class="card"><div class="topline"><h2>User Management</h2><button class="small" onclick="showPage('home')">← Home</button></div><div class="scan-status">Manajemen akun membutuhkan koneksi online (khusus super_admin).</div><div class="row"><div><label>Username</label><input id="newUsername" placeholder="operator01"/></div><div><label>Password</label><input id="newPassword" type="password" placeholder="Minimal 10 karakter"/></div></div><div class="row"><div><label>Nama</label><input id="newName" placeholder="Nama user"/></div><div><label>Role</label><select id="newRole"><option value="operator">operator</option><option value="admin">admin</option><option value="super_admin">super_admin</option></select></div></div><div class="actions"><button class="good" onclick="addUser()">Tambah User</button><button onclick="loadUsers()">Refresh User</button></div><div id="userList"></div></div></section>
 <section class="page hidden" id="page-importExisting">
 <div class="card">
 <div class="topline"><h2>Update Template Lapangan per Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div>
@@ -256,9 +686,9 @@ ARC'TERYX | ST-778 | SLEEVE x2, COLLAR | CNC-MEJA-01 | hasil opname"></textarea>
 </section><section class="page hidden" id="page-fieldUpdate">
 <div class="card">
 <div class="topline"><h2>Update Template Lapangan per Storage</h2><button class="small" onclick="showPage('home')">← Home</button></div>
-<div class="scan-status">Alur cepat: user pilih/klik storage → klik tambah template → isi 1 atau lebih dari 10 template → upload 1x. </div>
+<div class="scan-status">Alur cepat: user pilih/klik storage → klik tambah template → isi 1 atau lebih dari 10 template → upload 1x.</div>
 <div class="row"><div><label>Cari Storage</label><input id="fieldStorageSearch" oninput="renderFieldUpdateStorageList()" placeholder="Cari kode/nama/area storage"/></div><div><label>Storage terpilih</label><input id="fieldSelectedStorage" readonly placeholder="Belum pilih storage"/></div></div>
-<div class="actions"><button onclick="syncNowManual()">🔄 Sync Storage</button><button class="bad" onclick="logout()">Logout</button></div>
+<div class="actions"><button onclick="syncNowManual()">🔄 Sync Storage</button></div>
 <div class="grid" id="fieldStorageGrid"></div>
 </div>
 <div class="card hidden" id="fieldTemplateFormCard">
@@ -268,13 +698,46 @@ ARC'TERYX | ST-778 | SLEEVE x2, COLLAR | CNC-MEJA-01 | hasil opname"></textarea>
 <div class="muted">Kolom Part bisa isi banyak part pakai koma. Contoh: FRONT BODY, BACK BODY x2.</div>
 <div id="fieldUploadPreview"></div>
 </div>
-</section><section class="page hidden" id="page-printqr"><div class="card no-print"><div class="topline"><h2>Print QR Storage</h2><span class="selected-counter"><span id="qrSelectedCount">0</span> dipilih</span></div><div class="actions"><button onclick="selectAllQR(true)">Pilih Semua</button><button onclick="selectAllQR(false)">Clear</button><select id="qrPerPage"><option value="4">4 / A4</option><option selected="" value="8">8 / A4</option><option value="12">12 / A4</option></select><button class="good" onclick="printQR()">PDF / Print</button><button onclick="shareQRWhatsApp()">Share WA</button><button onclick="buildPrintQR()">Preview QR</button><button onclick="showPage('master')">Kembali</button></div><div class="qr-select-panel" id="qrSelection"></div></div><div class="qr-print-area" id="qrPrintArea"></div></section>
-<section class="page hidden" id="page-templateQrPrint"><div class="card no-print"><div class="topline"><div><h2>Print QR Template</h2><div class="muted">QR berisi ID template. CT diisi untuk setiap label saat cetak dan tidak disimpan ke database.</div></div><span class="selected-counter"><span id="templateQrSelectedCount">0</span> dipilih</span></div><label>Cari Buyer / Style / KP / proses</label><input id="templateQrSearch" oninput="renderTemplateQrSelection()" placeholder="Ketik Buyer, Style/KP, atau Part"/><div class="actions"><button onclick="selectAllTemplateQR(true)">Pilih semua hasil</button><button onclick="selectAllTemplateQR(false)">Kosongkan</button><label style="min-width:160px;flex:1">Ukuran kertas<select id="templateQrPaper" onchange="setTemplateQrPaper()"><option value="A4">A4</option><option value="58">Thermal 58 mm</option><option value="80">Thermal 80 mm</option></select></label><button class="good" onclick="printTemplateQR()">Cetak / Simpan PDF</button><button onclick="showPage('home')">Kembali</button></div><div id="templateQrSelection" class="qr-select-panel"></div></div><div id="templateQrPrintArea" class="template-qr-print-area"></div></section>
+</section><section class="page hidden" id="page-printqr"><div class="card no-print"><div class="topline"><h2>Print QR Storage</h2><span class="selected-counter"><span id="qrSelectedCount">0</span> dipilih</span></div><div class="actions"><button onclick="selectAllQR(true)">Pilih Semua</button><button onclick="selectAllQR(false)">Clear</button><select id="qrPerPage" style="width:auto;min-width:110px"><option value="4">4 / A4</option><option selected="" value="8">8 / A4</option><option value="12">12 / A4</option></select><button class="good" onclick="printQR()">🖨️ Print / Simpan PDF</button><button onclick="shareQRWhatsApp()">Share WA</button><button onclick="buildPrintQR()">Preview QR</button><button onclick="showPage('master')">Kembali</button></div><div class="qr-select-panel" id="qrSelection"></div></div><div class="qr-print-area" id="qrPrintArea"></div></section>
+<section class="page hidden" id="page-templateQrPrint"><div class="card no-print"><div class="topline"><div><h2>Print QR Template</h2><div class="muted">QR berisi ID template. CT diisi untuk setiap label saat cetak dan tidak disimpan ke database.</div></div><span class="selected-counter"><span id="templateQrSelectedCount">0</span> dipilih</span></div><label>Cari Buyer / Style / KP / proses</label><input id="templateQrSearch" oninput="renderTemplateQrSelection()" placeholder="Ketik Buyer, Style/KP, atau Part"/><div class="actions"><button onclick="selectAllTemplateQR(true)">Pilih semua hasil</button><button onclick="selectAllTemplateQR(false)">Kosongkan</button><select id="templateQrPaper" onchange="setTemplateQrPaper()" style="width:auto;min-width:160px"><option value="A4">Kertas A4</option><option value="58">Thermal 58 mm</option><option value="80">Thermal 80 mm</option></select><button class="good" onclick="printTemplateQR()">🖨️ Cetak / Simpan PDF</button><button onclick="showPage('home')">Kembali</button></div><div id="templateQrSelection" class="qr-select-panel"></div></div><div id="templateQrPrintArea" class="template-qr-print-area"></div></section>
 <div class="spacer-bottom"></div>
 </main>
-<nav class="bottom-nav hidden no-print" id="bottomNav"><button data-page="home" onclick="showPage('home')">🏠 Home</button><button data-page="templateInput" onclick="showPage('templateInput')">➕ Input</button><button data-page="distribution" onclick="showPage('distribution')">📦 Dist</button><button data-page="storage" onclick="showPage('storage')">📷 Scan</button></nav>
+
+<nav class="bottom-nav no-print" id="bottomNav">
+  <button data-page="home" class="active" onclick="showPage('home')">🏠 Home</button>
+  <button data-page="templateInput" onclick="showPage('templateInput')">➕ Input</button>
+  <button data-page="distribution" onclick="showPage('distribution')">📦 Dist</button>
+  <button data-page="acrylic" onclick="showPage('acrylic')">🧱 Akrilik</button>
+  <button data-page="storage" onclick="showPage('storage')">📷 Scan</button>
+</nav>
+
 <datalist id="storageSuggest"></datalist>
-<div class="modal" id="modal"><div class="box"><div class="topline"><h2 id="modalTitle">Detail</h2><button class="bad small" onclick="closeModal()">Tutup</button></div><div id="modalContent"></div></div></div>
+
+<!-- POP-UP LOGIN MODAL -->
+<div class="modal login-modal" id="loginModal" onclick="if(event.target===this)closeLoginModal()">
+  <div class="box">
+    <div class="login-modal-head">
+      <div>
+        <h2>🔐 Login CNC Tracker</h2>
+        <small style="color:rgba(226,236,252,.85)">Token perangkat aktif 30 hari (tetap jalan saat offline)</small>
+      </div>
+      <button class="small" type="button" onclick="closeLoginModal()">✕</button>
+    </div>
+    <div id="loginReasonBox" class="dist-alert info hidden"></div>
+    <label>Username</label>
+    <input id="loginUser" value="" autocomplete="username" placeholder="Masukkan username"/>
+    <label>Password</label>
+    <input id="loginPass" type="password" value="" autocomplete="current-password" placeholder="Masukkan password" onkeydown="if(event.key==='Enter')login()"/>
+    <div class="actions">
+      <button class="good" type="button" onclick="login()" style="flex:1">Masuk</button>
+      <button id="btnPingCloud" type="button" onclick="testConnection()">Tes Koneksi</button>
+      <button type="button" onclick="openServerSettingsModal()">⚙️ Server</button>
+    </div>
+    <div class="scan-status" id="loginStatus"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()"><div class="box"><div class="topline"><h2 id="modalTitle">Detail</h2><button class="bad small" onclick="closeModal()">Tutup</button></div><div id="modalContent"></div></div></div>
 <div class="loading-overlay hidden" id="busy"><div class="loading-box"><b id="busyTitle">Memproses data...</b><div class="bar"><span></span></div></div></div>
 <div class="toast hidden" id="toast"></div>
 <script src="./config.js"></script>
@@ -1648,7 +2111,18 @@ function userName(){ return currentUser?.username || "system"; }
 function isAdmin(){ return currentUser && ["admin","super_admin"].includes(currentUser.role); }
 function isSuperAdmin(){ return currentUser?.role === "super_admin"; }
 function isAndroidNative(){ return !!(window.Android || window.Capacitor); }
-function emptyDB(){ return {storages:[],templates:[],parts:[],movements:[],users:[],masters:{buyers:[],parts:[]}}; }
+function emptyDB(){ return {storages:[],templates:[],parts:[],movements:[],acrylics:[],acrylicLogs:[],users:[],masters:{buyers:[],parts:[]}}; }
+function roundQty(v){
+  const n = Number(v || 0);
+  if(!isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+function formatAcrylicSpec(a){
+  if(!a) return "";
+  const u = a.unit || "cm";
+  const color = a.color ? ` (${a.color})` : "";
+  return `${roundQty(a.length)} × ${roundQty(a.width)} ${u} · ${roundQty(a.thicknessMm)} mm${color}`;
+}
 function statusLabel(s){
   const map={WAITING_DISTRIBUTION:"Menunggu Distribusi",DISTRIBUTED:"Sudah Distribusi",OUT:"Keluar",REPAIR:"Repair",ARCHIVED:"Arsip"};
   return map[s] || s || "-";
@@ -1672,6 +2146,18 @@ function migrateDB(d){
   d.templates = (d.templates || []).filter(t=>t && t.id && !t.deleted);
   d.parts = (d.parts || []).filter(p=>p && (p.partId || p.templateId) && !p.deleted);
   d.movements = (d.movements || []).filter(m=>m && m.id);
+  d.acrylics = (d.acrylics || []).filter(a=>a && a.id && !a.deleted).map(a=>({
+    ...a,
+    length: roundQty(a.length),
+    width: roundQty(a.width),
+    unit: String(a.unit || "cm").toLowerCase() === "mm" ? "mm" : "cm",
+    thicknessMm: roundQty(a.thicknessMm),
+    color: normalizeText(a.color || ""),
+    qtyIn: roundQty(a.qtyIn),
+    qtyUsed: roundQty(a.qtyUsed),
+    qtyAvailable: roundQty(a.qtyAvailable != null ? a.qtyAvailable : Math.max(0, Number(a.qtyIn||0) - Number(a.qtyUsed||0)))
+  }));
+  d.acrylicLogs = (d.acrylicLogs || []).filter(l=>l && l.id);
   d.users = d.users || [];
   d.masters = d.masters || {buyers:[],parts:[]};
 
@@ -1681,6 +2167,11 @@ function migrateDB(d){
     if(!t.status) t.status=t.currentStorage?"DISTRIBUTED":"WAITING_DISTRIBUTION";
     if(t.sketch){ t.hasSketch = true; delete t.sketch; }
     t.hasSketch = String(t.hasSketch).toUpperCase()==="TRUE" || t.hasSketch===true;
+    t.acrylicSource = String(t.acrylicSource || "").toUpperCase();
+    t.acrylicId = String(t.acrylicId || "");
+    t.acrylicQty = roundQty(t.acrylicQty || 0);
+    t.acrylicSourceTemplateId = String(t.acrylicSourceTemplateId || "");
+    t.acrylicSpec = String(t.acrylicSpec || "");
     delete t.storage;
     tMap.set(String(t.id), t);
   });
@@ -1719,7 +2210,7 @@ async function reloadLocalState(){
   db = migrateDB(snap);
   dataLoaded = true;
   await CNCSync.refreshOutboxCounters();
-  if(currentUser) renderCurrentPage();
+  renderCurrentPage();
   updateHeader();
   return db;
 }
@@ -1733,7 +2224,7 @@ function updateSyncIndicator(st){
   }
   const qBadge = $("syncQueueBadge");
   if(qBadge){
-    qBadge.classList.toggle("hidden", !currentUser);
+    qBadge.classList.toggle("hidden", !currentUser && !syncUiState.pendingCount && !syncUiState.errorCount);
     if(syncUiState.errorCount > 0){
       qBadge.className = "sync-pill error";
       qBadge.textContent = `⚠️ ${syncUiState.errorCount} gagal · ${syncUiState.pendingCount} antre`;
@@ -1748,12 +2239,13 @@ function updateSyncIndicator(st){
   const lastSyncStr = syncUiState.lastSyncAt ? dateTimeText(syncUiState.lastSyncAt) : "Belum sync";
   lastSyncText = lastSyncStr;
   const lastEl = $("headerLastSync");
-  if(lastEl) lastEl.textContent = currentUser ? `Sync: ${lastSyncStr}` : "Sync: -";
+  if(lastEl) lastEl.textContent = `Sync: ${lastSyncStr}`;
   const btn = $("btnHeaderSync");
   if(btn) btn.disabled = !!syncUiState.syncing;
   const homeSum = $("homeSyncSummary");
   if(homeSum){
-    homeSum.textContent = `${syncUiState.online ? "Online" : "Offline"} · Antrean tertunda: ${syncUiState.pendingCount}${syncUiState.errorCount ? ` (${syncUiState.errorCount} gagal)` : ""} · Sync terakhir: ${lastSyncStr}`;
+    const authHint = currentUser ? `Login: ${currentUser.name || currentUser.username}` : "Mode Tamu (klik Login di kanan atas untuk input & sync)";
+    homeSum.textContent = `${syncUiState.online ? "Online" : "Offline"} · ${authHint} · Antrean: ${syncUiState.pendingCount}${syncUiState.errorCount ? ` (${syncUiState.errorCount} gagal)` : ""} · Sync: ${lastSyncStr}`;
   }
   if(syncUiState.authExpired && currentUser){
     toast("Token perangkat kedaluwarsa/dicabut. Silakan login ulang saat online.");
@@ -1761,7 +2253,7 @@ function updateSyncIndicator(st){
 }
 
 async function syncNowManual(full=false){
-  if(!currentUser) return;
+  if(!requireLogin("melakukan sinkronisasi dengan Google Sheets")) return;
   if(!CNCSync.isOnline()){
     toast("Sedang offline — data lokal tetap aman, antrean akan dikirim saat online.");
     return;
@@ -1772,10 +2264,11 @@ async function syncNowManual(full=false){
     await reloadLocalState();
     if(res.ok){
       const m = res.merged || {};
-      const pulled = (m.templates||0) + (m.parts||0) + (m.movements||0) + (m.storages||0);
+      const pulled = (m.templates||0) + (m.parts||0) + (m.movements||0) + (m.storages||0) + (m.acrylics||0) + (m.acrylicLogs||0);
       toast(`Sync selesai · upload ${res.pushed||0}, unduh ${pulled} perubahan`);
     }else if(res.authError){
       alert("Sesi kedaluwarsa/dicabut di server. Silakan login ulang (data lokal & antrean tidak hilang).");
+      openLoginModal("Sesi kedaluwarsa/dicabut. Silakan login ulang untuk melanjutkan sync.");
     }else if(res.error){
       alert("Sync gagal: " + res.error);
     }else if(res.message){
@@ -1972,7 +2465,35 @@ async function onImportBackupSelected(input){
   }
 }
 
-/* ================= LOGIN / LOGOUT (TOKEN 30 HARI OFFLINE) ================= */
+/* ================= LOGIN POP-UP MODAL & AUTH (TOKEN 30 HARI OFFLINE) ================= */
+function openLoginModal(reasonText=""){
+  const m = $("loginModal");
+  if(!m) return;
+  const rb = $("loginReasonBox");
+  if(rb){
+    if(reasonText){
+      rb.textContent = reasonText;
+      rb.classList.remove("hidden");
+    }else{
+      rb.classList.add("hidden");
+    }
+  }
+  m.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  updateLoginConfigHint();
+  setTimeout(()=>{ if($("loginUser")) $("loginUser").focus(); }, 60);
+}
+function closeLoginModal(){
+  const m = $("loginModal");
+  if(m) m.style.display = "none";
+  document.body.style.overflow = "";
+}
+function requireLogin(actionLabel="menyimpan perubahan"){
+  if(currentUser) return true;
+  openLoginModal(`Silakan login terlebih dahulu untuk ${actionLabel}. Dashboard dan data lokal tetap dapat dilihat tanpa login.`);
+  return false;
+}
+
 async function login(){
   const u=normalizeText($("loginUser").value).toLowerCase(); const p=$("loginPass").value;
   if(!u || !p) return alert("Username dan password wajib diisi.");
@@ -1985,6 +2506,7 @@ async function login(){
     currentUser = res.user;
     await CNCDB.saveSession(currentUser);
     $("loginPass").value="";
+    closeLoginModal();
     renderAuth();
     toast(`Login berhasil · sesi aktif ${res.tokenDays||30} hari (bisa offline)`);
     CNCSync.startAutoSync();
@@ -2022,31 +2544,31 @@ async function logout(){
     try{ await CNCSync.postApi("logout", {}, { token }); }catch(e){}
   }
   CNCSync.stopAutoSync();
-  currentUser=null; activePage="home"; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
+  currentUser=null; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
   await CNCDB.clearSession();
   renderAuth();
   await updateLoginConfigHint();
-  toast("Logout berhasil");
+  toast("Logout berhasil · kembali ke Mode Tamu");
 }
 
 function renderAuth(){
-  $("page-login").classList.toggle("hidden", !!currentUser);
-  $("app").classList.toggle("hidden", !currentUser);
-  $("bottomNav").classList.toggle("hidden", !currentUser);
+  if($("app")) $("app").classList.remove("hidden");
+  if($("bottomNav")) $("bottomNav").classList.remove("hidden");
+  if($("btnHeaderLogin")) $("btnHeaderLogin").classList.toggle("hidden", !!currentUser);
   if($("btnHeaderLogout")) $("btnHeaderLogout").classList.toggle("hidden", !currentUser);
   if($("btnHeaderSync")) $("btnHeaderSync").classList.toggle("hidden", !currentUser);
-  if($("syncQueueBadge")) $("syncQueueBadge").classList.toggle("hidden", !currentUser);
-  if(currentUser){
-    $("whoami").textContent = `${currentUser.name || currentUser.username} · ${currentUser.role}`;
-    showPage("home");
-  }else{
-    $("whoami").textContent="";
-    updateHeader();
+  if($("menuUserManagement")) $("menuUserManagement").classList.toggle("hidden", !isSuperAdmin());
+  if($("whoami")){
+    $("whoami").textContent = currentUser ? `${currentUser.name || currentUser.username} · ${currentUser.role}` : "Mode Tamu";
   }
+  renderCurrentPage(activePage || "home");
 }
 
 async function showPage(page){
-  if(page==="userManagement" && !isSuperAdmin()){ alert("User Management khusus super admin."); page="home"; }
+  if(page==="userManagement"){
+    if(!currentUser){ openLoginModal("Login sebagai super_admin untuk membuka User Management."); return; }
+    if(!isSuperAdmin()){ alert("User Management khusus super admin."); page="home"; }
+  }
   activePage = page || "home";
   document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
   const el=$("page-"+activePage); if(el) el.classList.remove("hidden");
@@ -2062,8 +2584,9 @@ async function showPage(page){
 function renderCurrentPage(page=activePage){
   updateHeader();
   if(page==="home") renderHome();
+  if(page==="acrylic") renderAcrylicPage();
   if(page==="dashboardStorage") renderDashboardStorage();
-  if(page==="templateInput") renderSuggestions();
+  if(page==="templateInput"){ renderSuggestions(); renderTemplateAcrylicOptions(); }
   if(page==="templateList") renderTemplates();
   if(page==="distribution") renderDistribution();
   if(page==="movement") renderMovementStart();
@@ -2080,7 +2603,8 @@ function renderAll(){ renderCurrentPage(); }
 function updateHeader(){
   const total=db.templates.length;
   const waiting=db.templates.filter(isTemplateWaiting).length;
-  const mode=currentUser ? `${total} template · ${waiting} waiting` : "Mode Offline-First · belum login";
+  const acrAvail=roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyAvailable||0),0));
+  const mode=`${total} template · ${waiting} waiting · ${acrAvail} lbr akrilik`;
   const el=$("headerSyncStatus"); if(el) el.textContent = mode;
   updateSyncIndicator(syncUiState);
 }
@@ -2132,7 +2656,7 @@ function partTextInStorage(templateId, code){
   const inSt=distributedPartsInStorage(templateId, code);
   return formatPartList(inSt.length ? inSt : partsOf(templateId));
 }
-function templateSearchText(t){ return [t.id,t.buyer,t.stylekp,t.status,t.currentStorage,templateStorages(t).join(" "),t.createdBy,partText(t.id)].join(" ").toLowerCase(); }
+function templateSearchText(t){ return [t.id,t.buyer,t.stylekp,t.status,t.currentStorage,templateStorages(t).join(" "),t.createdBy,t.acrylicSource,t.acrylicSpec,t.acrylicSourceTemplateId,partText(t.id)].join(" ").toLowerCase(); }
 
 function partsKeyLocal(parts){
   const agg=new Map();
@@ -2152,22 +2676,415 @@ function findDuplicateTemplateLocal(buyer, stylekp, parts){
   return db.templates.find(t=>normalizeText(t.buyer)===buyer && normalizeText(t.stylekp)===stylekp && templatePartsKeyLocal(t.id)===key);
 }
 
+/* ================= INTERACTIVE DASHBOARD ================= */
+let homeSelectedStorage = "";
+function openFilteredTemplates(statusVal){
+  showPage("templateList").then(()=>{
+    if($("templateStatusFilter")) $("templateStatusFilter").value = statusVal || "";
+    renderTemplates();
+  });
+}
+function resetHomeFilter(){
+  ["homeBuyerFilter","homeStyleFilter","homeStorageFilter","homeQuickSearch"].forEach(id=>{ if($(id)) $(id).value=""; });
+  homeSelectedStorage = "";
+  renderHomeAnalytics();
+}
+function selectHomeStorage(code){
+  homeSelectedStorage = homeSelectedStorage === code ? "" : code;
+  renderHomeAnalytics();
+}
 function renderHome(){
   if(!$("sumTemplates")) return;
   if($("menuUserManagement")) $("menuUserManagement").classList.toggle("hidden", !isSuperAdmin());
-  $("sumTemplates").textContent=db.templates.length;
-  $("sumWaiting").textContent=db.templates.filter(isTemplateWaiting).length;
-  $("sumDistributed").textContent=db.templates.filter(t=>!isTemplateWaiting(t) && t.status==="DISTRIBUTED").length;
+  const totalAvailAcr = roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyAvailable||0),0));
+  const leftoverCount = db.templates.filter(t=>String(t.acrylicSource||"").toUpperCase()==="LEFTOVER").length;
+  $("sumTemplates").textContent = db.templates.length;
+  $("sumWaiting").textContent = db.templates.filter(isTemplateWaiting).length;
+  $("sumDistributed").textContent = db.templates.filter(t=>!isTemplateWaiting(t) && t.status==="DISTRIBUTED").length;
+  if($("sumAcrylicAvail")) $("sumAcrylicAvail").textContent = totalAvailAcr;
+  if($("sumAcrylicSub")) $("sumAcrylicSub").textContent = `${db.acrylics.length} jenis ukuran`;
+  if($("sumLeftoverTpl")) $("sumLeftoverTpl").textContent = leftoverCount;
+
+  selectOptions("homeBuyerFilter", [...new Set(db.templates.map(t=>t.buyer).filter(Boolean))].sort(), "Semua Buyer");
+  selectOptions("homeStyleFilter", [...new Set(db.templates.map(t=>t.stylekp).filter(Boolean))].sort(), "Semua Style / KP");
+  selectOptions("homeStorageFilter", db.storages.filter(s=>s.code!=="WORKSHOP").map(s=>s.code), "Semua Storage");
+
+  renderHomeAnalytics();
+
   const recent=[...db.movements].sort(movementSortNewest).slice(0,5);
   $("recentMovements").innerHTML = recent.length ? recent.map(m=>{
     const t=db.templates.find(x=>x.id===m.templateId) || {};
     return `<div class="line-item mh-item"><div class="mh-icon">${movementIcon(m.type)}</div><div><b>${esc(m.type)}</b><span>${esc(t.buyer||"")} ${esc(t.stylekp||"")} · ${esc(m.from||"-")} → ${esc(m.to||"-")} · ${dateTimeText(m.at)}</span></div></div>`;
-  }).join("") : `<div class="muted">Belum ada movement minggu ini.</div>`;
+  }).join("") : `<div class="empty">Belum ada movement terbaru.</div>`;
 }
+
+function renderHomeAnalytics(){
+  const buyer = $("homeBuyerFilter")?.value || "";
+  const style = $("homeStyleFilter")?.value || "";
+  const stFilter = $("homeStorageFilter")?.value || "";
+  const q = ($("homeQuickSearch")?.value || "").trim().toLowerCase();
+
+  const matchTpl = (t) => {
+    if(buyer && t.buyer !== buyer) return false;
+    if(style && t.stylekp !== style) return false;
+    if(q && !templateSearchText(t).includes(q)) return false;
+    return true;
+  };
+
+  const storages = db.storages
+    .filter(s=>s.code!=="WORKSHOP" && (!stFilter || s.code===stFilter))
+    .map(s=>{
+      const tpls = templatesInStorage(s.code).filter(matchTpl);
+      const partQty = tpls.reduce((acc,t)=>acc + distributedPartsInStorage(t.id, s.code).reduce((a,p)=>a+Number(p.qty||1),0), 0);
+      return { storage: s, tpls, partQty };
+    })
+    .sort((a,b)=>b.tpls.length - a.tpls.length || a.storage.code.localeCompare(b.storage.code));
+
+  if($("homeStorageCounter")) $("homeStorageCounter").textContent = `${storages.length} storage`;
+  const chartBox = $("homeStorageChart");
+  const drillBox = $("homeStorageDrilldown");
+  if(chartBox){
+    const maxCount = Math.max(1, ...storages.map(x=>x.tpls.length));
+    const shown = storages.slice(0, 8);
+    chartBox.innerHTML = shown.length ? shown.map(item=>{
+      const pct = Math.round((item.tpls.length / maxCount) * 100);
+      const isActive = homeSelectedStorage === item.storage.code;
+      return `<div class="chart-row ${isActive ? "active" : ""}" onclick="selectHomeStorage('${escAttr(item.storage.code)}')">
+        <div class="chart-row-head">
+          <span><b>${esc(item.storage.code)}</b> <span class="muted">${esc(item.storage.name||"")}</span></span>
+          <span class="badge">${item.tpls.length} tpl · ${item.partQty} pcs</span>
+        </div>
+        <div class="chart-track"><div class="chart-fill" style="width:${item.tpls.length ? Math.max(8, pct) : 0}%"></div></div>
+      </div>`;
+    }).join("") + (storages.length > 8 ? `<div class="muted" style="margin-top:6px">Menampilkan 8 teratas dari ${storages.length} storage. Klik "Buka Full View" untuk semua storage.</div>` : "")
+    : `<div class="empty">Belum ada data storage sesuai filter.</div>`;
+
+    if(drillBox){
+      const picked = storages.find(x=>x.storage.code === homeSelectedStorage);
+      if(picked){
+        drillBox.classList.remove("hidden");
+        drillBox.innerHTML = `
+          <div class="topline" style="margin-bottom:6px">
+            <div><b>🗄️ ${esc(picked.storage.code)} · ${esc(picked.storage.name||"")}</b><div class="muted">${picked.tpls.length} template (${picked.partQty} pcs part)</div></div>
+            <div class="actions" style="margin:0">
+              <button class="small primary" type="button" onclick="openStorage('${escAttr(picked.storage.code)}')">Detail Penuh</button>
+              <button class="small" type="button" onclick="goFieldUpdateStorage('${escAttr(picked.storage.code)}')">+ Update Lapangan</button>
+            </div>
+          </div>
+          ${picked.tpls.length ? picked.tpls.slice(0,6).map(t=>`
+            <div class="line-item" style="cursor:pointer;background:#fff" onclick="openTemplateDetail('${escAttr(t.id)}')">
+              <b>${esc(t.buyer)} · ${esc(t.stylekp)}</b>
+              <span>${esc(partTextInStorage(t.id, picked.storage.code))}</span>
+            </div>`).join("") + (picked.tpls.length > 6 ? `<div class="muted">+ ${picked.tpls.length - 6} template lainnya — klik Detail Penuh.</div>` : "")
+          : `<div class="muted">Storage ini masih kosong untuk filter saat ini.</div>`}`;
+      }else{
+        drillBox.classList.add("hidden");
+      }
+    }
+  }
+
+  // Ringkasan Akrilik di Dashboard
+  const acrBox = $("homeAcrylicSummary");
+  if(acrBox){
+    const newSheetCount = db.templates.filter(t=>String(t.acrylicSource||"").toUpperCase()==="NEW_SHEET").length;
+    const leftoverCount = db.templates.filter(t=>String(t.acrylicSource||"").toUpperCase()==="LEFTOVER").length;
+    const stocks = [...db.acrylics].filter(a=>!q || formatAcrylicSpec(a).toLowerCase().includes(q) || String(a.note||"").toLowerCase().includes(q))
+      .sort((a,b)=>Number(a.qtyAvailable||0) - Number(b.qtyAvailable||0));
+    const headChips = `<div class="chip-row" style="margin-top:0">
+      <span class="badge acrylic">🧱 Stok Baru: ${newSheetCount} template</span>
+      <span class="badge leftover">♻️ Sisa Template: ${leftoverCount} template</span>
+    </div>`;
+    if(!stocks.length){
+      acrBox.innerHTML = headChips + `<div class="empty">Belum ada stok akrilik tercatat.<br><button class="small primary" style="margin-top:8px" onclick="showPage('acrylic')">+ Input Stok Akrilik</button></div>`;
+    }else{
+      acrBox.innerHTML = headChips + stocks.slice(0, 6).map(a=>{
+        const pct = a.qtyIn > 0 ? Math.max(0, Math.min(100, Math.round((a.qtyAvailable / a.qtyIn) * 100))) : 0;
+        const barCls = a.qtyAvailable <= 0 ? "bad" : (a.qtyAvailable <= 2 ? "warn" : "good");
+        const stBadge = a.qtyAvailable <= 0 ? `<span class="badge bad">Habis</span>` : (a.qtyAvailable <= 2 ? `<span class="badge warn">Menipis</span>` : `<span class="badge good">Aman</span>`);
+        return `<div class="chart-row" onclick="showPage('acrylic')">
+          <div class="chart-row-head">
+            <b>${esc(formatAcrylicSpec(a))}</b>
+            <span>${stBadge} <b>${roundQty(a.qtyAvailable)}</b>/${roundQty(a.qtyIn)} lbr</span>
+          </div>
+          <div class="chart-track"><div class="chart-fill ${barCls}" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join("");
+    }
+  }
+}
+const renderHomeAnalyticsDebounced = debounce(renderHomeAnalytics, 160);
+
 function movementSortNewest(a,b){const da=Date.parse(a?.at||"");const db=Date.parse(b?.at||"");return Number.isFinite(da)&&Number.isFinite(db)?db-da:String(b?.at||"").localeCompare(String(a?.at||""));}
 function movementIcon(type){
   const map={DISTRIBUTE:"📦",TRANSFER:"🔁",REPAIR:"🛠️",RETURN:"↩️",OUT:"🚚",IMPORT_EXISTING:"📥",UPDATE_EXISTING:"📝"};
   return map[String(type||"").toUpperCase()] || "📄";
+}
+
+/* ================= FLOW AKRILIK (BAHAN BAKU & TRACEABILITY SISA) ================= */
+let acrylicStockFilter = "all";
+let acrylicLogFilter = "ALL";
+let tplAcrylicMode = "NEW_SHEET";
+
+function setAcrThickness(mm){
+  if($("acrThickness")) $("acrThickness").value = mm;
+}
+function setAcrylicStockFilter(f, el){
+  acrylicStockFilter = f || "all";
+  document.querySelectorAll("#acrFilterChips .chip").forEach(c=>c.classList.toggle("active", c===el));
+  renderAcrylicPage();
+}
+function setAcrylicLogFilter(f, el){
+  acrylicLogFilter = f || "ALL";
+  document.querySelectorAll("#acrLogFilterChips .chip").forEach(c=>c.classList.toggle("active", c===el));
+  renderAcrylicPage();
+}
+function prefillAcrylicStock(aid){
+  const a = db.acrylics.find(x=>String(x.id)===String(aid));
+  if(!a) return;
+  $("acrLength").value = a.length;
+  $("acrWidth").value = a.width;
+  $("acrUnit").value = a.unit || "cm";
+  $("acrThickness").value = a.thicknessMm;
+  $("acrColor").value = a.color || "";
+  $("acrQty").value = 1;
+  $("acrNote").value = a.note || "";
+  toast(`Form diisi spec ${formatAcrylicSpec(a)} — masukkan qty tambah lalu Simpan`);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function clearAcrylicForm(){
+  ["acrLength","acrWidth","acrThickness","acrColor","acrNote"].forEach(id=>{ if($(id)) $(id).value=""; });
+  if($("acrUnit")) $("acrUnit").value = "cm";
+  if($("acrQty")) $("acrQty").value = "1";
+}
+function acrylicSpecKey(length, width, unit, thicknessMm, color){
+  return [roundQty(length), roundQty(width), String(unit||"cm").toLowerCase(), roundQty(thicknessMm), normalizeText(color||"")].join("|");
+}
+async function saveAcrylicStockIn(){
+  if(!requireLogin("menyimpan stok akrilik masuk")) return;
+  const length = roundQty($("acrLength")?.value);
+  const width = roundQty($("acrWidth")?.value);
+  const unit = ($("acrUnit")?.value || "cm").toLowerCase() === "mm" ? "mm" : "cm";
+  const thicknessMm = roundQty($("acrThickness")?.value);
+  const color = normalizeText($("acrColor")?.value || "");
+  const qty = roundQty($("acrQty")?.value);
+  const note = String($("acrNote")?.value || "").trim();
+
+  if(length <= 0 || width <= 0) return alert("Panjang dan Lebar akrilik harus lebih dari 0.");
+  if(thicknessMm <= 0) return alert("Tebal akrilik (mm) harus lebih dari 0.");
+  if(qty <= 0) return alert("Qty lembar masuk harus lebih dari 0.");
+
+  setBusy(true, "Menyimpan stok akrilik ke database lokal...");
+  try{
+    const now = nowISO();
+    const specKey = acrylicSpecKey(length, width, unit, thicknessMm, color);
+    const existing = db.acrylics.find(a=>acrylicSpecKey(a.length, a.width, a.unit, a.thicknessMm, a.color) === specKey);
+    const aid = existing ? existing.id : id("ACR");
+    const logId = id("ACRLOG");
+    const nextIn = roundQty((existing ? existing.qtyIn : 0) + qty);
+    const nextUsed = roundQty(existing ? existing.qtyUsed : 0);
+    const nextAvail = roundQty(Math.max(0, nextIn - nextUsed));
+
+    const acrylicObj = {
+      id: aid,
+      length,
+      width,
+      unit,
+      thicknessMm,
+      color,
+      qtyIn: nextIn,
+      qtyUsed: nextUsed,
+      qtyAvailable: nextAvail,
+      note: note || (existing ? existing.note : ""),
+      createdBy: existing ? (existing.createdBy || userName()) : userName(),
+      createdAt: existing ? (existing.createdAt || now) : now,
+      updatedAt: now,
+      deleted: false
+    };
+    const logObj = {
+      id: logId,
+      acrylicId: aid,
+      templateId: "",
+      sourceType: "IN",
+      sourceTemplateId: "",
+      qty,
+      sizeLabel: formatAcrylicSpec(acrylicObj),
+      by: userName(),
+      note: note || (existing ? "Tambah stok masuk" : "Stok masuk awal"),
+      at: now
+    };
+
+    await CNCDB.putOne("acrylics", acrylicObj);
+    await CNCDB.putOne("acrylicLogs", logObj);
+    await CNCSync.enqueueAndSync("stockInAcrylic", {
+      id: aid,
+      logId,
+      length,
+      width,
+      unit,
+      thicknessMm,
+      color,
+      qty,
+      note,
+      createdBy: userName(),
+      createdAt: now,
+      updatedAt: now
+    });
+    await reloadLocalState();
+    clearAcrylicForm();
+    toast(`Stok akrilik ${formatAcrylicSpec(acrylicObj)} (+${qty} lbr) tersimpan`);
+  }catch(e){
+    alert("Gagal simpan stok akrilik: " + e.message);
+  }finally{
+    setBusy(false);
+  }
+}
+
+async function softDeleteAcrylic(aid){
+  if(!requireLogin("menghapus stok akrilik")) return;
+  if(!isAdmin()) return alert("Hapus stok akrilik khusus admin dan super_admin.");
+  const a = db.acrylics.find(x=>String(x.id)===String(aid));
+  if(!a) return;
+  if(!confirm(`Hapus stok akrilik ${formatAcrylicSpec(a)}?\nData ditandai soft-delete dan akan disinkronkan ke perangkat lain.`)) return;
+  const now = nowISO();
+  await CNCDB.putOne("acrylics", { ...a, deleted: true, updatedAt: now });
+  await CNCSync.enqueueAndSync("softDeleteAcrylic", { id: a.id, updatedAt: now });
+  await reloadLocalState();
+  toast("Stok akrilik dihapus (soft delete)");
+}
+
+function renderAcrylicPage(){
+  if(!$("acrylicStockList")) return;
+  const totalIn = roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyIn||0),0));
+  const totalUsed = roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyUsed||0),0));
+  const totalAvail = roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyAvailable||0),0));
+  if($("acrStatTypes")) $("acrStatTypes").textContent = db.acrylics.length;
+  if($("acrStatIn")) $("acrStatIn").textContent = totalIn;
+  if($("acrStatUsed")) $("acrStatUsed").textContent = totalUsed;
+  if($("acrStatAvail")) $("acrStatAvail").textContent = totalAvail;
+
+  const q = ($("acrSearch")?.value || "").trim().toLowerCase();
+  const list = db.acrylics.filter(a=>{
+    if(acrylicStockFilter === "available" && a.qtyAvailable <= 0) return false;
+    if(acrylicStockFilter === "low" && !(a.qtyAvailable > 0 && a.qtyAvailable <= 2)) return false;
+    if(acrylicStockFilter === "empty" && a.qtyAvailable > 0) return false;
+    if(q && ![a.id, formatAcrylicSpec(a), a.color, a.note].join(" ").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>b.qtyAvailable - a.qtyAvailable || a.thicknessMm - b.thicknessMm);
+
+  $("acrylicStockList").innerHTML = list.length ? list.map(a=>{
+    const pct = a.qtyIn > 0 ? Math.max(0, Math.min(100, Math.round((a.qtyAvailable / a.qtyIn) * 100))) : 0;
+    const barCls = a.qtyAvailable <= 0 ? "bad" : (a.qtyAvailable <= 2 ? "warn" : "good");
+    const statusTag = a.qtyAvailable <= 0 ? `<span class="badge bad">Habis</span>` : (a.qtyAvailable <= 2 ? `<span class="badge warn">Menipis</span>` : `<span class="badge good">Tersedia</span>`);
+    return `<div class="line-item" style="background:#fff">
+      <div class="topline" style="margin-bottom:4px">
+        <div>
+          <b>🧱 ${esc(formatAcrylicSpec(a))} ${statusTag}</b>
+          <span>Masuk: <b>${roundQty(a.qtyIn)}</b> lbr · Terpakai: <b>${roundQty(a.qtyUsed)}</b> lbr · Sisa: <b style="color:var(--navy-800)">${roundQty(a.qtyAvailable)}</b> lbr</span>
+          ${a.note ? `<small>Catatan: ${esc(a.note)} · ID: ${esc(a.id)}</small>` : `<small>ID: ${esc(a.id)} · update ${dateTimeText(a.updatedAt)}</small>`}
+        </div>
+        <div class="actions" style="margin:0">
+          <button class="small primary" type="button" onclick="prefillAcrylicStock('${escAttr(a.id)}')">+ Tambah Stok</button>
+          ${isAdmin() ? `<button class="small bad" type="button" onclick="softDeleteAcrylic('${escAttr(a.id)}')">Hapus</button>` : ""}
+        </div>
+      </div>
+      <div class="chart-track"><div class="chart-fill ${barCls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join("") : `<div class="empty">Belum ada data stok akrilik sesuai filter.</div>`;
+
+  const logs = [...db.acrylicLogs]
+    .filter(l=>acrylicLogFilter === "ALL" || String(l.sourceType||"").toUpperCase() === acrylicLogFilter)
+    .sort((a,b)=>movementSortNewest(a,b))
+    .slice(0, 40);
+
+  $("acrylicLogList").innerHTML = logs.length ? logs.map(l=>{
+    const st = String(l.sourceType||"").toUpperCase();
+    const t = l.templateId ? db.templates.find(x=>x.id===l.templateId) : null;
+    const srcT = l.sourceTemplateId ? db.templates.find(x=>x.id===l.sourceTemplateId) : null;
+    const badge = st === "IN" ? `<span class="badge good">+ STOK MASUK (+${roundQty(l.qty)} lbr)</span>`
+      : st === "NEW_SHEET" ? `<span class="badge acrylic">- PAKAI BARU (-${roundQty(l.qty)} lbr)</span>`
+      : `<span class="badge leftover">♻️ SISA TEMPLATE (0 lbr baru)</span>`;
+    return `<div class="line-item">
+      <b>${badge} ${esc(l.sizeLabel || "-")}</b>
+      <span>${t ? `Template: <b>${esc(t.buyer)} · ${esc(t.stylekp)}</b> (${esc(t.id)})` : (l.templateId ? `Template: ${esc(l.templateId)}` : "Penambahan stok gudang")}${srcT ? ` · Asal sisa: <b>${esc(srcT.buyer)} · ${esc(srcT.stylekp)}</b>` : (l.sourceTemplateId ? ` · Asal sisa: ${esc(l.sourceTemplateId)}` : "")}</span>
+      <small>${esc(l.by || "-")} · ${dateTimeText(l.at)}${l.note ? ` · ${esc(l.note)}` : ""}</small>
+    </div>`;
+  }).join("") : `<div class="empty">Belum ada riwayat transaksi akrilik.</div>`;
+}
+
+function setTemplateAcrylicMode(mode){
+  tplAcrylicMode = mode || "NEW_SHEET";
+  document.querySelectorAll("#tplAcrylicModeGrid .acrylic-mode-card").forEach(el=>{
+    el.classList.toggle("active", el.dataset.mode === tplAcrylicMode);
+  });
+  if($("tplAcrylicNewBox")) $("tplAcrylicNewBox").classList.toggle("hidden", tplAcrylicMode !== "NEW_SHEET");
+  if($("tplAcrylicLeftoverBox")) $("tplAcrylicLeftoverBox").classList.toggle("hidden", tplAcrylicMode !== "LEFTOVER");
+  updateTplAcrylicPreview();
+}
+function setTplAcrylicQty(val){
+  if($("tplAcrylicQty")) $("tplAcrylicQty").value = val;
+  updateTplAcrylicPreview();
+}
+function renderTemplateAcrylicOptions(){
+  const sel = $("tplAcrylicId");
+  if(sel){
+    const cur = sel.value;
+    const avail = db.acrylics.filter(a=>a.qtyAvailable > 0).sort((a,b)=>a.thicknessMm - b.thicknessMm || b.qtyAvailable - a.qtyAvailable);
+    sel.innerHTML = `<option value="">-- Pilih Stok Akrilik Tersedia --</option>` + avail.map(a=>`<option value="${escAttr(a.id)}">${esc(formatAcrylicSpec(a))} — Sisa: ${roundQty(a.qtyAvailable)} lbr</option>`).join("");
+    if(avail.some(a=>a.id === cur)) sel.value = cur;
+    else if(avail.length === 1) sel.value = avail[0].id;
+  }
+  const srcSel = $("tplLeftoverSourceId");
+  if(srcSel){
+    const curSrc = srcSel.value;
+    const q = ($("tplLeftoverSearch")?.value || "").trim().toLowerCase();
+    const tpls = db.templates.filter(t=>!q || `${t.buyer} ${t.stylekp} ${t.id} ${t.acrylicSpec}`.toLowerCase().includes(q)).slice(0, 120);
+    srcSel.innerHTML = `<option value="">-- Pilih Template Asal Sisa Akrilik --</option>` + tpls.map(t=>`<option value="${escAttr(t.id)}">${esc(t.buyer)} · ${esc(t.stylekp)} (${esc(t.id)})${t.acrylicSpec ? " — " + esc(t.acrylicSpec) : ""}</option>`).join("");
+    if(tpls.some(t=>t.id === curSrc)) srcSel.value = curSrc;
+  }
+  updateTplAcrylicPreview();
+}
+function updateTplAcrylicPreview(){
+  const box = $("tplAcrylicPreview");
+  if(!box || tplAcrylicMode !== "NEW_SHEET") return;
+  const aid = $("tplAcrylicId")?.value || "";
+  const qty = roundQty($("tplAcrylicQty")?.value);
+  if(!db.acrylics.some(a=>a.qtyAvailable > 0)){
+    box.className = "dist-alert warn";
+    box.innerHTML = `Belum ada stok akrilik tersedia. Klik <b>+ Input Stok Akrilik</b>, atau pilih <b>♻️ Sisa Akrilik Template Lain</b> / <b>Tanpa Catat Akrilik</b>.`;
+    return;
+  }
+  if(!aid){
+    box.className = "dist-alert info";
+    box.textContent = "Pilih ukuran akrilik yang dipakai. Stok akan otomatis berkurang saat template disimpan.";
+    return;
+  }
+  const a = db.acrylics.find(x=>x.id===aid);
+  if(!a) return;
+  if(qty <= 0){
+    box.className = "dist-alert bad";
+    box.textContent = "Qty lembar dipakai harus lebih dari 0 (bisa desimal, misal 0.5 atau 1).";
+    return;
+  }
+  if(qty > a.qtyAvailable + 1e-9){
+    box.className = "dist-alert bad";
+    box.innerHTML = `Stok tidak mencukupi! Tersedia <b>${roundQty(a.qtyAvailable)} lbr</b>, diminta <b>${qty} lbr</b>.`;
+    return;
+  }
+  const after = roundQty(a.qtyAvailable - qty);
+  box.className = "dist-alert good";
+  box.innerHTML = `🧱 <b>${esc(formatAcrylicSpec(a))}</b> · Stok akan berkurang: <b>${roundQty(a.qtyAvailable)} → ${after} lembar</b>.`;
+}
+function acrylicBadgeHtml(t){
+  const src = String(t?.acrylicSource || "").toUpperCase();
+  if(src === "NEW_SHEET"){
+    return `<span class="badge acrylic">🧱 ${esc(t.acrylicSpec || "Akrilik Baru")}${t.acrylicQty ? ` (-${roundQty(t.acrylicQty)} lbr)` : ""}</span>`;
+  }
+  if(src === "LEFTOVER"){
+    const srcT = t.acrylicSourceTemplateId ? db.templates.find(x=>x.id===t.acrylicSourceTemplateId) : null;
+    const lbl = srcT ? `${srcT.buyer} · ${srcT.stylekp}` : (t.acrylicSourceTemplateId || "Template lain");
+    return `<span class="badge leftover">♻️ Sisa: ${esc(lbl)}</span>`;
+  }
+  return "";
 }
 
 /* ================= MOVEMENT HISTORY (menu + filter + lazy load) ================= */
@@ -2495,15 +3412,62 @@ async function compressImage(file, maxMB=0.95){
   return out;
 }
 async function saveTemplate(){
+  if(!requireLogin("menyimpan template baru")) return;
   const buyer=normalizeText($("buyer").value), stylekp=normalizeText($("stylekp").value), parts=getPartRows();
   if(!buyer || !stylekp || !parts.length){ alert("Buyer, Style/KP, dan minimal 1 Part wajib diisi."); return; }
   const dup=findDuplicateTemplateLocal(buyer, stylekp, parts);
   if(dup){ alert(`Anti duplicate aktif: Template sudah ada.\nBuyer: ${dup.buyer}\nStyle/KP: ${dup.stylekp}\nStatus: ${statusLabel(dup.status)}\nLokasi: ${dup.currentStorage || "Belum distribusi"}`); return; }
+
+  // Validasi bahan baku akrilik
+  let acrylicSource = String(tplAcrylicMode || "NONE").toUpperCase();
+  let acrylicId = "";
+  let acrylicQty = 0;
+  let acrylicSourceTemplateId = "";
+  let acrylicSpec = "";
+  let acrylicNote = "";
+  let selectedAcrylic = null;
+
+  if(acrylicSource === "NEW_SHEET"){
+    acrylicId = String($("tplAcrylicId")?.value || "").trim();
+    acrylicQty = roundQty($("tplAcrylicQty")?.value);
+    if(!acrylicId){
+      alert("Pilih stok akrilik yang digunakan, atau ubah mode ke 'Sisa Akrilik Template Lain' / 'Tanpa Catat Akrilik'.");
+      return;
+    }
+    selectedAcrylic = db.acrylics.find(a=>String(a.id) === acrylicId);
+    if(!selectedAcrylic){
+      alert("Stok akrilik terpilih tidak ditemukan.");
+      return;
+    }
+    if(acrylicQty <= 0){
+      alert("Qty lembar akrilik yang dipakai harus lebih dari 0.");
+      return;
+    }
+    if(acrylicQty > selectedAcrylic.qtyAvailable + 1e-9){
+      alert(`Stok akrilik tidak mencukupi!\nSpec: ${formatAcrylicSpec(selectedAcrylic)}\nTersedia: ${roundQty(selectedAcrylic.qtyAvailable)} lbr\nDiminta: ${acrylicQty} lbr`);
+      return;
+    }
+    acrylicSpec = formatAcrylicSpec(selectedAcrylic);
+  }else if(acrylicSource === "LEFTOVER"){
+    acrylicSourceTemplateId = String($("tplLeftoverSourceId")?.value || "").trim();
+    acrylicNote = String($("tplLeftoverNote")?.value || "").trim();
+    if(!acrylicSourceTemplateId && !acrylicNote){
+      alert("Pilih Template Asal Sisa Akrilik atau isi Keterangan Sisa Akrilik.");
+      return;
+    }
+    const srcTpl = db.templates.find(t=>String(t.id) === acrylicSourceTemplateId);
+    const srcLabel = srcTpl ? `Sisa ${srcTpl.buyer} ${srcTpl.stylekp}${srcTpl.acrylicSpec ? " (" + srcTpl.acrylicSpec + ")" : ""}` : "Sisa Akrilik Template Lain";
+    acrylicSpec = acrylicNote ? `${srcLabel} · ${acrylicNote}` : srcLabel;
+  }else{
+    acrylicSource = "";
+  }
+
   setBusy(true,"Menyimpan template ke database lokal...");
   try{
     const sketch = sketchDataUrl || await compressImage($("sketch").files[0], 0.95);
     const now = nowISO();
     const tid = id("TPL");
+    const acrylicLogId = (acrylicSource === "NEW_SHEET" || acrylicSource === "LEFTOVER") ? id("ACRLOG") : "";
     const partRows = parts.map(x=>({
       partId: id("PRT"),
       templateId: tid,
@@ -2529,11 +3493,54 @@ async function saveTemplate(){
       createdAt: now,
       updatedAt: now,
       distributedAt: "",
-      deleted: false
+      deleted: false,
+      acrylicSource,
+      acrylicId,
+      acrylicQty,
+      acrylicSourceTemplateId,
+      acrylicSpec
     };
 
     await CNCDB.putOne("templates", templateObj);
     await CNCDB.putMany("parts", partRows);
+
+    // Update stok akrilik lokal & catat riwayat akrilik
+    if(acrylicSource === "NEW_SHEET" && selectedAcrylic){
+      const nextUsed = roundQty(Number(selectedAcrylic.qtyUsed || 0) + acrylicQty);
+      const nextAvail = roundQty(Math.max(0, Number(selectedAcrylic.qtyIn || 0) - nextUsed));
+      await CNCDB.putOne("acrylics", {
+        ...selectedAcrylic,
+        qtyUsed: nextUsed,
+        qtyAvailable: nextAvail,
+        updatedAt: now
+      });
+      await CNCDB.putOne("acrylicLogs", {
+        id: acrylicLogId,
+        acrylicId: selectedAcrylic.id,
+        templateId: tid,
+        sourceType: "NEW_SHEET",
+        sourceTemplateId: "",
+        qty: acrylicQty,
+        sizeLabel: acrylicSpec,
+        by: userName(),
+        note: `Pemakaian template ${buyer} ${stylekp}`,
+        at: now
+      });
+    }else if(acrylicSource === "LEFTOVER"){
+      await CNCDB.putOne("acrylicLogs", {
+        id: acrylicLogId,
+        acrylicId: "",
+        templateId: tid,
+        sourceType: "LEFTOVER",
+        sourceTemplateId: acrylicSourceTemplateId,
+        qty: 0,
+        sizeLabel: acrylicSpec,
+        by: userName(),
+        note: acrylicNote || `Memakai sisa akrilik template ${acrylicSourceTemplateId || "lain"}`,
+        at: now
+      });
+    }
+
     if(sketch){
       await CNCDB.saveSketchLocal(tid, [sketch], { synced: false, updatedAt: now });
     }
@@ -2547,7 +3554,14 @@ async function saveTemplate(){
       parts: partRows,
       createdBy: userName(),
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      acrylicSource,
+      acrylicId,
+      acrylicQty,
+      acrylicSourceTemplateId,
+      acrylicSpec,
+      acrylicLogId,
+      acrylicNote
     });
     if(sketch){
       await CNCSync.enqueueAndSync("uploadSketch", { templateId: tid });
@@ -2555,12 +3569,26 @@ async function saveTemplate(){
 
     await reloadLocalState();
     clearTemplateForm();
-    toast(CNCSync.isOnline() ? "Template tersimpan lokal & dikirim ke antrean sync" : "Template tersimpan offline · akan sync saat online");
+    const acrMsg = acrylicSource === "NEW_SHEET" ? ` · stok akrilik -${acrylicQty} lbr`
+      : acrylicSource === "LEFTOVER" ? " · tercatat dari sisa template lain" : "";
+    toast((CNCSync.isOnline() ? "Template tersimpan & masuk sync" : "Template tersimpan offline") + acrMsg);
     showPage("templateList");
   }catch(e){ alert("Gagal simpan: "+e.message); }
   finally{ setBusy(false); }
 }
-function clearTemplateForm(){ if(!$("buyer")) return; $("buyer").value=""; $("stylekp").value=""; $("partRows").innerHTML=""; addPartRow(); clearSketch(); }
+function clearTemplateForm(){
+  if(!$("buyer")) return;
+  $("buyer").value="";
+  $("stylekp").value="";
+  $("partRows").innerHTML="";
+  addPartRow();
+  clearSketch();
+  if($("tplAcrylicQty")) $("tplAcrylicQty").value = "1";
+  if($("tplLeftoverSearch")) $("tplLeftoverSearch").value = "";
+  if($("tplLeftoverNote")) $("tplLeftoverNote").value = "";
+  setTemplateAcrylicMode(db.acrylics.some(a=>a.qtyAvailable > 0) ? "NEW_SHEET" : "LEFTOVER");
+  renderTemplateAcrylicOptions();
+}
 /* Lazy loading list template: render bertahap 40 baris + tombol muat lagi */
 let tplShownCount = 40;
 const TPL_PAGE_SIZE = 40;
@@ -2570,13 +3598,19 @@ function renderTemplates(keepCount){
   if(!dataLoaded){ box.innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>'; return; }
   if(!keepCount) tplShownCount = TPL_PAGE_SIZE;
   const q=($("templateSearch")?.value||"").toLowerCase(); const status=$("templateStatusFilter")?.value||"";
-  const rows=db.templates.filter(t=>(!q || templateSearchText(t).includes(q)) && (!status || (status==="WAITING_DISTRIBUTION" ? isTemplateWaiting(t) : t.status===status)));
+  const rows=db.templates.filter(t=>{
+    if(q && !templateSearchText(t).includes(q)) return false;
+    if(!status) return true;
+    if(status==="WAITING_DISTRIBUTION") return isTemplateWaiting(t);
+    if(status==="LEFTOVER" || status==="NEW_SHEET") return String(t.acrylicSource||"").toUpperCase()===status;
+    return t.status===status;
+  });
   const shown = rows.slice(0, tplShownCount);
-  box.innerHTML = `<div class="muted">Ditemukan: ${rows.length} template · ditampilkan ${shown.length}</div>` + (shown.length? `<table><thead><tr><th>Template</th><th>Part</th><th>Status</th><th>Lokasi</th><th>Action</th></tr></thead><tbody>${shown.map(t=>{
+  box.innerHTML = `<div class="muted">Ditemukan: ${rows.length} template · ditampilkan ${shown.length}</div>` + (shown.length? `<table><thead><tr><th>Template</th><th>Part</th><th>Status &amp; Akrilik</th><th>Lokasi</th><th>Action</th></tr></thead><tbody>${shown.map(t=>{
     const partial=isTemplatePartial(t);
     const locs=templateStorages(t);
     const locLabel=locs.length ? (partial ? `${locs.join(", ")} (+waiting)` : locs.join(", ")) : "Belum distribusi";
-    return `<tr><td><b>${esc(t.buyer)}</b><br>${esc(t.stylekp)}<br><span class="muted">${esc(t.id)} · ${dateTimeText(t.createdAt)}</span></td><td>${esc(partText(t.id))}</td><td>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""}</td><td>${esc(locLabel)}</td><td><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button>${t.hasSketch?` <button class="small" onclick="viewSketch('${escAttr(t.id)}')">Sketch</button>`:""}</td></tr>`;
+    return `<tr><td><b>${esc(t.buyer)}</b><br>${esc(t.stylekp)}<br><span class="muted">${esc(t.id)} · ${dateTimeText(t.createdAt)}</span></td><td>${esc(partText(t.id))}</td><td>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""}${acrylicBadgeHtml(t)?`<br>${acrylicBadgeHtml(t)}`:""}</td><td>${esc(locLabel)}</td><td><button class="small" onclick="openTemplateDetail('${escAttr(t.id)}')">Detail</button>${t.hasSketch?` <button class="small" onclick="viewSketch('${escAttr(t.id)}')">Sketch</button>`:""}</td></tr>`;
   }).join("")}</tbody></table>` : `<div class="empty">Belum ada data.</div>`) + (rows.length > tplShownCount ? `<button class="load-more-btn" onclick="loadMoreTemplates()">⬇ Muat ${Math.min(TPL_PAGE_SIZE, rows.length-tplShownCount)} template lagi (${rows.length-tplShownCount} tersisa)</button>` : "");
 }
 const renderTemplatesDebounced = debounce(renderTemplates, 160);
@@ -2587,11 +3621,18 @@ function openTemplateDetail(tid){
   const partial=isTemplatePartial(t);
   const locs=templateStorages(t);
   const partTable=ps.length ? `<table><thead><tr><th>Part</th><th>Size</th><th>Qty</th><th>Status</th><th>Storage</th></tr></thead><tbody>${ps.map(p=>`<tr><td><b>${esc(p.part)}</b></td><td>${esc(p.size||"-")}</td><td>${Number(p.qty||1)}</td><td>${statusBadge(p.status||"WAITING_DISTRIBUTION")}</td><td>${esc(p.currentStorage||"-")}</td></tr>`).join("")}</tbody></table>` : `<p class="muted">Belum ada rincian part.</p>`;
+  const srcTpl = t.acrylicSourceTemplateId ? db.templates.find(x=>x.id===t.acrylicSourceTemplateId) : null;
+  const acrInfo = t.acrylicSource === "NEW_SHEET"
+    ? `<div class="dist-alert info" style="margin:8px 0">🧱 <b>Bahan Akrilik Baru:</b> ${esc(t.acrylicSpec || "-")} · Dipakai <b>${roundQty(t.acrylicQty || 0)} lembar</b> (stok dikurangi otomatis)</div>`
+    : t.acrylicSource === "LEFTOVER"
+    ? `<div class="dist-alert good" style="margin:8px 0">♻️ <b>Bahan Sisa Akrilik Template Lain:</b> ${srcTpl ? `${esc(srcTpl.buyer)} · ${esc(srcTpl.stylekp)} (${esc(srcTpl.id)})` : esc(t.acrylicSourceTemplateId || "-")} ${t.acrylicSpec ? `· ${esc(t.acrylicSpec)}` : ""} (tidak mengurangi stok baru)</div>`
+    : "";
   $("modalTitle").textContent="Detail Template";
-  $("modalContent").innerHTML=`<div class="card"><h3>${esc(t.buyer)} · ${esc(t.stylekp)}</h3><p>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""} <span class="badge">${esc(locs.length?locs.join(", "):"Belum distribusi")}</span></p><p><b>Rincian Part:</b></p>${partTable}<p class="muted">Dibuat oleh: ${esc(t.createdBy)} · ${dateTimeText(t.createdAt)}</p><div class="actions">${t.hasSketch?`<button onclick="viewSketch('${escAttr(t.id)}')">Lihat Sketch</button>`:""}${isTemplateWaiting(t)?`<button class="good" onclick="closeModal();goDistributeTemplate('${escAttr(t.id)}')">📦 Distribusikan</button>`:""}${isAdmin()?`<button class="bad" onclick="softDeleteTemplate('${escAttr(t.id)}')">🗑️ Hapus Template</button>`:""}</div></div><h3>History</h3>${mov.length?mov.map(m=>`<div class="line-item"><b>${esc(m.type)}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · ${esc(m.by||"")} · ${dateTimeText(m.at)}<br>${esc(m.note||"")}</span></div>`).join(""):`<div class="muted">Belum ada movement.</div>`}`;
+  $("modalContent").innerHTML=`<div class="card"><h3>${esc(t.buyer)} · ${esc(t.stylekp)}</h3><p>${statusBadge(t.status)}${partial?` <span class="badge partial">Split Parsial</span>`:""} <span class="badge">${esc(locs.length?locs.join(", "):"Belum distribusi")}</span></p>${acrInfo}<p><b>Rincian Part:</b></p>${partTable}<p class="muted">Dibuat oleh: ${esc(t.createdBy)} · ${dateTimeText(t.createdAt)}</p><div class="actions">${t.hasSketch?`<button onclick="viewSketch('${escAttr(t.id)}')">Lihat Sketch</button>`:""}${isTemplateWaiting(t)?`<button class="good" onclick="closeModal();goDistributeTemplate('${escAttr(t.id)}')">📦 Distribusikan</button>`:""}${isAdmin()?`<button class="bad" onclick="softDeleteTemplate('${escAttr(t.id)}')">🗑️ Hapus Template</button>`:""}</div></div><h3>History</h3>${mov.length?mov.map(m=>`<div class="line-item"><b>${esc(m.type)}</b><span>${esc(m.from||"-")} → ${esc(m.to||"-")} · ${esc(m.by||"")} · ${dateTimeText(m.at)}<br>${esc(m.note||"")}</span></div>`).join(""):`<div class="muted">Belum ada movement.</div>`}`;
   openModal();
 }
 async function softDeleteTemplate(tid){
+  if(!requireLogin("menghapus template")) return;
   if(!isAdmin()) return alert("Hapus template khusus admin dan super_admin.");
   const t=db.templates.find(x=>String(x.id)===String(tid));
   if(!t) return;
@@ -2996,6 +4037,7 @@ function setDistStorageScanned(){
   }
 }
 async function distributeTemplate(){
+  if(!requireLogin("mendistribusikan template")) return;
   if(distSubmitting) return;
   const st=normalizeText($("distStorage")?.value || "");
   if(!st || st==="WORKSHOP") return alert("Pilih storage tujuan yang valid.");
@@ -3143,6 +4185,7 @@ function renderMoveTemplates(){
   $("moveTemplateList").innerHTML = rows.length ? rows.map(t=>`<div class="template-pick-card ${selectedMoveTemplateId===t.id?'selected':''}" onclick="selectedMoveTemplateId='${escAttr(t.id)}';renderMoveTemplates()"><b>${esc(t.buyer)} · ${esc(t.stylekp)}</b><span>${esc(partTextInStorage(t.id, from))}</span><small>${esc(t.id)}</small></div>`).join("") : `<div class="empty">Tidak ada template di storage ini.</div>`;
 }
 async function saveMovement(){
+  if(!requireLogin("menyimpan movement template")) return;
   const t=db.templates.find(x=>x.id===selectedMoveTemplateId); if(!t) return alert("Pilih template dulu.");
   const from=normalizeText($("moveStorageFrom")?.value || t.currentStorage);
   const type=normalizeText($("moveType").value || "TRANSFER");
@@ -3312,6 +4355,7 @@ function renderUserManagement(){
 }
 
 async function addStorage(){
+  if(!requireLogin("menambahkan master storage")) return;
   const code=normalizeText($("storageCode").value), name=$("storageName").value.trim(), area=$("storageArea").value.trim();
   if(!code || !name) return alert("Kode dan nama storage wajib diisi.");
   if(db.storages.some(s=>String(s.code).toUpperCase()===code)) return alert("Anti duplicate aktif: Kode storage sudah ada di master.");
@@ -3329,6 +4373,7 @@ async function addStorage(){
   finally{ setBusy(false); }
 }
 async function softDeleteStorage(code){
+  if(!requireLogin("menghapus master storage")) return;
   if(!isAdmin()) return alert("Hapus storage khusus admin dan super_admin.");
   const normCode=normalizeText(code);
   if(normCode==="WORKSHOP") return alert("WORKSHOP tidak dapat dihapus.");
@@ -3342,6 +4387,7 @@ async function softDeleteStorage(code){
   toast("Storage dihapus (soft delete)");
 }
 async function addUser(){
+  if(!requireLogin("menambahkan user")) return;
   if(!isSuperAdmin()) return alert("Khusus super admin.");
   if(!CNCSync.isOnline()) return alert("Tambah user memerlukan koneksi online.");
   const username=$("newUsername").value.trim().toLowerCase(), password=$("newPassword").value, name=$("newName").value.trim(), role=$("newRole").value;
@@ -3358,6 +4404,35 @@ async function addUser(){
   catch(e){ alert("Gagal tambah user: "+e.message); }
   finally{ setBusy(false); }
 }
+
+/* ================= APK-PROOF QR PRINTING (PNG IMG + Android.printHtml) ================= */
+function materializeQrImages(container){
+  if(!container || typeof container.querySelectorAll !== "function") return;
+  const canvases = container.querySelectorAll("canvas");
+  canvases.forEach(cv=>{
+    try{
+      if(typeof cv.toDataURL !== "function") return;
+      const dataUrl = cv.toDataURL("image/png");
+      if(!dataUrl || dataUrl === "data:,") return;
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      img.alt = "QR Code";
+      img.style.display = "block";
+      if(cv.parentNode) cv.parentNode.replaceChild(img, cv);
+    }catch(e){}
+  });
+}
+function buildStandalonePrintHtml(title, cssRules, bodyHtml){
+  return `<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"/><title>${esc(title)}</title><style>*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}${cssRules}</style></head><body>${bodyHtml}</body></html>`;
+}
+function triggerBrowserPrint(targetKey){
+  document.body.dataset.printTarget = targetKey;
+  const cleanup = () => { delete document.body.dataset.printTarget; };
+  window.addEventListener("afterprint", cleanup, { once: true });
+  setTimeout(()=>{ window.print(); }, 250);
+  setTimeout(cleanup, 4000);
+}
+
 function renderTemplateQrSelection(){
   const box=$("templateQrSelection"); if(!box) return;
   const q=($("templateQrSearch")?.value||"").trim().toLowerCase();
@@ -3386,16 +4461,37 @@ function buildTemplateQrPrint(){
   if(missing.length){alert("Isi CT untuk semua label terpilih. CT tidak disimpan ke database.");return false;}
   const area=$("templateQrPrintArea");
   setTemplateQrPaper();
-  area.innerHTML=list.map((t,i)=>`<article class="template-qr-label"><div class="template-qr-holder" id="template-qr-${i}"></div><div class="template-qr-style">${esc(t.stylekp||"—")}</div><div class="template-qr-process">PROSES: ${esc(partText(t.id)||"—")}</div><div class="template-qr-ct">CT: ${esc(templateCTValues[t.id])}</div></article>`).join("");
+  area.innerHTML=list.map((t,i)=>`<article class="template-qr-label"><div class="template-qr-holder" id="template-qr-${i}"></div><div class="template-qr-style">${esc(t.stylekp||"—")}</div><div class="template-qr-process">PROSES: ${esc(partText(t.id)||"—")}</div><div class="template-qr-ct">CT: ${esc(templateCTValues[t.id])}</div><div class="template-qr-id">${esc(t.id)}</div></article>`).join("");
   list.forEach((t,i)=>{const el=$("template-qr-"+i);if(window.QRCode&&el){try{window.QRCode(el,{text:String(t.id),width:220,height:220,margin:4});}catch(e){el.textContent="QR error";}}else if(el)el.textContent="QR tidak tersedia";});
+  materializeQrImages(area);
   return true;
 }
+function buildTemplateQrStandaloneHtml(paper){
+  const area = $("templateQrPrintArea");
+  const isRoll = paper === "58" || paper === "80";
+  const labelW = paper === "58" ? "54mm" : "76mm";
+  const qrSize = paper === "58" ? "28mm" : (paper === "80" ? "36mm" : "32mm");
+  const css = isRoll
+    ? `@page{size:${paper}mm auto;margin:1mm}.print-grid{display:block;width:${paper}mm;margin:0 auto}.template-qr-label{width:${labelW};margin:0 auto 2mm;padding:3mm;border:1px solid #111;border-radius:2mm;text-align:center;page-break-after:always;break-after:page;page-break-inside:avoid;break-inside:avoid;display:flex;flex-direction:column;align-items:center;gap:1.2mm}.template-qr-label:last-child{page-break-after:auto;break-after:auto}.template-qr-label img{width:${qrSize};height:${qrSize};display:block}.template-qr-style{font-size:11pt;font-weight:800;line-height:1.2}.template-qr-process{font-size:8.5pt;line-height:1.25;overflow-wrap:anywhere}.template-qr-ct{font-size:10.5pt;font-weight:800}.template-qr-id{font-size:7pt;color:#333}`
+    : `@page{size:A4 portrait;margin:8mm}.print-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm;width:100%}.template-qr-label{border:1px solid #111;border-radius:3mm;padding:4mm;text-align:center;page-break-inside:avoid;break-inside:avoid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4mm;min-height:68mm}.template-qr-label img{width:${qrSize};height:${qrSize};display:block}.template-qr-style{font-size:12pt;font-weight:800;line-height:1.2}.template-qr-process{font-size:9pt;line-height:1.25;overflow-wrap:anywhere}.template-qr-ct{font-size:11pt;font-weight:800}.template-qr-id{font-size:7pt;color:#333}`;
+  return buildStandalonePrintHtml("QR Template CNC", css, `<div class="print-grid">${area ? area.innerHTML : ""}</div>`);
+}
 function printTemplateQR(){
-  if(!buildTemplateQrPrint())return;
+  if(!buildTemplateQrPrint()) return;
   const paper=$("templateQrPaper")?.value||"A4";
+  if(window.Android && typeof window.Android.printHtml === "function"){
+    try{
+      const html = buildTemplateQrStandaloneHtml(paper);
+      window.Android.printHtml(html, "CNC_QR_Template_" + paper, paper);
+      toast("Membuka dialog Print / PDF Android...");
+      return;
+    }catch(e){
+      alert("Gagal membuka print Android: " + e.message);
+    }
+  }
   let style=$("templateQrPageStyle");if(!style){style=document.createElement("style");style.id="templateQrPageStyle";document.head.appendChild(style);}
   style.textContent=paper==="A4"?'@media print{@page{size:A4 portrait;margin:8mm}.template-qr-print-area{width:100%;min-height:0;padding:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:4mm}}':`@media print{@page{size:${paper}mm auto;margin:1mm}.template-qr-print-area{width:${paper}mm;min-height:0;padding:0;grid-template-columns:1fr;gap:0}.template-qr-label{width:${Number(paper)-4}mm}}`;
-  setTimeout(()=>{window.print();},350);
+  triggerBrowserPrint("templateQr");
 }
 
 function renderPrintQRSelection(){
@@ -3410,8 +4506,9 @@ function buildPrintQR(){
   const size=Number($("qrPerPage").value||8); const list=db.storages.filter(s=>selectedQR.has(s.code));
   if(!list.length){ toast("Pilih storage dulu"); return []; }
   const cols=size<=4?2: size<=8?2:3;
-  $("qrPrintArea").style.gridTemplateColumns=`repeat(${cols},1fr)`;
-  $("qrPrintArea").innerHTML = list.map((s,i)=>`<div class="qr-label"><div class="qr-title">${esc(s.name)}</div><div class="qr-real-holder" id="qr-print-${i}"></div><div class="qr-code-text">${esc(s.code)}</div><div class="qr-area-text">${esc(s.area||"")}</div></div>`).join("");
+  const area=$("qrPrintArea");
+  area.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  area.innerHTML = list.map((s,i)=>`<div class="qr-label"><div class="qr-title">${esc(s.name)}</div><div class="qr-real-holder" id="qr-print-${i}"></div><div class="qr-code-text">${esc(s.code)}</div><div class="qr-area-text">${esc(s.area||"")}</div></div>`).join("");
   list.forEach((s,i)=>{
     const el=$("qr-print-"+i);
     if(window.QRCode && el){
@@ -3421,19 +4518,32 @@ function buildPrintQR(){
       el.innerHTML=`<div class="qr-fallback">QR<br>${esc(s.code)}</div>`;
     }
   });
+  materializeQrImages(area);
   toast("Preview QR dibuat");
   return list;
+}
+function buildStorageQrStandaloneHtml(cols){
+  const area = $("qrPrintArea");
+  const css = `@page{size:A4 portrait;margin:8mm}.qr-grid{display:grid;grid-template-columns:repeat(${cols},minmax(0,1fr));gap:5mm;width:100%}.qr-label{border:1px solid #111;border-radius:4mm;padding:4mm;text-align:center;page-break-inside:avoid;break-inside:avoid;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:56mm}.qr-title{font-weight:800;font-size:13pt;margin-bottom:2mm}.qr-real-holder img{width:34mm;height:34mm;display:block;margin:1mm auto}.qr-code-text{font-weight:800;font-size:11pt;margin-top:2mm}.qr-area-text{font-size:9pt;color:#333}`;
+  return buildStandalonePrintHtml("QR Storage CNC", css, `<div class="qr-grid">${area ? area.innerHTML : ""}</div>`);
 }
 function printQR(){
   const list = buildPrintQR();
   if(!list.length) return;
-  setTimeout(()=>{
-    if(window.Android && typeof window.Android.printQRToPdf === "function"){
-      try{ window.Android.printQRToPdf(); return; }catch(e){}
+  const size=Number($("qrPerPage").value||8);
+  const cols=size<=4?2: size<=8?2:3;
+  if(window.Android && typeof window.Android.printHtml === "function"){
+    try{
+      const html = buildStorageQrStandaloneHtml(cols);
+      window.Android.printHtml(html, "CNC_QR_Storage", "A4");
+      toast("Membuka dialog Print / PDF Android...");
+      return;
+    }catch(e){
+      alert("Gagal membuka print Android: " + e.message);
     }
-    window.print();
-    toast("Di dialog print pilih Save as PDF jika mau kirim ke WhatsApp.");
-  },500);
+  }
+  triggerBrowserPrint("qr");
+  toast("Di dialog print pilih Save as PDF jika mau kirim ke WhatsApp.");
 }
 async function shareQRWhatsApp(){
   const list = buildPrintQR();
@@ -3602,6 +4712,7 @@ async function applyBulkImportOffline(rows, opts){
 }
 
 async function saveFieldStorageTemplates(){
+  if(!requireLogin("menyimpan update lapangan")) return;
   if(!selectedFieldStorage) return alert('Pilih storage dulu.');
   const {rows, errors}=getFieldTemplateRows();
   if(errors.length) return alert('Masih ada data belum lengkap:\n'+errors.slice(0,12).join('\n'));
@@ -3673,6 +4784,7 @@ function setImportStorageScanned(){
   if(code) toast("Storage import dipilih: "+code);
 }
 async function importExistingTemplates(){
+  if(!requireLogin("mengimpor template lapangan")) return;
   const {rows,errors,mainStorage}=parseExistingImportText();
   if(errors.length) return alert("Masih ada baris error. Rapikan dulu data import.");
   if(!rows.length) return alert("Belum ada data yang bisa diupdate.");
@@ -3699,6 +4811,7 @@ window.addEventListener("DOMContentLoaded", async ()=>{
   updateHeader();
   const loggedIn = await tryAutoLogin();
   if(!loggedIn) renderAuth();
+  setTemplateAcrylicMode(db.acrylics.some(a=>a.qtyAvailable > 0) ? "NEW_SHEET" : "LEFTOVER");
 });
 
 </script>

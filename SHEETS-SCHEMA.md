@@ -7,10 +7,12 @@
 | `USERS` | `username, password, role, name, active, createdAt, updatedAt` | Akun & peran (`operator`, `admin`, `super_admin`). **Privat, jangan dipublikasikan.** |
 | `SESSIONS` | `tokenHash, username, role, name, deviceId, deviceName, createdAt, expiresAt, lastSeenAt, revoked` | Token perangkat 30 hari (disimpan sebagai hash SHA-256, bukan token mentah). **Privat.** |
 | `STORAGES` | `code, name, area, createdAt, updatedAt, deleted` | Master lokasi/meja. Mendukung soft delete (`deleted = TRUE`) & LWW (`updatedAt`). |
-| `TEMPLATES` | `id, buyer, stylekp, status, currentStorage, sketch, createdBy, createdAt, updatedAt, distributedAt, deleted` | Master template (ID UUID dari klien). `sketch` hanya penanda kosong/`DRIVE`. Mendukung soft delete & LWW. |
+| `TEMPLATES` | `id, buyer, stylekp, status, currentStorage, sketch, createdBy, createdAt, updatedAt, distributedAt, deleted, acrylicSource, acrylicId, acrylicQty, acrylicSourceTemplateId, acrylicSpec` | Master template (ID UUID dari klien) + referensi bahan baku akrilik (`NEW_SHEET` atau `LEFTOVER`). |
 | `TEMPLATE_PARTS` | `partId, templateId, part, size, qty, createdAt, status, currentStorage, distributedAt, updatedAt, deleted` | Part/proses per template (UUID klien). Mendukung split distribution, auto-merge, soft delete, & LWW. |
 | `MOVEMENTS` | `id, templateId, type, from, to, by, note, at` | Log pergerakan **append-only** (dedupe berdasarkan UUID `id` klien). |
 | `SKETCHES` | `templateId, idx, seq, chunk, updatedAt, deleted` | Referensi file Drive privat (`DRIVE_FILE:<fileId>`). **Privat.** |
+| `ACRYLIC_STOCKS` | `id, length, width, unit, thicknessMm, color, qtyIn, qtyUsed, qtyAvailable, note, createdBy, createdAt, updatedAt, deleted` | Stok bahan baku akrilik (Panjang × Lebar × Tebal mm). Otomatis berkurang saat dipakai template baru (`NEW_SHEET`). |
+| `ACRYLIC_LOGS` | `id, acrylicId, templateId, sourceType, sourceTemplateId, qty, sizeLabel, by, note, at` | Riwayat **append-only** akrilik masuk (`IN`), pemakaian stok baru (`NEW_SHEET`), dan pemakaian sisa template lain (`LEFTOVER`). |
 
 ## Akun Awal
 
