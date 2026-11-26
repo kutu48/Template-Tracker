@@ -81,6 +81,7 @@ header{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--
 
 /* === INTERACTIVE DASHBOARD ANALYTICS === */
 .dash-analytics-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;margin-bottom:12px}
+.dash-analytics-grid.single-col{grid-template-columns:1fr}
 .chart-row{padding:9px 10px;border-radius:12px;border:1px solid var(--line);background:var(--card2);margin:7px 0;cursor:pointer;transition:all .16s ease}
 .chart-row:hover,.chart-row.active{border-color:var(--navy-600);background:var(--navy-50);box-shadow:0 4px 12px rgba(30,69,126,.09)}
 .chart-row-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;margin-bottom:6px}
@@ -395,17 +396,20 @@ body[data-screen="xl"] .wrap{max-width:1360px}
   <div class="home-hero">
     <div class="hero-top">
       <div>
-        <h2>Dashboard Template CNC &amp; Akrilik</h2>
-        <div class="muted" id="homeSyncSummary">Database lokal siap offline · login untuk simpan &amp; sync ke Google Sheets</div>
+        <h2>Dashboard Template CNC</h2>
+        <div class="muted" id="homeSyncSummary">Menampilkan jumlah template per lokasi/storage · Login untuk melihat detail &amp; mengakses menu lainnya</div>
       </div>
-      <div class="hero-quick-btns">
+      <div class="hero-quick-btns hidden" id="heroQuickBtnsAuth">
         <button class="hero-primary" type="button" onclick="showPage('templateInput')">➕ Input Template</button>
         <button type="button" onclick="showPage('acrylic')">🧱 Stok Akrilik</button>
         <button type="button" onclick="showPage('distribution')">📦 Distribusi</button>
         <button type="button" onclick="showPage('storage')">📷 Scan Storage</button>
       </div>
+      <div class="hero-quick-btns" id="heroQuickBtnsGuest">
+        <button class="hero-primary" type="button" onclick="openLoginModal('Login untuk melihat detail template per lokasi/storage dan mengakses semua menu.')">🔐 Login untuk Akses Penuh</button>
+      </div>
     </div>
-    <div class="summary-box">
+    <div class="summary-box" id="homeKpiBox">
       <div class="mini" onclick="openFilteredTemplates('')" title="Lihat semua template">
         <div class="mini-top"><span>Total Template</span><span>📋</span></div>
         <b id="sumTemplates">0</b>
@@ -419,14 +423,14 @@ body[data-screen="xl"] .wrap{max-width:1360px}
       <div class="mini" onclick="openFilteredTemplates('DISTRIBUTED')" title="Lihat template sudah distribusi">
         <div class="mini-top"><span>Distributed</span><span>✅</span></div>
         <b id="sumDistributed">0</b>
-        <span>Di meja/storage</span>
+        <span>Di lokasi/storage</span>
       </div>
-      <div class="mini" onclick="showPage('acrylic')" title="Kelola stok bahan baku akrilik">
+      <div class="mini hidden" id="kpiAcrylicCard" onclick="showPage('acrylic')" title="Kelola stok bahan baku akrilik">
         <div class="mini-top"><span>Stok Akrilik</span><span>🧱</span></div>
         <b id="sumAcrylicAvail">0</b>
         <span id="sumAcrylicSub">lembar tersedia</span>
       </div>
-      <div class="mini" onclick="openFilteredTemplates('LEFTOVER')" title="Lihat template dari sisa akrilik">
+      <div class="mini hidden" id="kpiLeftoverCard" onclick="openFilteredTemplates('LEFTOVER')" title="Lihat template dari sisa akrilik">
         <div class="mini-top"><span>Sisa Akrilik</span><span>♻️</span></div>
         <b id="sumLeftoverTpl">0</b>
         <span>template hemat bahan</span>
@@ -434,12 +438,24 @@ body[data-screen="xl"] .wrap{max-width:1360px}
     </div>
   </div>
 
-  <!-- Interactive Dashboard Filter & Analytics -->
-  <div class="card">
+  <!-- Banner Mode Publik (Belum Login) -->
+  <div class="card" id="homeGuestBanner">
+    <div class="topline" style="margin-bottom:6px">
+      <div>
+        <h3>🔒 Dashboard Ringkas (Belum Login)</h3>
+        <div class="muted">Menampilkan <b>jumlah template per lokasi/storage</b> saja. Login untuk melihat detail template tiap lokasi dan membuka menu lainnya.</div>
+      </div>
+      <button class="small primary" type="button" onclick="openLoginModal()">🔐 Login</button>
+    </div>
+    <input id="homeGuestStorageSearch" oninput="renderHomeAnalyticsDebounced()" placeholder="Cari kode atau nama lokasi / storage..."/>
+  </div>
+
+  <!-- Interactive Dashboard Filter & Analytics (Khusus Setelah Login) -->
+  <div class="card hidden" id="homeFilterCard">
     <div class="topline">
       <div>
         <h3>📊 Filter &amp; Analitik Interaktif</h3>
-        <div class="muted">Filter langsung untuk melihat isi storage, rincian Buyer/Style, dan sisa bahan baku akrilik.</div>
+        <div class="muted">Filter langsung untuk melihat detail isi storage, rincian Buyer/Style, dan sisa bahan baku akrilik.</div>
       </div>
       <div class="actions" style="margin-top:0">
         <button class="small" type="button" onclick="resetHomeFilter()">Reset Filter</button>
@@ -454,16 +470,19 @@ body[data-screen="xl"] .wrap{max-width:1360px}
     </div>
   </div>
 
-  <div class="dash-analytics-grid">
+  <div class="dash-analytics-grid single-col" id="homeAnalyticsGrid">
     <div class="card">
       <div class="topline">
-        <div><h3>🗄️ Sebaran Template per Storage</h3><div class="muted">Klik baris storage untuk lihat detail isinya</div></div>
-        <span class="selected-counter" id="homeStorageCounter">0 storage</span>
+        <div>
+          <h3>🗄️ Jumlah Template per Lokasi / Storage</h3>
+          <div class="muted" id="homeStorageSubtitle">Menampilkan jumlah template per lokasi · Login untuk lihat detail isi tiap lokasi</div>
+        </div>
+        <span class="selected-counter" id="homeStorageCounter">0 lokasi</span>
       </div>
       <div id="homeStorageChart"></div>
       <div id="homeStorageDrilldown" class="drilldown-box hidden"></div>
     </div>
-    <div class="card">
+    <div class="card hidden" id="homeAcrylicCard">
       <div class="topline">
         <div><h3>🧱 Ringkasan Stok Akrilik</h3><div class="muted">Pemakaian stok baru vs sisa template lain</div></div>
         <button class="small primary" type="button" onclick="showPage('acrylic')">Kelola →</button>
@@ -472,7 +491,7 @@ body[data-screen="xl"] .wrap{max-width:1360px}
     </div>
   </div>
 
-  <div class="menu-grid">
+  <div class="menu-grid hidden" id="homeMenuGrid">
     <div class="menu-card" onclick="showPage('acrylic')"><div class="icon">🧱</div><b>Stok Akrilik</b><span>Input ukuran P×L×T &amp; log pemakaian</span></div>
     <div class="menu-card" onclick="showPage('templateInput')"><div class="icon">➕</div><b>Input Template</b><span>Multi part, bahan akrilik, sketch</span></div>
     <div class="menu-card" onclick="showPage('distribution')"><div class="icon">📦</div><b>Distribusi</b><span>Split part/size/qty &amp; anti-duplikat</span></div>
@@ -487,7 +506,7 @@ body[data-screen="xl"] .wrap{max-width:1360px}
     <div class="menu-card hidden" id="menuUserManagement" onclick="showPage('userManagement')"><div class="icon">👥</div><b>User Management</b><span>Khusus super admin</span></div>
   </div>
 
-  <div class="card movement-menu-card" onclick="showPage('movementHistory')">
+  <div class="card movement-menu-card hidden" id="homeRecentMovementsCard" onclick="showPage('movementHistory')">
     <div class="topline">
       <div><h3>🕘 5 Movement Terakhir</h3><div class="muted">Aktivitas terbaru dari database lokal</div></div>
       <button class="small primary" type="button" onclick="event.stopPropagation();showPage('movementHistory')">Buka History →</button>
@@ -703,7 +722,7 @@ ARC'TERYX | ST-778 | SLEEVE x2, COLLAR | CNC-MEJA-01 | hasil opname"></textarea>
 <div class="spacer-bottom"></div>
 </main>
 
-<nav class="bottom-nav no-print" id="bottomNav">
+<nav class="bottom-nav hidden no-print" id="bottomNav">
   <button data-page="home" class="active" onclick="showPage('home')">🏠 Home</button>
   <button data-page="templateInput" onclick="showPage('templateInput')">➕ Input</button>
   <button data-page="distribution" onclick="showPage('distribution')">📦 Dist</button>
@@ -2224,8 +2243,9 @@ function updateSyncIndicator(st){
   }
   const qBadge = $("syncQueueBadge");
   if(qBadge){
-    qBadge.classList.toggle("hidden", !currentUser && !syncUiState.pendingCount && !syncUiState.errorCount);
-    if(syncUiState.errorCount > 0){
+    if(!currentUser){
+      qBadge.classList.add("hidden");
+    }else if(syncUiState.errorCount > 0){
       qBadge.className = "sync-pill error";
       qBadge.textContent = `⚠️ ${syncUiState.errorCount} gagal · ${syncUiState.pendingCount} antre`;
     }else if(syncUiState.pendingCount > 0){
@@ -2244,8 +2264,9 @@ function updateSyncIndicator(st){
   if(btn) btn.disabled = !!syncUiState.syncing;
   const homeSum = $("homeSyncSummary");
   if(homeSum){
-    const authHint = currentUser ? `Login: ${currentUser.name || currentUser.username}` : "Mode Tamu (klik Login di kanan atas untuk input & sync)";
-    homeSum.textContent = `${syncUiState.online ? "Online" : "Offline"} · ${authHint} · Antrean: ${syncUiState.pendingCount}${syncUiState.errorCount ? ` (${syncUiState.errorCount} gagal)` : ""} · Sync: ${lastSyncStr}`;
+    homeSum.textContent = currentUser
+      ? `${syncUiState.online ? "Online" : "Offline"} · Login: ${currentUser.name || currentUser.username} · Antrean: ${syncUiState.pendingCount}${syncUiState.errorCount ? ` (${syncUiState.errorCount} gagal)` : ""} · Sync: ${lastSyncStr}`
+      : `Mode Publik (${syncUiState.online ? "Online" : "Offline"}) · Hanya menampilkan jumlah template per lokasi/storage · Login untuk detail & menu lainnya`;
   }
   if(syncUiState.authExpired && currentUser){
     toast("Token perangkat kedaluwarsa/dicabut. Silakan login ulang saat online.");
@@ -2351,6 +2372,7 @@ async function updateLoginConfigHint(){
 
 /* ================= OUTBOX MODAL (ANTREAN TULIS) ================= */
 async function openOutboxModal(){
+  if(!requireLogin("melihat antrean sinkronisasi")) return;
   const ops = await CNCDB.getOutbox();
   $("modalTitle").textContent = `🧾 Antrean Sinkronisasi (${ops.length})`;
   const summary = `<div class="actions"><button class="good" type="button" onclick="retryOutboxFromModal()">🔄 Sync / Coba Ulang Semua</button><button class="small" type="button" onclick="openOutboxModal()">Refresh Daftar</button></div>`;
@@ -2544,32 +2566,68 @@ async function logout(){
     try{ await CNCSync.postApi("logout", {}, { token }); }catch(e){}
   }
   CNCSync.stopAutoSync();
-  currentUser=null; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
+  currentUser=null; activePage="home"; homeSelectedStorage=""; selectedQR.clear(); selectedTemplateId=""; distSelections.clear(); distSubmitting=false; selectedMoveTemplateId=""; selectedFieldStorage="";
+  closeModal();
   await CNCDB.clearSession();
   renderAuth();
   await updateLoginConfigHint();
-  toast("Logout berhasil · kembali ke Mode Tamu");
+  toast("Logout berhasil · kembali ke Dashboard Publik");
 }
 
 function renderAuth(){
+  const loggedIn = !!currentUser;
   if($("app")) $("app").classList.remove("hidden");
-  if($("bottomNav")) $("bottomNav").classList.remove("hidden");
-  if($("btnHeaderLogin")) $("btnHeaderLogin").classList.toggle("hidden", !!currentUser);
-  if($("btnHeaderLogout")) $("btnHeaderLogout").classList.toggle("hidden", !currentUser);
-  if($("btnHeaderSync")) $("btnHeaderSync").classList.toggle("hidden", !currentUser);
+  if($("bottomNav")) $("bottomNav").classList.toggle("hidden", !loggedIn);
+  if($("btnHeaderLogin")) $("btnHeaderLogin").classList.toggle("hidden", loggedIn);
+  if($("btnHeaderLogout")) $("btnHeaderLogout").classList.toggle("hidden", !loggedIn);
+  if($("btnHeaderSync")) $("btnHeaderSync").classList.toggle("hidden", !loggedIn);
+  if($("syncQueueBadge") && !loggedIn) $("syncQueueBadge").classList.add("hidden");
   if($("menuUserManagement")) $("menuUserManagement").classList.toggle("hidden", !isSuperAdmin());
+
+  // Toggle elemen Dashboard publik (belum login) vs penuh (sudah login)
+  if($("heroQuickBtnsAuth")) $("heroQuickBtnsAuth").classList.toggle("hidden", !loggedIn);
+  if($("heroQuickBtnsGuest")) $("heroQuickBtnsGuest").classList.toggle("hidden", loggedIn);
+  if($("homeGuestBanner")) $("homeGuestBanner").classList.toggle("hidden", loggedIn);
+  if($("homeFilterCard")) $("homeFilterCard").classList.toggle("hidden", !loggedIn);
+  if($("homeAcrylicCard")) $("homeAcrylicCard").classList.toggle("hidden", !loggedIn);
+  if($("homeMenuGrid")) $("homeMenuGrid").classList.toggle("hidden", !loggedIn);
+  if($("homeRecentMovementsCard")) $("homeRecentMovementsCard").classList.toggle("hidden", !loggedIn);
+  if($("kpiAcrylicCard")) $("kpiAcrylicCard").classList.toggle("hidden", !loggedIn);
+  if($("kpiLeftoverCard")) $("kpiLeftoverCard").classList.toggle("hidden", !loggedIn);
+  if($("homeAnalyticsGrid")) $("homeAnalyticsGrid").classList.toggle("single-col", !loggedIn);
+  if($("homeKpiBox")){
+    $("homeKpiBox").style.gridTemplateColumns = loggedIn ? "" : "repeat(3,minmax(0,1fr))";
+  }
+  if($("homeStorageSubtitle")){
+    $("homeStorageSubtitle").textContent = loggedIn
+      ? "Klik baris lokasi/storage untuk melihat detail template di dalamnya"
+      : "Hanya menampilkan jumlah template per lokasi · Login untuk melihat detail template";
+  }
+
   if($("whoami")){
-    $("whoami").textContent = currentUser ? `${currentUser.name || currentUser.username} · ${currentUser.role}` : "Mode Tamu";
+    $("whoami").textContent = loggedIn ? `${currentUser.name || currentUser.username} · ${currentUser.role}` : "Mode Tamu";
+  }
+
+  if(!loggedIn){
+    activePage = "home";
+    homeSelectedStorage = "";
+    document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
+    if($("page-home")) $("page-home").classList.remove("hidden");
   }
   renderCurrentPage(activePage || "home");
 }
 
 async function showPage(page){
-  if(page==="userManagement"){
-    if(!currentUser){ openLoginModal("Login sebagai super_admin untuk membuka User Management."); return; }
-    if(!isSuperAdmin()){ alert("User Management khusus super admin."); page="home"; }
+  const target = page || "home";
+  if(target !== "home" && !currentUser){
+    openLoginModal("Menu ini hanya dapat diakses setelah login. Sebelum login, hanya Dashboard jumlah template per lokasi yang ditampilkan.");
+    return;
   }
-  activePage = page || "home";
+  if(target === "userManagement" && !isSuperAdmin()){
+    alert("User Management khusus super admin.");
+    return showPage("home");
+  }
+  activePage = target;
   document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
   const el=$("page-"+activePage); if(el) el.classList.remove("hidden");
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active", b.dataset.page===activePage));
@@ -2582,8 +2640,10 @@ async function showPage(page){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function renderCurrentPage(page=activePage){
+  if(!currentUser && page !== "home") page = "home";
   updateHeader();
   if(page==="home") renderHome();
+  if(!currentUser) return;
   if(page==="acrylic") renderAcrylicPage();
   if(page==="dashboardStorage") renderDashboardStorage();
   if(page==="templateInput"){ renderSuggestions(); renderTemplateAcrylicOptions(); }
@@ -2603,8 +2663,11 @@ function renderAll(){ renderCurrentPage(); }
 function updateHeader(){
   const total=db.templates.length;
   const waiting=db.templates.filter(isTemplateWaiting).length;
+  const locCount=db.storages.filter(s=>s.code!=="WORKSHOP").length;
   const acrAvail=roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyAvailable||0),0));
-  const mode=`${total} template · ${waiting} waiting · ${acrAvail} lbr akrilik`;
+  const mode=currentUser
+    ? `${total} template · ${waiting} waiting · ${acrAvail} lbr akrilik`
+    : `${locCount} lokasi · ${total} template (Login untuk detail)`;
   const el=$("headerSyncStatus"); if(el) el.textContent = mode;
   updateSyncIndicator(syncUiState);
 }
@@ -2679,22 +2742,28 @@ function findDuplicateTemplateLocal(buyer, stylekp, parts){
 /* ================= INTERACTIVE DASHBOARD ================= */
 let homeSelectedStorage = "";
 function openFilteredTemplates(statusVal){
+  if(!requireLogin("melihat daftar detail template")) return;
   showPage("templateList").then(()=>{
     if($("templateStatusFilter")) $("templateStatusFilter").value = statusVal || "";
     renderTemplates();
   });
 }
 function resetHomeFilter(){
-  ["homeBuyerFilter","homeStyleFilter","homeStorageFilter","homeQuickSearch"].forEach(id=>{ if($(id)) $(id).value=""; });
+  ["homeBuyerFilter","homeStyleFilter","homeStorageFilter","homeQuickSearch","homeGuestStorageSearch"].forEach(id=>{ if($(id)) $(id).value=""; });
   homeSelectedStorage = "";
   renderHomeAnalytics();
 }
 function selectHomeStorage(code){
+  if(!currentUser){
+    openLoginModal(`Silakan login untuk melihat detail template pada lokasi ${code}.`);
+    return;
+  }
   homeSelectedStorage = homeSelectedStorage === code ? "" : code;
   renderHomeAnalytics();
 }
 function renderHome(){
   if(!$("sumTemplates")) return;
+  const loggedIn = !!currentUser;
   if($("menuUserManagement")) $("menuUserManagement").classList.toggle("hidden", !isSuperAdmin());
   const totalAvailAcr = roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyAvailable||0),0));
   const leftoverCount = db.templates.filter(t=>String(t.acrylicSource||"").toUpperCase()==="LEFTOVER").length;
@@ -2705,20 +2774,61 @@ function renderHome(){
   if($("sumAcrylicSub")) $("sumAcrylicSub").textContent = `${db.acrylics.length} jenis ukuran`;
   if($("sumLeftoverTpl")) $("sumLeftoverTpl").textContent = leftoverCount;
 
-  selectOptions("homeBuyerFilter", [...new Set(db.templates.map(t=>t.buyer).filter(Boolean))].sort(), "Semua Buyer");
-  selectOptions("homeStyleFilter", [...new Set(db.templates.map(t=>t.stylekp).filter(Boolean))].sort(), "Semua Style / KP");
-  selectOptions("homeStorageFilter", db.storages.filter(s=>s.code!=="WORKSHOP").map(s=>s.code), "Semua Storage");
+  if(loggedIn){
+    selectOptions("homeBuyerFilter", [...new Set(db.templates.map(t=>t.buyer).filter(Boolean))].sort(), "Semua Buyer");
+    selectOptions("homeStyleFilter", [...new Set(db.templates.map(t=>t.stylekp).filter(Boolean))].sort(), "Semua Style / KP");
+    selectOptions("homeStorageFilter", db.storages.filter(s=>s.code!=="WORKSHOP").map(s=>s.code), "Semua Storage");
+  }
 
   renderHomeAnalytics();
 
-  const recent=[...db.movements].sort(movementSortNewest).slice(0,5);
-  $("recentMovements").innerHTML = recent.length ? recent.map(m=>{
-    const t=db.templates.find(x=>x.id===m.templateId) || {};
-    return `<div class="line-item mh-item"><div class="mh-icon">${movementIcon(m.type)}</div><div><b>${esc(m.type)}</b><span>${esc(t.buyer||"")} ${esc(t.stylekp||"")} · ${esc(m.from||"-")} → ${esc(m.to||"-")} · ${dateTimeText(m.at)}</span></div></div>`;
-  }).join("") : `<div class="empty">Belum ada movement terbaru.</div>`;
+  if(loggedIn && $("recentMovements")){
+    const recent=[...db.movements].sort(movementSortNewest).slice(0,5);
+    $("recentMovements").innerHTML = recent.length ? recent.map(m=>{
+      const t=db.templates.find(x=>x.id===m.templateId) || {};
+      return `<div class="line-item mh-item"><div class="mh-icon">${movementIcon(m.type)}</div><div><b>${esc(m.type)}</b><span>${esc(t.buyer||"")} ${esc(t.stylekp||"")} · ${esc(m.from||"-")} → ${esc(m.to||"-")} · ${dateTimeText(m.at)}</span></div></div>`;
+    }).join("") : `<div class="empty">Belum ada movement terbaru.</div>`;
+  }else if($("recentMovements")){
+    $("recentMovements").innerHTML = "";
+  }
 }
 
 function renderHomeAnalytics(){
+  const loggedIn = !!currentUser;
+  const chartBox = $("homeStorageChart");
+  const drillBox = $("homeStorageDrilldown");
+
+  // MODE BELUM LOGIN: hanya tampilkan jumlah template per lokasi/storage (tanpa detail template)
+  if(!loggedIn){
+    const guestQ = ($("homeGuestStorageSearch")?.value || "").trim().toLowerCase();
+    const storages = db.storages
+      .filter(s=>s.code!=="WORKSHOP" && (!guestQ || [s.code, s.name, s.area].join(" ").toLowerCase().includes(guestQ)))
+      .map(s=>{
+        const count = templatesInStorage(s.code).length;
+        return { storage: s, count };
+      })
+      .sort((a,b)=>b.count - a.count || a.storage.code.localeCompare(b.storage.code));
+
+    if($("homeStorageCounter")) $("homeStorageCounter").textContent = `${storages.length} lokasi`;
+    if(drillBox){ drillBox.classList.add("hidden"); drillBox.innerHTML = ""; }
+    if(chartBox){
+      const maxCount = Math.max(1, ...storages.map(x=>x.count));
+      chartBox.innerHTML = storages.length ? storages.map(item=>{
+        const pct = Math.round((item.count / maxCount) * 100);
+        return `<div class="chart-row" onclick="selectHomeStorage('${escAttr(item.storage.code)}')" title="Login untuk lihat detail template di lokasi ini">
+          <div class="chart-row-head">
+            <span><b>${esc(item.storage.code)}</b> <span class="muted">${esc(item.storage.name||"")}${item.storage.area ? ` · ${esc(item.storage.area)}` : ""}</span></span>
+            <span><span class="badge">${item.count} template</span> <small class="muted">🔒 Detail</small></span>
+          </div>
+          <div class="chart-track"><div class="chart-fill" style="width:${item.count ? Math.max(8, pct) : 0}%"></div></div>
+        </div>`;
+      }).join("") : `<div class="empty">Belum ada data lokasi/storage di perangkat ini. Silakan <b>Login</b> untuk menyinkronkan data dari server.</div>`;
+    }
+    if($("homeAcrylicSummary")) $("homeAcrylicSummary").innerHTML = "";
+    return;
+  }
+
+  // MODE SUDAH LOGIN: analitik lengkap + drilldown detail template per lokasi/storage + ringkasan akrilik
   const buyer = $("homeBuyerFilter")?.value || "";
   const style = $("homeStyleFilter")?.value || "";
   const stFilter = $("homeStorageFilter")?.value || "";
@@ -2741,11 +2851,9 @@ function renderHomeAnalytics(){
     .sort((a,b)=>b.tpls.length - a.tpls.length || a.storage.code.localeCompare(b.storage.code));
 
   if($("homeStorageCounter")) $("homeStorageCounter").textContent = `${storages.length} storage`;
-  const chartBox = $("homeStorageChart");
-  const drillBox = $("homeStorageDrilldown");
   if(chartBox){
     const maxCount = Math.max(1, ...storages.map(x=>x.tpls.length));
-    const shown = storages.slice(0, 8);
+    const shown = storages.slice(0, 12);
     chartBox.innerHTML = shown.length ? shown.map(item=>{
       const pct = Math.round((item.tpls.length / maxCount) * 100);
       const isActive = homeSelectedStorage === item.storage.code;
@@ -2756,7 +2864,7 @@ function renderHomeAnalytics(){
         </div>
         <div class="chart-track"><div class="chart-fill" style="width:${item.tpls.length ? Math.max(8, pct) : 0}%"></div></div>
       </div>`;
-    }).join("") + (storages.length > 8 ? `<div class="muted" style="margin-top:6px">Menampilkan 8 teratas dari ${storages.length} storage. Klik "Buka Full View" untuk semua storage.</div>` : "")
+    }).join("") + (storages.length > 12 ? `<div class="muted" style="margin-top:6px">Menampilkan 12 teratas dari ${storages.length} storage. Klik "Buka Full View" untuk semua storage.</div>` : "")
     : `<div class="empty">Belum ada data storage sesuai filter.</div>`;
 
     if(drillBox){
@@ -2771,11 +2879,11 @@ function renderHomeAnalytics(){
               <button class="small" type="button" onclick="goFieldUpdateStorage('${escAttr(picked.storage.code)}')">+ Update Lapangan</button>
             </div>
           </div>
-          ${picked.tpls.length ? picked.tpls.slice(0,6).map(t=>`
+          ${picked.tpls.length ? picked.tpls.slice(0,8).map(t=>`
             <div class="line-item" style="cursor:pointer;background:#fff" onclick="openTemplateDetail('${escAttr(t.id)}')">
               <b>${esc(t.buyer)} · ${esc(t.stylekp)}</b>
               <span>${esc(partTextInStorage(t.id, picked.storage.code))}</span>
-            </div>`).join("") + (picked.tpls.length > 6 ? `<div class="muted">+ ${picked.tpls.length - 6} template lainnya — klik Detail Penuh.</div>` : "")
+            </div>`).join("") + (picked.tpls.length > 8 ? `<div class="muted">+ ${picked.tpls.length - 8} template lainnya — klik Detail Penuh.</div>` : "")
           : `<div class="muted">Storage ini masih kosong untuk filter saat ini.</div>`}`;
       }else{
         drillBox.classList.add("hidden");
@@ -3615,6 +3723,7 @@ function renderTemplates(keepCount){
 }
 const renderTemplatesDebounced = debounce(renderTemplates, 160);
 function openTemplateDetail(tid){
+  if(!requireLogin("melihat detail template")) return;
   const t=db.templates.find(x=>x.id===tid); if(!t) return;
   const mov=db.movements.filter(m=>m.templateId===tid).sort(movementSortNewest).slice(0,5);
   const ps=partsOf(t.id);
@@ -3649,6 +3758,7 @@ async function softDeleteTemplate(tid){
 }
 const zoomState={scale:1,x:0,y:0,startX:0,startY:0,pointerX:0,pointerY:0,dragging:false,startScale:1,lastDist:0,pointers:new Map()};
 async function viewSketch(tid){
+  if(!requireLogin("melihat sketch template")) return;
   const t=db.templates.find(x=>x.id===tid);
   if(!t) return;
   try{
@@ -4266,6 +4376,7 @@ function renderStorage(){
   $("storageGrid").innerHTML = rows.map(s=>{ const total=templatesInStorage(s.code).length; return `<div class="card storage-card" onclick="openStorage('${escAttr(s.code)}')"><b>${esc(s.code)}</b><p>${esc(s.name)}</p><span class="badge">${total} template</span><div class="muted">${esc(s.area||"")}</div></div>`; }).join("");
 }
 function openStorage(code){
+  if(!requireLogin(`melihat detail isi storage ${code}`)) return;
   const s=db.storages.find(x=>x.code===code); const rows=templatesInStorage(code);
   $("modalTitle").textContent = s ? `${s.code} · ${s.name}` : code;
   const addBtn = `<div class="actions"><button class="good" onclick="goFieldUpdateStorage('${escAttr(code)}')">+ Tambah Template di Storage Ini</button></div>`;
