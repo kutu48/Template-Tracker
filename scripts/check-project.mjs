@@ -109,6 +109,10 @@ if (cap.webDir !== 'public') throw new Error('capacitor.config.json webDir must 
 if (gradleProps.includes('APP_URL') || appGradle.includes('APP_URL')) {
   throw new Error('Android config still references obsolete APP_URL');
 }
+const settingsGradle = await read('android/settings.gradle.kts');
+if (settingsGradle.includes('FAIL_ON_PROJECT_REPOS')) {
+  throw new Error('android/settings.gradle.kts must not use FAIL_ON_PROJECT_REPOS (breaks :capacitor-android)');
+}
 for (const needle of ['BridgeActivity', 'fun shareQRText(', 'fun printHtml(', 'buildPrintAttributes', 'onShowFileChooser', 'fun saveSketchFile(', 'fun readSketchFile(']) {
   if (!mainKt.includes(needle)) throw new Error(`Missing Android bridge/Capacitor feature in MainActivity.kt: ${needle}`);
 }

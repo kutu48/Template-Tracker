@@ -10,15 +10,15 @@ android {
         applicationId = "com.pancaprima.cnctracker"
         minSdk = 24
         targetSdk = 35
-        versionCode = 50
-        versionName = "5.0.0"
+        versionCode = 51
+        versionName = "5.1.0"
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
     buildFeatures {
         buildConfig = true
@@ -27,7 +27,7 @@ android {
 
 dependencies {
     implementation(project(":capacitor-android"))
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }
