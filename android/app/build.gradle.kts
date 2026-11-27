@@ -10,8 +10,17 @@ android {
         applicationId = "com.pancaprima.cnctracker"
         minSdk = 24
         targetSdk = 35
-        versionCode = 51
-        versionName = "5.1.0"
+        versionCode = 52
+        versionName = "5.2.0"
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
@@ -24,6 +33,8 @@ android {
         buildConfig = true
     }
 }
+
+apply(from = "capacitor.build.gradle")
 
 dependencies {
     implementation(project(":capacitor-android"))

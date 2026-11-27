@@ -1,8 +1,10 @@
 package com.pancaprima.cnctracker
 
+import android.Manifest
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,8 +18,14 @@ import android.webkit.ValueCallback
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.getcapacitor.BridgeActivity
 import com.getcapacitor.BridgeWebChromeClient
 import com.google.zxing.integration.android.IntentIntegrator
@@ -29,8 +37,20 @@ class MainActivity : BridgeActivity() {
 
     private var pendingFileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingCameraUri: Uri? = null
+    private var pendingChooserWantsImage: Boolean = false
+    private var pendingChooserAcceptTypes: List<String> = emptyList()
+    private var pendingPermissionAction: ((Boolean) -> Unit)? = null
+
     // Simpan referensi kuat ke WebView cetak agar tidak di-GC sebelum PrintManager selesai
     private var activePrintWebView: WebView? = null
+
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val action = pendingPermissionAction
+        pendingPermissionAction = null
+        action?.invoke(granted)
+    }
 
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -75,6 +95,25 @@ class MainActivity : BridgeActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Android 15 (targetSdk 35) Edge-to-Edge Safe Area Insets
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        val contentRoot = findViewById<android.view.View>(android.R.id.content)
+        if (contentRoot != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(contentRoot) { v, windowInsets ->
+                val bars = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+                v.updatePadding(
+                    left = bars.left,
+                    top = bars.top,
+                    right = bars.right,
+                    bottom = bars.bottom
+                )
+                windowInsets
+            }
+        }
+
         val capBridge = bridge ?: return
         val webView = capBridge.webView ?: return
 
@@ -86,7 +125,30 @@ class MainActivity : BridgeActivity() {
         }
         webView.addJavascriptInterface(AndroidBridge(), "Android")
 
-        // File chooser lengkap (Kamera + Galeri + File JSON backup)
+        // Navigasi tombol Back hardware / gesture Android:
+        // Tutup modal aktif atau kembali ke halaman Home sebelum keluar aplikasi
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val wv = bridge?.webView
+                if (wv == null) {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    return
+                }
+                wv.evaluateJavascript(
+                    "(function(){ return typeof window.handleHardwareBack === 'function' ? String(window.handleHardwareBack()) : 'false'; })()"
+                ) { result ->
+                    val handled = result != null && result.contains("true")
+                    if (!handled) {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                    }
+                }
+            }
+        })
+
+        // File chooser lengkap (Kamera dengan runtime CAMERA permission + Galeri + File JSON backup)
         webView.webChromeClient = object : BridgeWebChromeClient(capBridge) {
             override fun onShowFileChooser(
                 view: WebView?,
@@ -99,51 +161,120 @@ class MainActivity : BridgeActivity() {
 
                 val acceptTypes = fileChooserParams?.acceptTypes?.filter { it.isNotBlank() } ?: emptyList()
                 val wantsImage = acceptTypes.isEmpty() || acceptTypes.any { it.startsWith("image/") || it.contains("image") }
+                pendingChooserWantsImage = wantsImage
+                pendingChooserAcceptTypes = acceptTypes
 
-                val contentIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = if (acceptTypes.size == 1 && acceptTypes[0].contains("/")) acceptTypes[0] else "*/*"
-                    if (wantsImage && acceptTypes.all { it.startsWith("image/") }) {
-                        type = "image/*"
+                if (wantsImage && !hasCameraPermission()) {
+                    pendingPermissionAction = { granted ->
+                        launchCombinedFileChooser(wantsImage = true, includeCamera = granted, acceptTypes = pendingChooserAcceptTypes)
                     }
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                    return true
                 }
 
-                val extraIntents = mutableListOf<Intent>()
-                if (wantsImage) {
-                    try {
-                        val photoFile = File.createTempFile("sketch_capture_", ".jpg", cacheDir)
-                        val photoUri = FileProvider.getUriForFile(
-                            this@MainActivity,
-                            "${applicationContext.packageName}.fileprovider",
-                            photoFile
-                        )
-                        pendingCameraUri = photoUri
-                        val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-                            putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                        }
-                        extraIntents.add(captureIntent)
-                    } catch (_: Exception) {
-                        pendingCameraUri = null
-                    }
-                }
-
-                val chooser = Intent.createChooser(contentIntent, if (wantsImage) "Pilih Foto / Kamera" else "Pilih File")
-                if (extraIntents.isNotEmpty()) {
-                    chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents.toTypedArray())
-                }
-
-                return try {
-                    fileChooserLauncher.launch(chooser)
-                    true
-                } catch (_: Exception) {
-                    pendingFileCallback?.onReceiveValue(null)
-                    pendingFileCallback = null
-                    pendingCameraUri = null
-                    false
-                }
+                return launchCombinedFileChooser(
+                    wantsImage = wantsImage,
+                    includeCamera = wantsImage && hasCameraPermission(),
+                    acceptTypes = acceptTypes
+                )
             }
         }
+    }
+
+    override fun onDestroy() {
+        cleanupPrintWebView()
+        super.onDestroy()
+    }
+
+    private fun hasCameraPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun launchCombinedFileChooser(
+        wantsImage: Boolean,
+        includeCamera: Boolean,
+        acceptTypes: List<String>
+    ): Boolean {
+        val contentIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = if (acceptTypes.size == 1 && acceptTypes[0].contains("/")) acceptTypes[0] else "*/*"
+            if (wantsImage && (acceptTypes.isEmpty() || acceptTypes.all { it.startsWith("image/") })) {
+                type = "image/*"
+            }
+        }
+
+        val extraIntents = mutableListOf<Intent>()
+        if (includeCamera) {
+            try {
+                val photoFile = File.createTempFile("sketch_capture_", ".jpg", cacheDir)
+                val photoUri = FileProvider.getUriForFile(
+                    this,
+                    "${applicationContext.packageName}.fileprovider",
+                    photoFile
+                )
+                pendingCameraUri = photoUri
+                val captureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                    putExtra(MediaStore.EXTRA_OUTPUT, photoUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                }
+                extraIntents.add(captureIntent)
+            } catch (_: Exception) {
+                pendingCameraUri = null
+            }
+        }
+
+        val chooser = Intent.createChooser(contentIntent, if (wantsImage) "Pilih Foto / Kamera" else "Pilih File")
+        if (extraIntents.isNotEmpty()) {
+            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents.toTypedArray())
+        }
+
+        return try {
+            fileChooserLauncher.launch(chooser)
+            true
+        } catch (_: Exception) {
+            pendingFileCallback?.onReceiveValue(null)
+            pendingFileCallback = null
+            pendingCameraUri = null
+            false
+        }
+    }
+
+    private fun launchQrScannerWithPermission() {
+        val startScan = {
+            val intent = IntentIntegrator(this@MainActivity)
+                .setPrompt("Scan QR Storage / Template")
+                .setBeepEnabled(true)
+                .setOrientationLocked(false)
+                .createScanIntent()
+            qrScanLauncher.launch(intent)
+        }
+        if (hasCameraPermission()) {
+            startScan()
+        } else {
+            pendingPermissionAction = { granted ->
+                if (granted) {
+                    startScan()
+                } else {
+                    Toast.makeText(this@MainActivity, "Izin kamera diperlukan untuk scan QR.", Toast.LENGTH_LONG).show()
+                }
+            }
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun cleanupPrintWebView() {
+        activePrintWebView?.let { old ->
+            try {
+                old.stopLoading()
+                old.webViewClient = WebViewClient()
+                old.destroy()
+            } catch (_: Exception) {
+            }
+        }
+        activePrintWebView = null
     }
 
     private fun buildPrintAttributes(paperType: String): PrintAttributes {
@@ -177,12 +308,7 @@ class MainActivity : BridgeActivity() {
         @JavascriptInterface
         fun scanQr() {
             runOnUiThread {
-                val intent = IntentIntegrator(this@MainActivity)
-                    .setPrompt("Scan QR Storage / Template")
-                    .setBeepEnabled(true)
-                    .setOrientationLocked(false)
-                    .createScanIntent()
-                qrScanLauncher.launch(intent)
+                launchQrScannerWithPermission()
             }
         }
 
@@ -199,6 +325,7 @@ class MainActivity : BridgeActivity() {
         fun printHtml(htmlContent: String, jobName: String?, paperType: String?) {
             runOnUiThread {
                 try {
+                    cleanupPrintWebView()
                     val safeJob = (jobName ?: "CNC Template Tracker").trim().ifEmpty { "CNC Template Tracker" }
                     val safePaper = (paperType ?: "A4").trim()
                     val printWebView = WebView(this@MainActivity)

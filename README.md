@@ -6,8 +6,8 @@ Satu kode web **offline-first** di folder `public/` yang dibungkus sesuai platfo
 
 ## Arsitektur Inti (PC & Android)
 
-- **Satu kode web klasik (`public/`):** `index.html`, `config.js`, `db.js`, dan `sync.js` ditulis sebagai skrip klasik (tanpa `type="module"`, tanpa CDN, tanpa `fetch` ke file lokal, semua path relatif) sehingga berjalan langsung lewat `file://` di PC maupun dari asset internal APK via Capacitor.
-- **UI Blue Navy + Background Putih & Dashboard Publik Tanpa Login:** Sebelum login, halaman utama hanya menampilkan **jumlah template per lokasi/storage** (tanpa detail isi template dan tanpa akses ke menu lain). Klik **`🔐 Login`** (pop-up modal) untuk membuka **detail template per lokasi/storage**, filter interaktif, stok akrilik, 5 movement terakhir, dan seluruh menu lainnya.
+- **Satu kode web modular klasik (`public/`):** `index.html`, `styles.css`, `config.js`, `db.js`, `sync.js`, `vendor/qrcode.js`, dan `app.js` ditulis sebagai skrip & stylesheet klasik (tanpa `type="module"`, tanpa CDN, tanpa `fetch` ke file lokal, semua path relatif) sehingga berjalan langsung lewat `file://` di PC maupun dari asset internal APK via Capacitor.
+- **UI Blue Navy + Background Putih, Navigasi Adaptif, & Dashboard Publik Tanpa Login:** Sebelum login, halaman utama hanya menampilkan **jumlah template per lokasi/storage** (tanpa detail isi template dan tanpa sidebar/bottom-nav). Setelah login (`🔐 Login`), muncul **Sidebar Kiri di Desktop (`≥ 1024px`)** atau **Bottom Bar + Drawer `☰ Menu` di Mobile**, dialog kustom Blue Navy (`uiAlert`/`uiConfirm`/`uiPrompt` tanpa blocking native `alert()`), serta akses penuh ke detail lokasi, filter interaktif, stok akrilik, dan seluruh menu.
 - **Flow Bahan Baku Akrilik (`ACRYLIC_STOCKS` & `ACRYLIC_LOGS`):** Rekam stok akrilik masuk (`Panjang × Lebar` cm/mm, `Tebal mm`, warna, qty lembar). Saat input template, pilih **Pakai Stok Akrilik Baru** (otomatis mengurangi stok, mendukung desimal) atau **Sisa Akrilik Template Lain** (tercatat untuk traceability tanpa mengurangi stok baru).
 - **Database lokal + antrean tulis (Outbox):** Semua operasi tulis (input template, stok akrilik, split distribusi, movement, storage, soft-delete, import lapangan, upload sketch) langsung disimpan lokal ke **IndexedDB** dengan **UUID klien** dan masuk antrean **Outbox**, lalu dikirim otomatis saat online dengan retry backoff eksponensial.
 - **Delta Sync (`POST text/plain`):** Sinkronisasi memakai endpoint Google Apps Script sendiri (`action: "syncDelta"` dengan `since=timestamp` & `action: "pushOutbox"`), menggunakan `POST` dengan `Content-Type: text/plain;charset=utf-8` dan token di body JSON (respons JSON terbaca penuh — tanpa OpenSheet, tanpa JSONP, tanpa `POST no-cors`).
@@ -55,11 +55,12 @@ Folder `public/` dibundel langsung di dalam APK menggunakan **Capacitor**, sehin
    npm run cap:sync
    ```
 3. Buka folder `android/` di Android Studio (`npm run cap:open` atau Open folder `android/`), lakukan Gradle Sync, lalu **Build → Generate Signed Bundle / APK → APK**.
-4. Fitur native Android yang terintegrasi di `MainActivity.kt`:
-   - File chooser kamera + galeri (`onShowFileChooser` + `FileProvider`) untuk upload sketch dan import JSON backup.
-   - `Android.shareQRText` untuk berbagi daftar QR Storage ke WhatsApp / aplikasi lain.
-   - Scanner QR ZXing (`Android.scanQr`) & **Android Print Framework (`Android.printHtml`)** dengan WebView cetak khusus, konversi QR `<canvas>` ke PNG `<img>`, dan `PrintAttributes` eksplisit untuk A4, Thermal 58 mm, serta Thermal 80 mm.
-   - Penyimpanan file sketch lokal di `files/sketches/`.
+4. Fitur native & engineering Android di `android/` (`targetSdk = 35`, Gradle Wrapper `8.11.1`):
+   - Safe-area & edge-to-edge Android 15 (`WindowCompat` + `WindowInsetsCompat` + CSS `env(safe-area-inset-*)`).
+   - Runtime Camera Permission (`ActivityResultContracts.RequestPermission`) sebelum membuka kamera sketch (`onShowFileChooser`) maupun scanner QR ZXing (`Android.scanQr`).
+   - Navigasi tombol Back fisik/gesture (`OnBackPressedCallback` → `window.handleHardwareBack()`) untuk menutup modal aktif atau kembali ke Dashboard sebelum keluar dari APK.
+   - **Android Print Framework (`Android.printHtml`)** dengan lifecycle pembersihan `activePrintWebView`, konversi QR `<canvas>` ke PNG `<img>`, dan `PrintAttributes` eksplisit untuk A4, Thermal 58 mm, serta Thermal 80 mm.
+   - Adaptive Launcher Icon Blue Navy (`@mipmap/ic_launcher`), penyimpanan sketch lokal `files/sketches/`, dan aturan R8/ProGuard (`proguard-rules.pro`) yang menjaga `@JavascriptInterface`.
 
 Panduan lengkap: [`android/README.md`](android/README.md).
 
@@ -71,4 +72,4 @@ Panduan lengkap: [`android/README.md`](android/README.md).
 npm run check
 ```
 
-Memvalidasi sintaks semua file skrip (`config.js`, `db.js`, `sync.js`, skrip inline `index.html`, dan `Code.gs`), memastikan tidak ada `type="module"`, CDN, OpenSheet, JSONP, `no-cors`, atau kredensial/URL hardcoded, serta memverifikasi konfigurasi PC & Capacitor Android.
+Memvalidasi sintaks semua file skrip (`config.js`, `db.js`, `sync.js`, `vendor/qrcode.js`, `app.js`, dan `Code.gs`), memastikan bebas `type="module"`, CDN, OpenSheet, JSONP, `no-cors`, blocking `alert/confirm/prompt`, atau kredensial/URL hardcoded, serta memverifikasi konfigurasi PC & Capacitor Android.

@@ -15,5 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "CNCTracker"
 include(":app")
-include(":capacitor-android")
-project(":capacitor-android").projectDir = file("../node_modules/@capacitor/android/capacitor")
+apply(from = "capacitor.settings.gradle")
