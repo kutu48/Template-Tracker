@@ -23,13 +23,13 @@
         <span class="sync-pill online" id="syncNetBadge">🟢 Online</span>
         <button class="sync-pill clean hidden" id="syncQueueBadge" type="button" onclick="openOutboxModal()">✓ Tersinkron</button>
         <button class="small hidden" id="btnHeaderSync" type="button" onclick="syncNowManual()" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.28)">🔄 Sync</button>
-        <span class="last-sync-tag" id="headerLastSync">Sync: -</span>
+        <span class="last-sync-tag hidden" id="headerLastSync">Sync: -</span>
       </div>
     </div>
     <div class="sync-head">
-      <div id="headerSyncStatus">Dashboard Interaktif · Offline-First</div>
+      <div id="headerSyncStatus">Ringkasan Lokasi &amp; Template CNC</div>
       <div class="head-auth-row">
-        <span class="user-chip" id="whoami">Mode Tamu</span>
+        <span class="user-chip hidden" id="whoami"></span>
         <button class="small btn-header-login" id="btnHeaderLogin" type="button" onclick="openLoginModal()">🔐 Login</button>
         <button class="small bad hidden" id="btnHeaderLogout" type="button" onclick="logout()">Logout</button>
       </div>
@@ -69,7 +69,7 @@
     <div class="hero-top">
       <div>
         <h2>Dashboard Template CNC</h2>
-        <div class="muted" id="homeSyncSummary">Menampilkan jumlah template per lokasi/storage · Login untuk melihat detail &amp; mengakses menu lainnya</div>
+        <div class="muted" id="homeSyncSummary">Ringkasan sebaran template per lokasi / storage</div>
       </div>
       <div class="hero-quick-btns hidden" id="heroQuickBtnsAuth">
         <button class="hero-primary" type="button" onclick="showPage('templateInput')">➕ Input Template</button>
@@ -77,22 +77,19 @@
         <button type="button" onclick="showPage('distribution')">📦 Distribusi</button>
         <button type="button" onclick="showPage('storage')">📷 Scan Storage</button>
       </div>
-      <div class="hero-quick-btns" id="heroQuickBtnsGuest">
-        <button class="hero-primary" type="button" onclick="openLoginModal('Login untuk melihat detail template per lokasi/storage dan mengakses semua menu.')">🔐 Login untuk Akses Penuh</button>
-      </div>
     </div>
     <div class="summary-box" id="homeKpiBox">
-      <div class="mini" onclick="openFilteredTemplates('')" title="Lihat semua template">
+      <div class="mini" onclick="openFilteredTemplates('')" title="Total seluruh template aktif">
         <div class="mini-top"><span>Total Template</span><span>📋</span></div>
         <b id="sumTemplates">0</b>
         <span>Semua aktif</span>
       </div>
-      <div class="mini" onclick="showPage('distribution')" title="Buka Distribusi Waiting">
+      <div class="mini" onclick="showPage('distribution')" title="Template siap distribusi">
         <div class="mini-top"><span>Waiting</span><span>⏳</span></div>
         <b id="sumWaiting">0</b>
         <span>Siap distribusi</span>
       </div>
-      <div class="mini" onclick="openFilteredTemplates('DISTRIBUTED')" title="Lihat template sudah distribusi">
+      <div class="mini" onclick="openFilteredTemplates('DISTRIBUTED')" title="Template di lokasi/storage">
         <div class="mini-top"><span>Distributed</span><span>✅</span></div>
         <b id="sumDistributed">0</b>
         <span>Di lokasi/storage</span>
@@ -108,18 +105,6 @@
         <span>template hemat bahan</span>
       </div>
     </div>
-  </div>
-
-  <!-- Banner Mode Publik (Belum Login) -->
-  <div class="card" id="homeGuestBanner">
-    <div class="topline" style="margin-bottom:6px">
-      <div>
-        <h3>🔒 Dashboard Ringkas (Belum Login)</h3>
-        <div class="muted">Menampilkan <b>jumlah template per lokasi/storage</b> saja. Login untuk melihat detail template tiap lokasi dan membuka menu lainnya.</div>
-      </div>
-      <button class="small primary" type="button" onclick="openLoginModal()">🔐 Login</button>
-    </div>
-    <input id="homeGuestStorageSearch" oninput="renderHomeAnalyticsDebounced()" placeholder="Cari kode atau nama lokasi / storage..."/>
   </div>
 
   <!-- Interactive Dashboard Filter & Analytics (Khusus Setelah Login) -->
@@ -146,10 +131,13 @@
     <div class="card">
       <div class="topline">
         <div>
-          <h3>🗄️ Jumlah Template per Lokasi / Storage</h3>
-          <div class="muted" id="homeStorageSubtitle">Menampilkan jumlah template per lokasi · Login untuk lihat detail isi tiap lokasi</div>
+          <h3>🗄️ Lokasi / Storage Template</h3>
+          <div class="muted" id="homeStorageSubtitle">Sebaran template per meja / storage</div>
         </div>
-        <span class="selected-counter" id="homeStorageCounter">0 lokasi</span>
+        <div class="storage-section-tools">
+          <input class="storage-search-inline" id="homeGuestStorageSearch" oninput="onHomeGuestSearchInput()" placeholder="🔍 Cari storage / area..." aria-label="Cari lokasi atau storage"/>
+          <span class="selected-counter" id="homeStorageCounter">0 lokasi</span>
+        </div>
       </div>
       <div id="homeStorageChart"></div>
       <div id="homeStorageDrilldown" class="drilldown-box hidden"></div>
