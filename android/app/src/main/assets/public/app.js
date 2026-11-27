@@ -325,14 +325,17 @@ function updateSyncIndicator(st){
   const lastSyncStr = syncUiState.lastSyncAt ? dateTimeText(syncUiState.lastSyncAt) : "Belum sync";
   lastSyncText = lastSyncStr;
   const lastEl = $("headerLastSync");
-  if(lastEl) lastEl.textContent = `Sync: ${lastSyncStr}`;
+  if(lastEl){
+    lastEl.textContent = `Sync: ${lastSyncStr}`;
+    lastEl.classList.toggle("hidden", !currentUser);
+  }
   const btn = $("btnHeaderSync");
   if(btn) btn.disabled = !!syncUiState.syncing;
   const homeSum = $("homeSyncSummary");
   if(homeSum){
     homeSum.textContent = currentUser
       ? `${syncUiState.online ? "Online" : "Offline"} · Login: ${currentUser.name || currentUser.username} · Antrean: ${syncUiState.pendingCount}${syncUiState.errorCount ? ` (${syncUiState.errorCount} gagal)` : ""} · Sync: ${lastSyncStr}`
-      : `Mode Publik (${syncUiState.online ? "Online" : "Offline"}) · Hanya menampilkan jumlah template per lokasi/storage · Login untuk detail & menu lainnya`;
+      : `Ringkasan sebaran template per lokasi / storage`;
   }
   if(syncUiState.authExpired && currentUser){
     toast("Token perangkat kedaluwarsa/dicabut. Silakan login ulang saat online.");
@@ -650,13 +653,13 @@ function renderAuth(){
   if($("btnHeaderLogin")) $("btnHeaderLogin").classList.toggle("hidden", loggedIn);
   if($("btnHeaderLogout")) $("btnHeaderLogout").classList.toggle("hidden", !loggedIn);
   if($("btnHeaderSync")) $("btnHeaderSync").classList.toggle("hidden", !loggedIn);
+  if($("headerLastSync")) $("headerLastSync").classList.toggle("hidden", !loggedIn);
   if($("syncQueueBadge") && !loggedIn) $("syncQueueBadge").classList.add("hidden");
   if($("menuUserManagement")) $("menuUserManagement").classList.toggle("hidden", !isSuperAdmin());
 
   // Toggle elemen Dashboard publik (belum login) vs penuh (sudah login)
   if($("heroQuickBtnsAuth")) $("heroQuickBtnsAuth").classList.toggle("hidden", !loggedIn);
-  if($("heroQuickBtnsGuest")) $("heroQuickBtnsGuest").classList.toggle("hidden", loggedIn);
-  if($("homeGuestBanner")) $("homeGuestBanner").classList.toggle("hidden", loggedIn);
+  if($("homeGuestStorageSearch")) $("homeGuestStorageSearch").classList.toggle("hidden", loggedIn);
   if($("homeFilterCard")) $("homeFilterCard").classList.toggle("hidden", !loggedIn);
   if($("homeAcrylicCard")) $("homeAcrylicCard").classList.toggle("hidden", !loggedIn);
   if($("homeMenuGrid")) $("homeMenuGrid").classList.toggle("hidden", !loggedIn);
@@ -669,14 +672,16 @@ function renderAuth(){
   }
   if($("homeStorageSubtitle")){
     $("homeStorageSubtitle").textContent = loggedIn
-      ? "Klik baris lokasi/storage untuk melihat detail template di dalamnya"
-      : "Hanya menampilkan jumlah template per lokasi · Login untuk melihat detail template";
+      ? "Klik kartu lokasi/storage untuk melihat rincian template di dalamnya"
+      : "Sebaran template & total buyer per meja / storage";
   }
 
   if($("whoami")){
-    $("whoami").textContent = loggedIn ? `${currentUser.name || currentUser.username} · ${currentUser.role}` : "Mode Tamu";
+    $("whoami").classList.toggle("hidden", !loggedIn);
+    $("whoami").textContent = loggedIn ? `${currentUser.name || currentUser.username} · ${currentUser.role}` : "";
   }
 
+  homeStorageSlideIndex = 0;
   if(!loggedIn){
     activePage = "home";
     homeSelectedStorage = "";
@@ -692,7 +697,7 @@ function renderAuth(){
 async function showPage(page){
   const target = page || "home";
   if(target !== "home" && !currentUser){
-    openLoginModal("Menu ini hanya dapat diakses setelah login. Sebelum login, hanya Dashboard jumlah template per lokasi yang ditampilkan.");
+    openLoginModal("Silakan login untuk mengakses menu ini.");
     return;
   }
   if(target === "userManagement" && !isSuperAdmin()){
@@ -700,6 +705,7 @@ async function showPage(page){
     return showPage("home");
   }
   activePage = target;
+  if(activePage !== "home") stopHomeStorageAutoSlideTimer();
   document.querySelectorAll(".page").forEach(s=>s.classList.add("hidden"));
   const el=$("page-"+activePage); if(el) el.classList.remove("hidden");
   document.querySelectorAll(".bottom-nav button[data-page], .side-nav button[data-page]").forEach(b=>b.classList.toggle("active", b.dataset.page===activePage));
@@ -739,7 +745,7 @@ function updateHeader(){
   const acrAvail=roundQty(db.acrylics.reduce((s,a)=>s+Number(a.qtyAvailable||0),0));
   const mode=currentUser
     ? `${total} template · ${waiting} waiting · ${acrAvail} lbr akrilik`
-    : `${locCount} lokasi · ${total} template (Login untuk detail)`;
+    : `${locCount} lokasi · ${total} template`;
   const el=$("headerSyncStatus"); if(el) el.textContent = mode;
   updateSyncIndicator(syncUiState);
 }
@@ -811,8 +817,123 @@ function findDuplicateTemplateLocal(buyer, stylekp, parts){
   return db.templates.find(t=>normalizeText(t.buyer)===buyer && normalizeText(t.stylekp)===stylekp && templatePartsKeyLocal(t.id)===key);
 }
 
-/* ================= INTERACTIVE DASHBOARD ================= */
+/* ================= INTERACTIVE DASHBOARD & AUTO-SLIDE STORAGE GRID ================= */
+const HOME_STORAGE_SLIDE_MS = 4800;
 let homeSelectedStorage = "";
+let homeStorageSlideIndex = 0;
+let homeStorageSlideCount = 1;
+let homeStorageAutoPlay = true;
+let homeStorageHoverPaused = false;
+let homeStorageTimer = null;
+let homeStorageTouchStartX = null;
+let lastHomePerSlide = 0;
+
+function getHomeStoragePerSlide(loggedIn){
+  const w = Number(window.innerWidth || 1280);
+  if(!loggedIn) return w >= 1101 ? 8 : 6;
+  return 6;
+}
+function chunkStorageSlides(items, perSlide){
+  const size = Math.max(1, perSlide || 6);
+  const out = [];
+  for(let i = 0; i < items.length; i += size){
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+function stopHomeStorageAutoSlideTimer(){
+  if(homeStorageTimer){
+    clearTimeout(homeStorageTimer);
+    homeStorageTimer = null;
+  }
+}
+function applyHomeStorageSlidePosition(){
+  const track = $("homeStorageSliderTrack");
+  if(track){
+    track.style.transform = `translateX(-${homeStorageSlideIndex * 100}%)`;
+  }
+  const info = $("homeStorageSlideInfo");
+  if(info){
+    info.textContent = `${homeStorageSlideIndex + 1} / ${homeStorageSlideCount}`;
+  }
+  document.querySelectorAll("#homeStorageSliderControls .slider-dot").forEach((dot, idx)=>{
+    dot.classList.toggle("active", idx === homeStorageSlideIndex);
+  });
+}
+function syncHomeStorageAutoSlideTimer(){
+  stopHomeStorageAutoSlideTimer();
+  if(!homeStorageAutoPlay || homeStorageSlideCount <= 1) return;
+  if(activePage !== "home" || homeStorageHoverPaused) return;
+  if(currentUser && homeSelectedStorage) return;
+  if(document.hidden || anyModalOpen()) return;
+  let armed = false;
+  homeStorageTimer = setTimeout(()=>{
+    if(!armed) return;
+    homeStorageTimer = null;
+    if(!homeStorageAutoPlay || homeStorageSlideCount <= 1 || activePage !== "home" || homeStorageHoverPaused || anyModalOpen()) return;
+    if(currentUser && homeSelectedStorage) return;
+    homeStorageSlideIndex = (homeStorageSlideIndex + 1) % homeStorageSlideCount;
+    applyHomeStorageSlidePosition();
+    syncHomeStorageAutoSlideTimer();
+  }, HOME_STORAGE_SLIDE_MS);
+  armed = true;
+}
+function stepHomeStorageSlide(delta){
+  if(homeStorageSlideCount <= 1) return;
+  homeStorageSlideIndex = (homeStorageSlideIndex + delta + homeStorageSlideCount) % homeStorageSlideCount;
+  applyHomeStorageSlidePosition();
+  syncHomeStorageAutoSlideTimer();
+}
+function goHomeStorageSlide(idx){
+  if(homeStorageSlideCount <= 1) return;
+  homeStorageSlideIndex = Math.max(0, Math.min(homeStorageSlideCount - 1, Number(idx) || 0));
+  applyHomeStorageSlidePosition();
+  syncHomeStorageAutoSlideTimer();
+}
+function toggleHomeStorageAutoSlide(){
+  homeStorageAutoPlay = !homeStorageAutoPlay;
+  const btn = $("homeSliderAutoBtn");
+  if(btn){
+    btn.classList.toggle("on", homeStorageAutoPlay);
+    btn.textContent = homeStorageAutoPlay ? "⏸ Auto Slide" : "▶ Auto Slide";
+  }
+  syncHomeStorageAutoSlideTimer();
+}
+function setHomeSliderHover(paused){
+  homeStorageHoverPaused = !!paused;
+  syncHomeStorageAutoSlideTimer();
+}
+function onHomeSliderTouchStart(ev){
+  const t = ev?.touches?.[0];
+  homeStorageTouchStartX = t ? t.clientX : null;
+  setHomeSliderHover(true);
+}
+function onHomeSliderTouchEnd(ev){
+  const t = ev?.changedTouches?.[0];
+  if(homeStorageTouchStartX != null && t){
+    const dx = t.clientX - homeStorageTouchStartX;
+    if(Math.abs(dx) > 42){
+      stepHomeStorageSlide(dx < 0 ? 1 : -1);
+    }
+  }
+  homeStorageTouchStartX = null;
+  setHomeSliderHover(false);
+}
+function onHomeGuestSearchInput(){
+  homeStorageSlideIndex = 0;
+  renderHomeAnalyticsDebounced();
+}
+window.addEventListener("resize", debounceRaw(()=>{
+  if(activePage === "home"){
+    const nextPer = getHomeStoragePerSlide(!!currentUser);
+    if(nextPer !== lastHomePerSlide) renderHomeAnalytics();
+  }
+}, 220));
+document.addEventListener("visibilitychange", ()=>{
+  if(document.hidden) stopHomeStorageAutoSlideTimer();
+  else if(activePage === "home") syncHomeStorageAutoSlideTimer();
+});
+
 function openFilteredTemplates(statusVal){
   if(!requireLogin("melihat daftar detail template")) return;
   showPage("templateList").then(()=>{
@@ -823,6 +944,7 @@ function openFilteredTemplates(statusVal){
 function resetHomeFilter(){
   ["homeBuyerFilter","homeStyleFilter","homeStorageFilter","homeQuickSearch","homeGuestStorageSearch"].forEach(id=>{ if($(id)) $(id).value=""; });
   homeSelectedStorage = "";
+  homeStorageSlideIndex = 0;
   renderHomeAnalytics();
 }
 function selectHomeStorage(code){
@@ -865,42 +987,107 @@ function renderHome(){
   }
 }
 
+function renderHomeStorageCardHtml(item, maxCount, loggedIn){
+  const pct = item.tplCount ? Math.max(8, Math.round((item.tplCount / maxCount) * 100)) : 0;
+  const isActive = loggedIn && homeSelectedStorage === item.storage.code;
+  const subLabel = [item.storage.name, item.storage.area].filter(Boolean).join(" · ") || "Lokasi Storage";
+  return `<article class="home-storage-card ${isActive ? "active" : ""}" onclick="selectHomeStorage('${escAttr(item.storage.code)}')">
+    <div class="hsc-top">
+      <div class="hsc-title">
+        <b class="hsc-code">${esc(item.storage.code)}</b>
+        <span class="hsc-name">${esc(subLabel)}</span>
+      </div>
+      <span class="hsc-count ${item.tplCount === 0 ? "is-empty" : ""}">${item.tplCount}</span>
+    </div>
+    <div class="hsc-track"><div class="hsc-fill" style="width:${pct}%"></div></div>
+    <div class="hsc-foot">
+      <span class="hsc-meta"><b>${item.buyerCount}</b> Buyer</span>
+      <span class="hsc-meta"><b>${item.tplCount}</b> Template${loggedIn && item.partQty ? ` · ${item.partQty} pcs` : ""}</span>
+    </div>
+  </article>`;
+}
+
+function renderHomeStorageSliderHtml(storages, loggedIn){
+  const perSlide = getHomeStoragePerSlide(loggedIn);
+  lastHomePerSlide = perSlide;
+  if(!storages.length){
+    homeStorageSlideCount = 1;
+    homeStorageSlideIndex = 0;
+    stopHomeStorageAutoSlideTimer();
+    return loggedIn
+      ? `<div class="empty">Belum ada data storage sesuai filter.</div>`
+      : `<div class="empty">Belum ada data lokasi/storage di perangkat ini.</div>`;
+  }
+
+  const maxCount = Math.max(1, ...storages.map(x=>x.tplCount));
+  const slides = chunkStorageSlides(storages, perSlide);
+  homeStorageSlideCount = slides.length;
+
+  if(loggedIn && homeSelectedStorage){
+    const foundSlide = slides.findIndex(page => page.some(x => x.storage.code === homeSelectedStorage));
+    if(foundSlide >= 0) homeStorageSlideIndex = foundSlide;
+  }
+  if(homeStorageSlideIndex >= homeStorageSlideCount) homeStorageSlideIndex = 0;
+
+  const gridVariant = loggedIn ? "auth-grid" : "guest-grid";
+  const pagesHtml = slides.map(page => `
+    <div class="storage-slide-page">
+      <div class="home-storage-grid ${gridVariant}">
+        ${page.map(item => renderHomeStorageCardHtml(item, maxCount, loggedIn)).join("")}
+      </div>
+    </div>`).join("");
+
+  const controlsHtml = homeStorageSlideCount > 1 ? `
+    <div class="storage-slider-controls" id="homeStorageSliderControls">
+      <button type="button" class="slider-auto-btn ${homeStorageAutoPlay ? "on" : ""}" id="homeSliderAutoBtn" onclick="toggleHomeStorageAutoSlide()">${homeStorageAutoPlay ? "⏸ Auto Slide" : "▶ Auto Slide"}</button>
+      <div class="slider-dots">
+        ${slides.map((_, idx) => `<button type="button" class="slider-dot ${idx === homeStorageSlideIndex ? "active" : ""}" onclick="goHomeStorageSlide(${idx})" aria-label="Halaman ${idx + 1}"></button>`).join("")}
+      </div>
+      <div class="slider-nav-group">
+        <button type="button" class="slider-nav-btn" onclick="stepHomeStorageSlide(-1)" aria-label="Sebelumnya">‹</button>
+        <span class="slider-page-info" id="homeStorageSlideInfo">${homeStorageSlideIndex + 1} / ${homeStorageSlideCount}</span>
+        <button type="button" class="slider-nav-btn" onclick="stepHomeStorageSlide(1)" aria-label="Berikutnya">›</button>
+      </div>
+    </div>` : "";
+
+  return `<div class="storage-slider" id="homeStorageSlider" onmouseenter="setHomeSliderHover(true)" onmouseleave="setHomeSliderHover(false)" ontouchstart="onHomeSliderTouchStart(event)" ontouchend="onHomeSliderTouchEnd(event)">
+    <div class="storage-slider-viewport">
+      <div class="storage-slider-track" id="homeStorageSliderTrack" style="transform:translateX(-${homeStorageSlideIndex * 100}%)">
+        ${pagesHtml}
+      </div>
+    </div>
+    ${controlsHtml}
+  </div>`;
+}
+
 function renderHomeAnalytics(){
   const loggedIn = !!currentUser;
   const chartBox = $("homeStorageChart");
   const drillBox = $("homeStorageDrilldown");
 
-  // MODE BELUM LOGIN: hanya tampilkan jumlah template per lokasi/storage (tanpa detail template)
+  // MODE BELUM LOGIN: Grid Card per storage + auto-slide + total buyer/template (tanpa bocorkan nama buyer/style)
   if(!loggedIn){
     const guestQ = ($("homeGuestStorageSearch")?.value || "").trim().toLowerCase();
     const storages = db.storages
       .filter(s=>s.code!=="WORKSHOP" && (!guestQ || [s.code, s.name, s.area].join(" ").toLowerCase().includes(guestQ)))
       .map(s=>{
-        const count = templatesInStorage(s.code).length;
-        return { storage: s, count };
+        const tpls = templatesInStorage(s.code);
+        const buyerCount = new Set(tpls.map(t=>normalizeText(t.buyer)).filter(Boolean)).size;
+        return { storage: s, tplCount: tpls.length, buyerCount, partQty: 0 };
       })
-      .sort((a,b)=>b.count - a.count || a.storage.code.localeCompare(b.storage.code));
+      .sort((a,b)=>b.tplCount - a.tplCount || a.storage.code.localeCompare(b.storage.code));
 
     if($("homeStorageCounter")) $("homeStorageCounter").textContent = `${storages.length} lokasi`;
     if(drillBox){ drillBox.classList.add("hidden"); drillBox.innerHTML = ""; }
     if(chartBox){
-      const maxCount = Math.max(1, ...storages.map(x=>x.count));
-      chartBox.innerHTML = storages.length ? storages.map(item=>{
-        const pct = Math.round((item.count / maxCount) * 100);
-        return `<div class="chart-row" onclick="selectHomeStorage('${escAttr(item.storage.code)}')" title="Login untuk lihat detail template di lokasi ini">
-          <div class="chart-row-head">
-            <span><b>${esc(item.storage.code)}</b> <span class="muted">${esc(item.storage.name||"")}${item.storage.area ? ` · ${esc(item.storage.area)}` : ""}</span></span>
-            <span><span class="badge">${item.count} template</span> <small class="muted">🔒 Detail</small></span>
-          </div>
-          <div class="chart-track"><div class="chart-fill" style="width:${item.count ? Math.max(8, pct) : 0}%"></div></div>
-        </div>`;
-      }).join("") : `<div class="empty">Belum ada data lokasi/storage di perangkat ini. Silakan <b>Login</b> untuk menyinkronkan data dari server.</div>`;
+      chartBox.innerHTML = renderHomeStorageSliderHtml(storages, false);
     }
     if($("homeAcrylicSummary")) $("homeAcrylicSummary").innerHTML = "";
+    syncHomeStorageAutoSlideTimer();
     return;
   }
 
-  // MODE SUDAH LOGIN: analitik lengkap + drilldown detail template per lokasi/storage + ringkasan akrilik
+  // MODE SUDAH LOGIN: Grid Card + Auto-Slide + Drilldown detail template per lokasi/storage + Ringkasan Akrilik
   const buyer = $("homeBuyerFilter")?.value || "";
   const style = $("homeStyleFilter")?.value || "";
   const stFilter = $("homeStorageFilter")?.value || "";
@@ -917,27 +1104,15 @@ function renderHomeAnalytics(){
     .filter(s=>s.code!=="WORKSHOP" && (!stFilter || s.code===stFilter))
     .map(s=>{
       const tpls = templatesInStorage(s.code).filter(matchTpl);
+      const buyerCount = new Set(tpls.map(t=>normalizeText(t.buyer)).filter(Boolean)).size;
       const partQty = tpls.reduce((acc,t)=>acc + distributedPartsInStorage(t.id, s.code).reduce((a,p)=>a+Number(p.qty||1),0), 0);
-      return { storage: s, tpls, partQty };
+      return { storage: s, tpls, tplCount: tpls.length, buyerCount, partQty };
     })
-    .sort((a,b)=>b.tpls.length - a.tpls.length || a.storage.code.localeCompare(b.storage.code));
+    .sort((a,b)=>b.tplCount - a.tplCount || a.storage.code.localeCompare(b.storage.code));
 
   if($("homeStorageCounter")) $("homeStorageCounter").textContent = `${storages.length} storage`;
   if(chartBox){
-    const maxCount = Math.max(1, ...storages.map(x=>x.tpls.length));
-    const shown = storages.slice(0, 12);
-    chartBox.innerHTML = shown.length ? shown.map(item=>{
-      const pct = Math.round((item.tpls.length / maxCount) * 100);
-      const isActive = homeSelectedStorage === item.storage.code;
-      return `<div class="chart-row ${isActive ? "active" : ""}" onclick="selectHomeStorage('${escAttr(item.storage.code)}')">
-        <div class="chart-row-head">
-          <span><b>${esc(item.storage.code)}</b> <span class="muted">${esc(item.storage.name||"")}</span></span>
-          <span class="badge">${item.tpls.length} tpl · ${item.partQty} pcs</span>
-        </div>
-        <div class="chart-track"><div class="chart-fill" style="width:${item.tpls.length ? Math.max(8, pct) : 0}%"></div></div>
-      </div>`;
-    }).join("") + (storages.length > 12 ? `<div class="muted" style="margin-top:6px">Menampilkan 12 teratas dari ${storages.length} storage. Klik "Buka Full View" untuk semua storage.</div>` : "")
-    : `<div class="empty">Belum ada data storage sesuai filter.</div>`;
+    chartBox.innerHTML = renderHomeStorageSliderHtml(storages, true);
 
     if(drillBox){
       const picked = storages.find(x=>x.storage.code === homeSelectedStorage);
@@ -945,7 +1120,7 @@ function renderHomeAnalytics(){
         drillBox.classList.remove("hidden");
         drillBox.innerHTML = `
           <div class="topline" style="margin-bottom:6px">
-            <div><b>🗄️ ${esc(picked.storage.code)} · ${esc(picked.storage.name||"")}</b><div class="muted">${picked.tpls.length} template (${picked.partQty} pcs part)</div></div>
+            <div><b>🗄️ ${esc(picked.storage.code)} · ${esc(picked.storage.name||"")}</b><div class="muted">${picked.buyerCount} buyer · ${picked.tplCount} template (${picked.partQty} pcs part)</div></div>
             <div class="actions" style="margin:0">
               <button class="small primary" type="button" onclick="openStorage('${escAttr(picked.storage.code)}')">Detail Penuh</button>
               <button class="small" type="button" onclick="goFieldUpdateStorage('${escAttr(picked.storage.code)}')">+ Update Lapangan</button>
@@ -962,6 +1137,7 @@ function renderHomeAnalytics(){
       }
     }
   }
+  syncHomeStorageAutoSlideTimer();
 
   // Ringkasan Akrilik di Dashboard
   const acrBox = $("homeAcrylicSummary");

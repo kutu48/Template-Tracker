@@ -111,12 +111,21 @@ for (const needle of [
   if (!html.includes(needle)) throw new Error(`Missing markup/reference in public/index.html: ${needle}`);
 }
 
+const loginBtnMatches = html.match(/openLoginModal\s*\(/g) || [];
+if (loginBtnMatches.length !== 1 || html.includes('homeGuestBanner') || html.includes('heroQuickBtnsGuest')) {
+  throw new Error('public/index.html must keep a single Login button in the navbar only (clean guest dashboard)');
+}
+
 for (const needle of [
   '--navy-900',
   'env(safe-area-inset-top',
   'env(safe-area-inset-bottom',
   '.side-nav',
   '.dialog-modal',
+  '.home-storage-grid',
+  '.home-storage-card',
+  '.hsc-foot',
+  '.storage-slider-track',
   ':focus-visible',
 ]) {
   if (!stylesCss.includes(needle)) throw new Error(`Missing style rule in public/styles.css: ${needle}`);
@@ -133,6 +142,9 @@ for (const needle of [
   'exportBackupFile',
   'setupAutoBackupFolder',
   'saveAcrylicStockIn',
+  'renderHomeStorageSliderHtml',
+  'stepHomeStorageSlide',
+  'toggleHomeStorageAutoSlide',
   'materializeQrImages',
   'Android.printHtml',
   'slice(0, 5)',
